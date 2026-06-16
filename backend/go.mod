@@ -4,12 +4,12 @@ go 1.26
 
 require (
 	github.com/dal-go/dalgo v0.62.2
-	github.com/sneat-co/sneat-core-modules v0.38.55
-	github.com/sneat-co/sneat-go-core v0.55.2
+	github.com/sneat-co/sneat-core-modules v0.38.58
+	github.com/sneat-co/sneat-go-core v0.55.4
 	github.com/strongo/logus v0.4.1
 	github.com/strongo/random v0.0.1
-	github.com/strongo/slice v0.3.4
-	github.com/strongo/strongoapp v0.31.35
+	github.com/strongo/slice v0.3.5
+	github.com/strongo/strongoapp v0.31.36
 	github.com/strongo/validation v0.0.8
 )
 
