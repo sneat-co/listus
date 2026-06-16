@@ -28,6 +28,8 @@ export default defineConfig({
     url: 'http://localhost:4200',
     reuseExistingServer: true,
     cwd: workspaceRoot,
+    // Cold CI builds the app on first request; allow generous startup time.
+    timeout: 180_000,
   },
   projects: [
     {
