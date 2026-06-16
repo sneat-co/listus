@@ -4,7 +4,7 @@ import { SpaceItemPageBaseComponent } from '@sneat/space-components';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { IListContext } from '../contexts';
-import { IListBrief, IListDbo, IMovie, ListType } from '../dto';
+import { IListBrief, IListDbo, ListType } from '../dto';
 import { ListusComponentBaseParams } from '../listus-component-base-params';
 
 export abstract class BaseListPage extends SpaceItemPageBaseComponent<
@@ -48,25 +48,6 @@ export abstract class BaseListPage extends SpaceItemPageBaseComponent<
       list = { ...list, brief: this.list.brief };
     }
     this.list = list;
-  }
-
-  protected goMoviePage(movie: IMovie): void {
-    if (!this.list) {
-      this.errorLogger.logError('not able to navigate without list context');
-    }
-    if (!this.space) {
-      this.errorLogger.logError('not able to navigate without team context');
-      return;
-    }
-    const url = `space/${this.space.id}`;
-    this.spaceParams.spaceNavService
-      .navigateForwardToSpacePage(this.space, url, {
-        state: {
-          list: this.list,
-          listItem: movie,
-        },
-      })
-      .catch(this.errorLogger.logError);
   }
 
   override getItemID$(paramMap$: Observable<ParamMap>): Observable<string> {

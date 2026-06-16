@@ -122,7 +122,7 @@
       >
         @for (item of listItems; track item.brief.id) {
           <ion-reorder>
-            <sneat-list-item
+            <listus-list-item
               [showDoneCheckbox]="doneFilter !== 'all'"
               [$doneFilter]="doneFilter || 'all'"
               [$listMode]="doneFilter === 'all' ? listMode : 'swipe'"
@@ -140,7 +140,7 @@
     @if (
       segment !== "settings" && listType !== "watch" && listType !== "recipes"
     ) {
-      <sneat-new-list-item
+      <listus-new-list-item
         [space]="space"
         [list]="list"
         [isDone]="doneFilter === 'completed'"

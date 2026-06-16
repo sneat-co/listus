@@ -44,7 +44,7 @@ import { NewListDialogComponent } from './new-list-dialog.component';
 import { ClassName } from '@sneat/ui';
 
 @Component({
-  selector: 'sneat-lists-page',
+  selector: 'listus-lists-page',
   templateUrl: './lists-page.component.html',
   imports: [
     FormsModule,

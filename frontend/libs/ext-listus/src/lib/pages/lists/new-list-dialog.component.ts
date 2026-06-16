@@ -28,7 +28,7 @@ import { IListInfo, ListType } from '../../dto';
 import { ErrorLogger, IErrorLogger } from '@sneat/core';
 
 @Component({
-  selector: 'sneat-new-list-popover',
+  selector: 'listus-new-list-popover',
   templateUrl: 'new-list-dialog.component.html',
   imports: [
     IonHeader,

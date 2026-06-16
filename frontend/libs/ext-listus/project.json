@@ -6,16 +6,23 @@
   "projectType": "library",
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "manifestRootsToUpdate": [
+        "dist/{projectRoot}"
+      ],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }
   },
-  "tags": [],
+  "tags": [
+    "type:lib",
+    "scope:listus"
+  ],
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
-      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/dist/{projectRoot}"
+      ],
       "options": {
         "project": "libs/ext-listus/ng-package.json",
         "tsConfig": "libs/ext-listus/tsconfig.lib.json"

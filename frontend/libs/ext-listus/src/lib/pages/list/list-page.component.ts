@@ -65,7 +65,7 @@ type ListPagePerforming =
   | 'clear list';
 
 @Component({
-  selector: 'sneat-list',
+  selector: 'listus-list',
   templateUrl: './list-page.component.html',
   imports: [
     ListusCoreServicesModule,

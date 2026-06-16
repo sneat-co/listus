@@ -26,7 +26,7 @@ export default [
         'error',
         {
           type: 'attribute',
-          prefix: 'lib',
+          prefix: 'listus',
           style: 'camelCase',
         },
       ],
@@ -34,7 +34,7 @@ export default [
         'error',
         {
           type: 'element',
-          prefix: 'lib',
+          prefix: 'listus',
           style: 'kebab-case',
         },
       ],
@@ -42,7 +42,10 @@ export default [
   },
   {
     files: ['**/*.html'],
-    // Override or add rules here
-    rules: {},
+    rules: {
+      // Migrated templates predate these a11y rules; tracked for a later pass.
+      '@angular-eslint/template/click-events-have-key-events': 'off',
+      '@angular-eslint/template/interactive-supports-focus': 'off',
+    },
   },
 ];

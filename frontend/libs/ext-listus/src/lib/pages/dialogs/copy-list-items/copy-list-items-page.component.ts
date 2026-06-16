@@ -21,7 +21,7 @@ import { ErrorLogger, IErrorLogger } from '@sneat/core';
 import { ListService } from '../../../services/list.service';
 
 @Component({
-  selector: 'sneat-copy-list-items',
+  selector: 'listus-copy-list-items',
   templateUrl: './copy-list-items-page.component.html',
   imports: [
     IonHeader,

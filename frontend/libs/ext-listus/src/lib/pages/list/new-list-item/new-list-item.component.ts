@@ -26,7 +26,7 @@ import {
 import { IListItemWithUiState } from '../list-item-with-ui-state';
 
 @Component({
-  selector: 'sneat-new-list-item',
+  selector: 'listus-new-list-item',
   imports: [FormsModule, IonItem, IonIcon, IonInput, IonButton],
   templateUrl: './new-list-item.component.html',
 })

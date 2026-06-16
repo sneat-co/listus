@@ -39,7 +39,7 @@ import { ListDialogsService } from '../../dialogs/ListDialogs.service';
 import { IListItemWithUiState } from '../list-item-with-ui-state';
 
 @Component({
-  selector: 'sneat-list-item',
+  selector: 'listus-list-item',
   imports: [
     IonItemSliding,
     IonItem,
