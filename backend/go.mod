@@ -22,7 +22,3 @@ require (
 	github.com/strongo/decimal v0.1.1 // indirect
 	github.com/strongo/delaying v0.2.1 // indirect
 )
-
-replace github.com/sneat-co/sneat-go-core => ../../sneat-go-core
-
-replace github.com/sneat-co/sneat-core-modules => ../../sneat-core-modules
