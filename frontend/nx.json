@@ -53,6 +53,10 @@
     "@nx/angular:unit-test": {
       "cache": true,
       "inputs": ["default", "^production"]
+    },
+    "@angular/build:unit-test": {
+      "cache": true,
+      "inputs": ["default", "^production"]
     }
   },
   "release": {

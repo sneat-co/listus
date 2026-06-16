@@ -1,0 +1,9 @@
+{
+  "name": "listus-app-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/listus-app-e2e/src",
+  "implicitDependencies": ["listus-app"],
+  "// targets": "to see all targets run: nx show project listus-app-e2e --web",
+  "targets": {}
+}
