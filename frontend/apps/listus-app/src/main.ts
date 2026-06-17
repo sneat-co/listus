@@ -15,7 +15,7 @@ import { registerIonicons } from './register-ionicons';
 bootstrapApplication(App, {
   providers: [
     ...getStandardSneatProviders(listusAppEnvironmentConfig),
-    provideAppInfo({ appId: 'listus', appTitle: 'listus.app' }),
+    provideAppInfo({ appId: 'listus', appTitle: 'Listus.app' }),
     provideRouter([...appRoutes, ...authRoutes]),
     provideRolesByType(undefined),
   ],
