@@ -1,10 +1,11 @@
 import { NgOptimizedImage } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  NgZone,
-  ViewChild,
+  signal,
+  viewChild,
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -110,26 +111,34 @@ type ListPagePerforming =
     ListDialogsService,
     RandomIdService,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListPageComponent extends BaseListPage implements AfterViewInit {
-  private readonly zone = inject(NgZone);
   private readonly listDialogs = inject(ListDialogsService);
   private readonly listusAppStateService = inject(IListusAppStateService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
 
-  protected isPersisting = false;
-  protected isHideWatched = false;
-  protected isReordering = false;
+  protected readonly isPersisting = signal(false);
+  protected readonly isHideWatched = signal(false);
+  protected readonly isReordering = signal(false);
 
-  protected listMode: 'reorder' | 'swipe' = 'swipe';
-  protected doneFilter?: 'all' | 'active' | 'completed' = undefined;
-  protected segment: ListPageSegment = 'list';
-  protected allListItems?: IListItemWithUiState[];
-  protected listItems?: IListItemWithUiState[];
-  @ViewChild('newListItem', { static: false })
-  public newListItem?: NewListItemComponent;
+  protected readonly listMode = signal<'reorder' | 'swipe'>('swipe');
+  protected readonly doneFilter = signal<
+    'all' | 'active' | 'completed' | undefined
+  >(undefined);
+  protected readonly segment = signal<ListPageSegment>('list');
+  protected readonly allListItems = signal<
+    IListItemWithUiState[] | undefined
+  >(undefined);
+  protected readonly listItems = signal<IListItemWithUiState[] | undefined>(
+    undefined,
+  );
+  protected readonly newListItem =
+    viewChild<NewListItemComponent>('newListItem');
   protected addingItems: IListItemWithUiState[] = [];
-  protected performing?: ListPagePerforming;
+  protected readonly performing = signal<ListPagePerforming | undefined>(
+    undefined,
+  );
 
   // protected completedListItems?: IListItemWithUiState[];
   // protected activeListItems?: IListItemWithUiState[];
@@ -145,34 +154,26 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
       return;
     }
     listusAppStateService.changed.subscribe((appState) => {
-      this.isHideWatched = !appState.showWatched;
+      this.isHideWatched.set(!appState.showWatched);
     });
   }
 
   ngAfterViewInit(): void /* Intentionally not ngOnInit */ {
-    if (this.newListItem) {
-      this.newListItem?.adding.subscribe({
-        next: (item: IListItemWithUiState) => {
-          this.addingItems.push(item);
-          this.applyFilter();
-        },
-        error: this.errorLogger.logError,
+    const newListItem = this.newListItem();
+    if (newListItem) {
+      newListItem.adding.subscribe((item: IListItemWithUiState) => {
+        this.addingItems.push(item);
+        this.applyFilter();
       });
-      this.newListItem.added.subscribe({
-        next: (item: IListItemBrief) => {
-          this.addingItems = this.addingItems.filter(
-            (v) => v.brief.id !== item.id,
-          );
-          this.applyFilter();
-        },
-        error: this.errorLogger.logError,
+      newListItem.added.subscribe((item: IListItemWithUiState) => {
+        this.addingItems = this.addingItems.filter(
+          (v) => v.brief.id !== item.brief.id,
+        );
+        this.applyFilter();
       });
 
-      this.newListItem.failedToAdd.subscribe({
-        next: (id: string): void => {
-          this.addingItems = this.addingItems.filter((v) => v.brief.id !== id);
-        },
-        error: this.errorLogger.logError,
+      newListItem.failedToAdd.subscribe((id: string): void => {
+        this.addingItems = this.addingItems.filter((v) => v.brief.id !== id);
       });
     } else {
       this.errorLogger.logError('newListItem component is not initialized');
@@ -182,12 +183,12 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
   public setEditMode(e: Event, v: 'reorder' | 'swipe'): boolean {
     e.preventDefault();
     e.stopPropagation();
-    this.listMode = v;
+    this.listMode.set(v);
     return false;
   }
 
   public clickShowWatchedMovies(): void {
-    this.listusAppStateService.setShowWatched(this.isHideWatched);
+    this.listusAppStateService.setShowWatched(this.isHideWatched());
   }
 
   // ngOnInit(): void {
@@ -212,11 +213,11 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
   }
 
   protected override setList(list: IListContext): void {
-    if (this.isReordering) {
+    if (this.isReordering()) {
       return;
     }
     super.setList(list);
-    this.allListItems =
+    let allListItems: IListItemWithUiState[] | undefined =
       list.dbo === undefined
         ? undefined
         : list.dbo?.items
@@ -224,14 +225,15 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
               return { brief: item, state: {} };
             })
           : [];
-    if (this.allListItems && this.addingItems.length) {
+    if (allListItems && this.addingItems.length) {
       this.addingItems = this.addingItems.filter(
-        (v) => !this.listItems?.some((li) => li.brief.id === v.brief.id),
+        (v) => !this.listItems()?.some((li) => li.brief.id === v.brief.id),
       );
       if (this.addingItems.length) {
-        this.allListItems = [...this.allListItems, ...this.addingItems];
+        allListItems = [...allListItems, ...this.addingItems];
       }
     }
+    this.allListItems.set(allListItems);
     this.applyFilter();
   }
 
@@ -266,12 +268,15 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
     old: IListItemWithUiState;
     new: IListItemWithUiState;
   }): void {
-    if (this.allListItems) {
-      const itemIndex = this.allListItems?.findIndex(
+    const allListItems = this.allListItems();
+    if (allListItems) {
+      const itemIndex = allListItems.findIndex(
         (item) => item === changedItem.old,
       );
       if (itemIndex >= 0) {
-        this.allListItems[itemIndex] = changedItem.new;
+        const updated = [...allListItems];
+        updated[itemIndex] = changedItem.new;
+        this.allListItems.set(updated);
         this.applyFilter();
       }
     }
@@ -299,15 +304,18 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
         list: boolean | IListItemWithUiState[],
       ) => IListItemWithUiState[];
     }>;
-    if (this.allListItems) {
+    const allListItems = this.allListItems();
+    if (allListItems) {
       // temp mock
-      let movingItem = this.allListItems[event.detail.from];
+      let movingItem = allListItems[event.detail.from];
       movingItem = {
         ...movingItem,
         state: { ...movingItem.state, isReordering: true },
       };
-      this.allListItems[event.detail.from] = movingItem;
-      event.detail.complete(this.allListItems);
+      const updated = [...allListItems];
+      updated[event.detail.from] = movingItem;
+      this.allListItems.set(updated);
+      event.detail.complete(updated);
       this.applyFilter();
       if (!this.space || !this.list?.brief) {
         return;
@@ -325,15 +333,18 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
             ...movingItem,
             state: { ...movingItem.state, isReordering: true },
           };
-          if (this.allListItems) {
-            this.allListItems[event.detail.from] = movingItem;
+          const current = this.allListItems();
+          if (current) {
+            const next = [...current];
+            next[event.detail.from] = movingItem;
+            this.allListItems.set(next);
           }
-          this.isReordering = false;
+          this.isReordering.set(false);
         },
         error: this.errorLogger.logErrorHandler('failed to reorder list items'),
       });
       setTimeout(() => {
-        if (!this.allListItems) {
+        if (!this.allListItems()) {
           return;
         }
       }, 1000);
@@ -409,7 +420,7 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
   }
 
   protected focusAddInput(): void {
-    (this.newListItem as NewListItemComponent).focus();
+    this.newListItem()?.focus();
   }
 
   protected openCopyListItemsDialog(
@@ -422,19 +433,19 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
 
     if (listItem) {
       this.errorLogger.logError('not implemented yet');
-    } else if (this.list && this.listItems) {
+    } else if (this.list && this.listItems()) {
       this.errorLogger.logError('not implemented yet');
     }
   }
 
   protected deleteCompleted(): void {
     this.deleteItems(
-      this.allListItems?.filter((li) => li.brief.status === 'done'),
+      this.allListItems()?.filter((li) => li.brief.status === 'done'),
     );
   }
 
   protected deleteAll(): void {
-    this.deleteItems(this.allListItems);
+    this.deleteItems(this.allListItems());
   }
 
   private deleteItems(items?: IListItemWithUiState[]): void {
@@ -468,7 +479,8 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
   }
 
   protected reactivateCompleted(): void {
-    if (!this.list?.brief || !this.space || !this.allListItems) {
+    const allListItems = this.allListItems();
+    if (!this.list?.brief || !this.space || !allListItems) {
       return;
     }
     const request: ISetListItemsIsComplete = {
@@ -476,7 +488,7 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
       listID: this.list.id,
       // listType: this.list.brief.type,
       isDone: false,
-      itemIDs: this.allListItems
+      itemIDs: allListItems
         .filter((li) => li.brief.status === 'done')
         .map((li) => li.brief.id),
     };
@@ -484,16 +496,16 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
       alert('You have no completed items');
       return;
     }
-    this.performing = 'reactivating completed';
+    this.performing.set('reactivating completed');
     this.listService
       .setListItemsIsCompleted(request)
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
-          this.performing = undefined;
+          this.performing.set(undefined);
         },
         error: (err) => {
-          this.performing = undefined;
+          this.performing.set(undefined);
           this.errorLogger.logError(
             err,
             'failed to reactivate all completed items',
@@ -515,25 +527,26 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
   }
 
   private applyFilter(): void {
-    const doneFilter = this.doneFilter;
+    const allListItems = this.allListItems();
+    const doneFilter = this.doneFilter();
     if (!doneFilter) {
       if (
-        !this.allListItems?.length ||
-        this.allListItems?.some((li) => li.brief.status !== 'done')
+        !allListItems?.length ||
+        allListItems?.some((li) => li.brief.status !== 'done')
       ) {
-        this.doneFilter = 'active';
+        this.doneFilter.set('active');
       } else {
-        this.doneFilter = 'all';
+        this.doneFilter.set('all');
       }
     }
-    this.listItems =
-      this.allListItems?.filter(
+    const filtered =
+      allListItems?.filter(
         (li) =>
           doneFilter === 'all' ||
           (doneFilter === 'completed' && li.brief.status === 'done') ||
           (doneFilter === 'active' && li.brief.status !== 'done'),
       ) || [];
-    this.listItems = [...this.listItems, ...this.addingItems];
+    this.listItems.set([...filtered, ...this.addingItems]);
   }
 
   // protected onListInfoChanged(): void {
