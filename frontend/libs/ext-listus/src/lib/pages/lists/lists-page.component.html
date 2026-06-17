@@ -22,7 +22,7 @@
 <ion-content>
   <ion-card>
     @for (
-      listGroup of listGroups;
+      listGroup of $listGroups();
       track listGroup.id || listGroup.type;
       let listGroupIndex = $index
     ) {
@@ -86,7 +86,7 @@
                   detail="false"
                   (click)="goList(list)"
                   [lines]="
-                    listGroupIndex + 1 === listGroups?.length &&
+                    listGroupIndex + 1 === $listGroups()?.length &&
                     listIndex + 1 === listGroup.lists?.length
                       ? 'none'
                       : undefined
@@ -139,7 +139,7 @@
                 </ion-item-options>
               </ion-item-sliding>
             }
-            @if (addingToGroup === listGroup.type) {
+            @if (addingToGroup() === listGroup.type) {
               <form (ngSubmit)="createList(listGroup)">
                 <ion-item-sliding>
                   <ion-item>
@@ -152,12 +152,13 @@
                       #newListTitle
                       name="title"
                       placeholder="List name"
-                      [(ngModel)]="listTitle"
+                      [ngModel]="listTitle()"
+                      (ngModelChange)="listTitle.set($event)"
                     />
                     <ion-button
                       fill="outline"
                       size="small"
-                      [disabled]="!listTitle.trim()"
+                      [disabled]="!listTitle().trim()"
                       type="submit"
                       >Add
                     </ion-button>

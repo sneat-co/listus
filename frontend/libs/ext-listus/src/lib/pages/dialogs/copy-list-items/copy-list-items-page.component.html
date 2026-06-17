@@ -6,7 +6,7 @@
 
 <ion-content>
   <ion-list>
-    @for (item of listItems; track item) {
+    @for (item of $listItems(); track item) {
       <ion-item button="">
         <ion-label>{{ item.emoji }} {{ item.title }}</ion-label>
         <ion-checkbox

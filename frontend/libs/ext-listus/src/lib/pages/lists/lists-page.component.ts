@@ -1,4 +1,10 @@
-import { Component, ViewChild, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  signal,
+  viewChild,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   IonInput,
@@ -79,6 +85,7 @@ import { ClassName } from '@sneat/ui';
     SpaceComponentBaseParams,
     ListusComponentBaseParams,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListsPageComponent extends SpaceBaseComponent {
   private readonly params = inject(ListusComponentBaseParams);
@@ -86,19 +93,32 @@ export class ListsPageComponent extends SpaceBaseComponent {
   private readonly modalCtrl = inject(PopoverController);
   private readonly listusAppStateService = inject(IListusAppStateService);
 
-  @ViewChild('newListTitle', { static: false }) newListTitle?: IonInput;
-  addingToGroup: ListType | undefined;
-  listGroups?: IListGroup[];
+  protected readonly newListTitle = viewChild<IonInput>('newListTitle');
+  protected readonly addingToGroup = signal<ListType | undefined>(undefined);
+  protected readonly $listGroups = signal<IListGroup[] | undefined>(undefined);
   reordered?: boolean;
-  listTitle = '';
+  protected readonly listTitle = signal('');
   private userCommunesSubscriptions: Subscription[] = [];
-  private collapsedGroups?: string[];
+  private readonly collapsedGroups = signal<string[] | undefined>(undefined);
+
+  /** Notifies the listGroups signal after in-place mutations of groups/lists. */
+  private notifyListGroupsChanged(): void {
+    const groups = this.$listGroups();
+    this.$listGroups.set(groups ? [...groups] : groups);
+  }
+
+  private get listGroups(): IListGroup[] | undefined {
+    return this.$listGroups();
+  }
+  private set listGroups(value: IListGroup[] | undefined) {
+    this.$listGroups.set(value);
+  }
 
   constructor() {
     super();
     // this.preloaderService.markAsPreloaded('lists');
     this.listusAppStateService.changed.subscribe((appState) => {
-      this.collapsedGroups = appState.collapsedGroups;
+      this.collapsedGroups.set(appState.collapsedGroups);
     });
   }
 
@@ -108,11 +128,11 @@ export class ListsPageComponent extends SpaceBaseComponent {
   }
 
   clearAddingToGroup(): void {
-    this.addingToGroup = undefined;
+    this.addingToGroup.set(undefined);
   }
 
   public isCollapsed(group: IListGroup): boolean {
-    return !!group.title && !!this.collapsedGroups?.includes(group.title);
+    return !!group.title && !!this.collapsedGroups()?.includes(group.title);
   }
 
   public clickGroup(group: IListGroup): void {
@@ -248,6 +268,7 @@ export class ListsPageComponent extends SpaceBaseComponent {
       next: () => {
         listGroup.lists =
           listGroup.lists?.filter((l) => !eq(l.id, list.id)) || [];
+        this.notifyListGroupsChanged();
       },
       error: (err) => {
         this.errorLogger.logError(err, 'Failed to delete list');
@@ -256,15 +277,15 @@ export class ListsPageComponent extends SpaceBaseComponent {
   }
 
   cancelListCreation(): void {
-    this.addingToGroup = undefined;
+    this.addingToGroup.set(undefined);
   }
 
   createList(listGroup: IListGroup): void {
     if (!listGroup.type) {
       throw new Error('!listGroup.type');
     }
-    this.addingToGroup = undefined;
-    const title = this.listTitle.trim();
+    this.addingToGroup.set(undefined);
+    const title = this.listTitle().trim();
     const listInfo: IListInfo = {
       id: title,
       type: listGroup.type,
@@ -276,7 +297,8 @@ export class ListsPageComponent extends SpaceBaseComponent {
       listGroup.lists = [];
     }
     listGroup.lists.push(listInfo);
-    this.listTitle = '';
+    this.notifyListGroupsChanged();
+    this.listTitle.set('');
     this.goList(listInfo);
   }
 
@@ -535,6 +557,7 @@ export class ListsPageComponent extends SpaceBaseComponent {
         }
       });
     });
+    this.notifyListGroupsChanged();
   }
 
   private async newList(listType: ListType, event: Event): Promise<void> {
@@ -563,6 +586,7 @@ export class ListsPageComponent extends SpaceBaseComponent {
         } else {
           listGroup.lists = [listInfo];
         }
+        this.notifyListGroupsChanged();
       }
     } catch (err) {
       this.errorLogger.logError(err);
