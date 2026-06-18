@@ -306,15 +306,17 @@ export class ListsPageComponent extends SpaceBaseComponent {
         if (this.reordered) {
           this.reordered = false;
         } else {
-          // Un-stub: load the lists from the space's persisted data (the backend
-          // stores list groups on the space DBO). Reset first so switching
-          // spaces doesn't accumulate the previous space's groups. The extraction
-          // had stubbed this to hardcoded family samples; this restores real data.
+          // Reset first so switching spaces doesn't accumulate the previous
+          // space's groups. Then show the built-in default lists (family) for
+          // instant UX, and merge the lists persisted on the space DBO (the
+          // extraction had stubbed out this second step, so only the built-ins
+          // showed and real lists never loaded).
           this.listGroups = [];
+          this.updateListsFromSpace(undefined); // built-in defaults (family)
           const listusDbo = this.space.dbo as unknown as
             | IListusSpaceDbo
             | undefined;
-          this.updateListsFromSpace(listusDbo?.listGroups);
+          this.updateListsFromSpace(listusDbo?.listGroups); // persisted lists
         }
       } else {
         this.listGroups = [];
@@ -366,14 +368,35 @@ export class ListsPageComponent extends SpaceBaseComponent {
   // 	});
   // }
 
-  // Merges the space's persisted list groups into this.listGroups for display.
+  // Merges list groups into this.listGroups for display. Called with `undefined`
+  // to seed the built-in default lists (family) for instant UX, and with the
+  // space's persisted listGroups to merge in the real data.
   private updateListsFromSpace(listGroups?: IListGroup[]): void {
     if (!listGroups) {
-      // No list groups persisted on the space yet — show an empty page (the user
-      // can add lists, which the backend persists onto the space DBO). Previously
-      // this fell back to hardcoded sample lists for family spaces (an extraction
-      // stub), which masked the real data.
-      return;
+      // Built-in default lists, shown immediately for family spaces (better UX
+      // while the persisted lists load/merge). Non-family spaces have no
+      // built-ins, so there's nothing to seed.
+      if (this.space?.type === 'family') {
+        listGroups = [
+          {
+            id: 'buy',
+            type: 'buy',
+            title: 'To Buy',
+            lists: [
+              { id: 'groceries', type: 'buy', emoji: '🛒', title: 'Groceries' },
+              { id: 'wholesale', type: 'buy', emoji: '🛒', title: 'Wholesale' },
+            ],
+          },
+          {
+            id: 'to-do',
+            type: 'do',
+            title: 'To Do',
+            lists: [{ id: 'chores', type: 'do', emoji: '🧹', title: 'Chores' }],
+          },
+        ];
+      } else {
+        return;
+      }
     }
     if (!this.listGroups) {
       this.listGroups = [];
