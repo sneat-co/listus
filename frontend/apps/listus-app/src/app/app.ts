@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import {
   IonApp,
   IonContent,
@@ -12,11 +13,14 @@ import {
 } from '@ionic/angular/standalone';
 import { BaseAppComponent } from '@sneat/app';
 import { AuthMenuItemComponent } from '@sneat/auth-ui';
+import { filter, map } from 'rxjs';
 
-// Extends BaseAppComponent so listus gets the shared app lifecycle (completing
-// signInWithRedirect via getRedirectResult, the document-title strategy,
-// analytics, current-space clearing). Hosts a side menu (like sneat-app) whose
-// sneat-auth-menu-item shows the signed-in user and a sign-out action.
+// Extends BaseAppComponent for the shared app lifecycle (redirect sign-in
+// completion, title strategy, analytics, current-space clearing). Hosts a side
+// menu (like sneat-app): on a space route it renders that space's menu via the
+// named "menu" outlet (which the space routes mount SpaceMenuComponent into —
+// without this outlet the space route fails to activate and its pages, e.g.
+// lists, never render); elsewhere it shows the spaces list + signed-in user.
 @Component({
   selector: 'listus-root',
   template: `
@@ -31,7 +35,11 @@ import { AuthMenuItemComponent } from '@sneat/auth-ui';
             </ion-toolbar>
           </ion-header>
           <ion-content>
-            <sneat-auth-menu-item />
+            @if (showRouteMenu()) {
+              <ion-router-outlet name="menu" [animated]="false" />
+            } @else {
+              <sneat-auth-menu-item />
+            }
           </ion-content>
         </ion-menu>
         <ion-router-outlet id="main" />
@@ -51,4 +59,19 @@ import { AuthMenuItemComponent } from '@sneat/auth-ui';
     AuthMenuItemComponent,
   ],
 })
-export class App extends BaseAppComponent {}
+export class App extends BaseAppComponent {
+  private readonly appRouter = inject(Router);
+
+  private readonly currentUrl = toSignal(
+    this.appRouter.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects),
+    ),
+    { initialValue: this.appRouter.url },
+  );
+
+  // On a space route, render the space-specific side menu via the named outlet.
+  protected readonly showRouteMenu = computed(() =>
+    this.currentUrl().startsWith('/space/'),
+  );
+}
