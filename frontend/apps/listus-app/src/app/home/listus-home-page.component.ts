@@ -7,6 +7,7 @@ import {
 } from '@ionic/angular/standalone';
 import { SpacesCardComponent } from '@sneat/space-components';
 import { SpaceService } from '@sneat/space-services';
+import { UserRequiredFieldsService } from '@sneat/auth-ui';
 
 // Authenticated landing page for listus.app. Reuses the shared
 // SpacesCardComponent (the same component sneat-app/debtus use to list a user's
@@ -16,10 +17,11 @@ import { SpaceService } from '@sneat/space-services';
 @Component({
   selector: 'listus-home-page',
   imports: [IonHeader, IonToolbar, IonTitle, IonContent, SpacesCardComponent],
-  // SpaceService is @Injectable() (provided via SpaceServiceModule), not
-  // providedIn:'root'. listus only provides it inside its space routes, so the
-  // root-level home page must provide it for SpacesCardComponent to resolve it.
-  providers: [SpaceService],
+  // SpaceService and UserRequiredFieldsService are @Injectable() (not
+  // providedIn:'root'). The embedded SpacesCard -> SpacesList chain needs both,
+  // so this root-level landing page provides them. (UserRequiredFieldsService is
+  // also made providedIn:'root' in @sneat to cover every consumer.)
+  providers: [SpaceService, UserRequiredFieldsService],
   template: `
     <ion-header>
       <ion-toolbar>
