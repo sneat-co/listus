@@ -17,11 +17,10 @@ export const listusAppEnvironmentConfig: IEnvironmentConfig =
       projectId: 'sneat-eur3-1',
       appId: '1:588648831063:web:303af7e0c5f8a7b10d6b12',
       apiKey: 'AIzaSyCeQu1WC182yD0VHrRm4nHUxVf27fY-MLQ',
-      // The Firebase Hosting site domain is same-origin with the served app and
-      // is auto-authorized for OAuth (Firebase serves /__/auth/handler on
-      // *.web.app), so signInWithRedirect stays first-party. Switch to
-      // 'listus.app' once that custom domain + its OAuth handler are wired.
-      authDomain: 'listus-app.web.app',
+      // authDomain intentionally omitted: appEnvironmentConfig defaults it to the
+      // current origin, so sign-in stays same-origin whether the app is served at
+      // listus.app, listus-app.web.app, or a preview channel. (listus.app is a
+      // Firebase Auth authorized domain serving /__/auth/handler.)
       messagingSenderId: '588648831063',
       measurementId: 'G-TYBDTV738R',
     },
