@@ -28,7 +28,7 @@ import {
 import { ContactusServicesModule } from '@sneat/contactus-services';
 import { APP_INFO, eq, IAppInfo } from '@sneat/core';
 import { SpaceServiceModule } from '@sneat/space-services';
-import { IListGroup, IListInfo, ListType } from '../../dto';
+import { IListGroup, IListInfo, IListusSpaceDbo, ListType } from '../../dto';
 import {
   SpaceBaseComponent,
   SpaceComponentBaseParams,
@@ -306,19 +306,15 @@ export class ListsPageComponent extends SpaceBaseComponent {
         if (this.reordered) {
           this.reordered = false;
         } else {
-          // if (!this.listGroups) {
-          // 	this.listGroups = this.commune.dto.listGroups.map(lg => {
-          // 		const listGroup: IListGroup = {
-          // 			...lg,
-          // 			lists: lg.lists && lg.lists.map(l => ({
-          // 				...l,
-          // 				commune: l.commune || this.shortCommuneInfo,
-          // 			})),
-          // 		};
-          // 		return listGroup;
-          // 	});
-          // }
-          this.updateListsFromSpace(undefined);
+          // Un-stub: load the lists from the space's persisted data (the backend
+          // stores list groups on the space DBO). Reset first so switching
+          // spaces doesn't accumulate the previous space's groups. The extraction
+          // had stubbed this to hardcoded family samples; this restores real data.
+          this.listGroups = [];
+          const listusDbo = this.space.dbo as unknown as
+            | IListusSpaceDbo
+            | undefined;
+          this.updateListsFromSpace(listusDbo?.listGroups);
         }
       } else {
         this.listGroups = [];
@@ -370,56 +366,14 @@ export class ListsPageComponent extends SpaceBaseComponent {
   // 	});
   // }
 
-  // and personal lists (private to the current user).
+  // Merges the space's persisted list groups into this.listGroups for display.
   private updateListsFromSpace(listGroups?: IListGroup[]): void {
-    console.log(
-      `ListsPageComponent.updateListsFromTeam()`,
-      listGroups,
-      '\n: passed:',
-      undefined, // TODO(fix): team.dto?.listGroups && team.dto?.listGroups.map((lg) => ({ ...lg })),
-      '\n: current:',
-      this.listGroups &&
-        this.listGroups.map((lg) => ({ ...lg, lists: [...(lg.lists || [])] })),
-    );
     if (!listGroups) {
-      if (this.space?.type === 'family') {
-        listGroups = [
-          {
-            id: 'buy',
-            type: 'buy',
-            title: 'To Buy',
-            lists: [
-              {
-                id: 'groceries',
-                type: 'buy',
-                emoji: '🛒',
-                title: 'Groceries',
-              },
-              {
-                id: 'wholesale',
-                type: 'buy',
-                emoji: '🛒',
-                title: 'Wholesale',
-              },
-            ],
-          },
-          {
-            id: 'to-do',
-            type: 'do',
-            title: 'To Do',
-            lists: [
-              {
-                id: 'chores',
-                type: 'do',
-                emoji: '🧹',
-                title: 'Chores',
-              },
-            ],
-          },
-        ];
-      } else {
-        return;
-      }
+      // No list groups persisted on the space yet — show an empty page (the user
+      // can add lists, which the backend persists onto the space DBO). Previously
+      // this fell back to hardcoded sample lists for family spaces (an extraction
+      // stub), which masked the real data.
+      return;
     }
     if (!this.listGroups) {
       this.listGroups = [];
