@@ -1,7 +1,7 @@
 name: Deploy listus-app
 
 # Builds listus-app and deploys it to the Firebase Hosting "listus-app" site
-# (project sneat-eur3-1) on main, AFTER the "Frontend CI" workflow succeeds — so
+# (project sneat-eur3-1) on main, AFTER the "CI" workflow succeeds — so
 # a red build never ships. Manual dispatch also available.
 #
 # Auth is keyless via Workload Identity Federation: GitHub OIDC -> GCP service
@@ -11,7 +11,7 @@ name: Deploy listus-app
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ['Frontend CI']
+    workflows: ['CI']
     types: [completed]
     branches: [main]
 
