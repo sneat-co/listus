@@ -23,4 +23,18 @@ export const appRoutes: Route[] = [
     loadChildren: () =>
       import('./space/listus-space.routes').then((m) => m.listusSpaceRoutes),
   },
+  {
+    // sneat-auth-menu-item navigates here on sign-out; mirror sneat-app and
+    // redirect to the login page (where the sign-in form is shown).
+    path: 'signed-out',
+    pathMatch: 'full',
+    redirectTo: 'login',
+  },
+  {
+    // sneat-auth-menu-item links the "signed in as" row to /my. Until listus has
+    // a real profile page, send it to the home landing. TODO: scaffold a profile.
+    path: 'my',
+    pathMatch: 'full',
+    redirectTo: '',
+  },
 ];

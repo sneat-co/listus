@@ -1,30 +1,40 @@
 import { Component } from '@angular/core';
 import {
+  IonButtons,
   IonContent,
   IonHeader,
+  IonMenuButton,
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { UserRequiredFieldsService } from '@sneat/auth-ui';
 import { SpacesCardComponent } from '@sneat/space-components';
 import { SpaceService } from '@sneat/space-services';
-import { UserRequiredFieldsService } from '@sneat/auth-ui';
 
 // Authenticated landing page for listus.app. Reuses the shared
-// SpacesCardComponent (the same component sneat-app/debtus use to list a user's
-// spaces): it watches the signed-in user's record, renders their spaces with
-// proper titles, and links into each space. Without an authed landing the root
-// route redirected to /login and bounced signed-in users back to the login page.
+// SpacesCardComponent to list the user's spaces. The menu button opens the side
+// menu (in the app shell) which shows the signed-in user + sign-out.
 @Component({
   selector: 'listus-home-page',
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, SpacesCardComponent],
+  imports: [
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonButtons,
+    IonMenuButton,
+    SpacesCardComponent,
+  ],
   // SpaceService and UserRequiredFieldsService are @Injectable() (not
-  // providedIn:'root'). The embedded SpacesCard -> SpacesList chain needs both,
-  // so this root-level landing page provides them. (UserRequiredFieldsService is
-  // also made providedIn:'root' in @sneat to cover every consumer.)
+  // providedIn:'root' before @sneat 0.9.1). The embedded SpacesCard -> SpacesList
+  // chain needs both, so this root-level landing page provides them.
   providers: [SpaceService, UserRequiredFieldsService],
   template: `
     <ion-header>
       <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-menu-button />
+        </ion-buttons>
         <ion-title>Listus.app</ion-title>
       </ion-toolbar>
     </ion-header>
