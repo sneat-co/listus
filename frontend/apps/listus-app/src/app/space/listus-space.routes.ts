@@ -1,9 +1,9 @@
 import { Route } from '@angular/router';
-import { listusRoutes } from '@sneat/extension-listus';
 import {
-  SpaceComponentBaseParams,
-  SpaceMenuComponent,
-} from '@sneat/space-components';
+  listusRoutes,
+  ListusSpaceMenuComponent,
+} from '@sneat/extension-listus';
+import { SpaceComponentBaseParams } from '@sneat/space-components';
 
 // Thin, listus-only space shell. It provides SpaceComponentBaseParams (which
 // resolves the active space from the :spaceType/:spaceID route params) to all
@@ -16,8 +16,11 @@ export const listusSpaceRoutes: Route[] = [
     providers: [SpaceComponentBaseParams],
     children: [
       {
+        // listus-specific side menu (space selector + the space's lists) instead
+        // of the generic SpaceMenuComponent, which hardcodes every sneat-app
+        // extension (Assets, Budget, Contacts, …) — none of which exist here.
         path: '',
-        component: SpaceMenuComponent,
+        component: ListusSpaceMenuComponent,
         outlet: 'menu',
       },
       {
