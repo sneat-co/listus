@@ -1,8 +1,8 @@
 package dto4listus
 
 import (
-	"github.com/sneat-co/sneat-core-modules/spaceus/dto4spaceus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
+	"github.com/sneat-co/sneat-core-modules/spaceus/dto4spaceus"
 	"github.com/sneat-co/sneat-go-core/coretypes"
 	"testing"
 )
