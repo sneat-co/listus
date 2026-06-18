@@ -10,6 +10,8 @@ allowBuilds:
   nx: true
   protobufjs: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@sneat/*'
 onlyBuiltDependencies:
   - '@firebase/util'
   - '@parcel/watcher'
