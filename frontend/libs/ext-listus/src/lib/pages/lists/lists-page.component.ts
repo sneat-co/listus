@@ -29,6 +29,7 @@ import { ContactusServicesModule } from '@sneat/contactus-services';
 import { APP_INFO, eq, IAppInfo } from '@sneat/core';
 import { SpaceServiceModule } from '@sneat/space-services';
 import { IListGroup, IListInfo, IListusSpaceDbo, ListType } from '../../dto';
+import { builtInListGroups } from './built-in-lists';
 import {
   SpaceBaseComponent,
   SpaceComponentBaseParams,
@@ -376,25 +377,8 @@ export class ListsPageComponent extends SpaceBaseComponent {
       // Built-in default lists, shown immediately for family spaces (better UX
       // while the persisted lists load/merge). Non-family spaces have no
       // built-ins, so there's nothing to seed.
-      if (this.space?.type === 'family') {
-        listGroups = [
-          {
-            id: 'buy',
-            type: 'buy',
-            title: 'To Buy',
-            lists: [
-              { id: 'groceries', type: 'buy', emoji: '🛒', title: 'Groceries' },
-              { id: 'wholesale', type: 'buy', emoji: '🛒', title: 'Wholesale' },
-            ],
-          },
-          {
-            id: 'to-do',
-            type: 'do',
-            title: 'To Do',
-            lists: [{ id: 'chores', type: 'do', emoji: '🧹', title: 'Chores' }],
-          },
-        ];
-      } else {
+      listGroups = builtInListGroups(this.space?.type);
+      if (!listGroups.length) {
         return;
       }
     }
