@@ -36,6 +36,7 @@ import {
 } from '@sneat/space-components';
 import { createShortSpaceInfoFromDbo } from '@sneat/space-models';
 import { Subscription } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { ListusComponentBaseParams } from '../../listus-component-base-params';
 import {
   IListusAppStateService,
@@ -101,6 +102,18 @@ export class ListsPageComponent extends SpaceBaseComponent {
     this.listusAppStateService.changed.subscribe((appState) => {
       this.collapsedGroups = appState.collapsedGroups;
     });
+    // Seed the built-in default lists (e.g. family To Buy / To Do) as soon as the
+    // space type is known from the URL — i.e. before the space document loads from
+    // the DB. onSpaceDboChanged() below resets and re-seeds + merges the persisted
+    // lists once the DBO arrives; if it never arrives (slow/denied), the built-ins
+    // still show for instant UX.
+    this.spaceTypeChanged$
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((spaceType) => {
+        if (spaceType && !this.listGroups?.length) {
+          this.updateListsFromSpace(undefined);
+        }
+      });
   }
 
   // defaultShortCommuneId: 'family';

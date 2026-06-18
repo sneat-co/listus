@@ -83,6 +83,17 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
           ),
         error: this.errorLogger.logErrorHandler('failed to get user state'),
       });
+    // Seed the built-in default lists (e.g. family To Buy / To Do) as soon as the
+    // space type is known from the URL, before the space document loads. Mirrors
+    // the lists page so the menu shows lists instantly; onSpaceDboChanged() below
+    // re-seeds + merges persisted lists once the DBO arrives.
+    this.spaceTypeChanged$
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((spaceType) => {
+        if (spaceType && !this.$listGroups().length) {
+          this.$listGroups.set([...builtInListGroups(spaceType)]);
+        }
+      });
   }
 
   // Mirror the lists page: built-in defaults (family) + the lists persisted on
