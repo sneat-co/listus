@@ -26,7 +26,7 @@ import { filter, map } from 'rxjs';
   template: `
     <ion-app>
       <ion-split-pane contentId="main">
-        <ion-menu contentId="main" #menu>
+        <ion-menu menuId="mainMenu" contentId="main" #menu>
           <ion-header>
             <ion-toolbar color="light">
               <ion-title [routerLink]="'/'" tappable (click)="menu.close()">
