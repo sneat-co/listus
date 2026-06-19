@@ -1,4 +1,11 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  OnInit,
+  signal,
+  inject,
+} from '@angular/core';
 import {
   ModalController,
   ToastController,
@@ -23,6 +30,7 @@ import { ListService } from '../../../services/list.service';
 @Component({
   selector: 'listus-copy-list-items',
   templateUrl: './copy-list-items-page.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     IonHeader,
     IonToolbar,
@@ -47,7 +55,17 @@ export class CopyListItemsPageComponent implements OnInit {
   @Input() modal?: ModalController;
   @Input() from?: IListInfo;
   @Input() to?: IListInfo;
-  @Input() listItems: IListItemBrief[] | undefined;
+
+  protected readonly $listItems = signal<IListItemBrief[] | undefined>(
+    undefined,
+  );
+  @Input()
+  set listItems(value: IListItemBrief[] | undefined) {
+    this.$listItems.set(value);
+  }
+  get listItems(): IListItemBrief[] | undefined {
+    return this.$listItems();
+  }
 
   private selectedListItemIds: string[] = [];
 

@@ -1,8 +1,10 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   Input,
-  ViewChild,
+  signal,
+  viewChild,
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -30,6 +32,7 @@ import { ErrorLogger, IErrorLogger } from '@sneat/core';
 @Component({
   selector: 'listus-new-list-popover',
   templateUrl: 'new-list-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     IonHeader,
     IonContent,
@@ -53,10 +56,10 @@ export class NewListDialogComponent implements AfterViewInit {
   private readonly modalCtrl = inject(ModalController);
   private readonly errorLogger = inject<IErrorLogger>(ErrorLogger);
 
-  @ViewChild('listNameInput', { static: false }) listNameInput?: IonInput;
+  protected readonly listNameInput = viewChild<IonInput>('listNameInput');
 
-  public listName = '';
-  public visibility: 'private' | 'family' = 'private';
+  public readonly listName = signal('');
+  public readonly visibility = signal<'private' | 'family'>('private');
 
   @Input() title?: string;
   @Input() listType?: ListType;
@@ -64,7 +67,7 @@ export class NewListDialogComponent implements AfterViewInit {
 
   ngAfterViewInit(): void /* Intentionally not ngOnInit */ {
     setTimeout(() => {
-      void this.listNameInput
+      void this.listNameInput()
         ?.setFocus?.()
         ?.catch(this.errorLogger.logError);
     }, 250);
@@ -75,15 +78,14 @@ export class NewListDialogComponent implements AfterViewInit {
       this.errorLogger.logError('list type is not set');
       return;
     }
+    const visibility = this.visibility();
     const listInfo: IListInfo = {
       space: {
-        type: this.visibility,
-        title:
-          this.visibility.substr(0, 1).toUpperCase() +
-          this.visibility.substr(1),
+        type: visibility,
+        title: visibility.substr(0, 1).toUpperCase() + visibility.substr(1),
       },
       type: this.listType,
-      title: this.listName,
+      title: this.listName(),
       emoji: '📝',
     };
     this.closeDialog(listInfo).catch(this.errorLogger.logError);

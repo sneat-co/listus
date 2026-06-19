@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { ParamMap } from '@angular/router';
 import { emptyTimestamp } from '@sneat/dto';
 import { SpaceItemPageBaseComponent } from '@sneat/space-components';
@@ -11,10 +12,14 @@ export abstract class BaseListPage extends SpaceItemPageBaseComponent<
   IListBrief,
   IListDbo
 > {
-  protected list?: IListContext;
-  protected listGroupTitle?: string;
+  protected readonly $list = signal<IListContext | undefined>(undefined);
+  protected readonly $listGroupTitle = signal<string | undefined>(undefined);
+  protected readonly $listType = signal<ListType | undefined>(undefined);
   protected listID?: string;
-  protected listType?: ListType;
+
+  protected get list(): IListContext | undefined {
+    return this.$list();
+  }
 
   protected constructor(
     // defaultBackPage: DefaultBackPage,
@@ -44,35 +49,37 @@ export abstract class BaseListPage extends SpaceItemPageBaseComponent<
   }
 
   protected setList(list: IListContext): void {
-    if (!list.brief && list.id == this.list?.id && this.list.brief) {
-      list = { ...list, brief: this.list.brief };
+    const current = this.list;
+    if (!list.brief && list.id == current?.id && current.brief) {
+      list = { ...list, brief: current.brief };
     }
-    this.list = list;
+    this.$list.set(list);
   }
 
   override getItemID$(paramMap$: Observable<ParamMap>): Observable<string> {
     return paramMap$.pipe(
       map((params) => {
         this.listID = params.get('listID') || undefined;
-        this.listType = params.get('listType') as ListType;
+        const listType = params.get('listType') as ListType;
+        this.$listType.set(listType);
 
-        if (this.listID && this.listType) {
+        if (this.listID && listType) {
           const title =
             this.listID.charAt(0).toUpperCase() + this.listID.slice(1);
           this.setList({
             id: this.listID,
-            type: this.listType,
+            type: listType,
             brief: {
               createdAt: emptyTimestamp,
               createdBy: '',
-              type: this.listType,
+              type: listType,
               title,
             },
             space: this.space,
           });
         }
 
-        return `${this.listType}!${this.listID}`;
+        return `${listType}!${this.listID}`;
       }),
     );
   }

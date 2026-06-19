@@ -8,11 +8,15 @@
     <ion-item>
       <ion-input
         #listNameInput
-        [(ngModel)]="listName"
+        [ngModel]="listName()"
+        (ngModelChange)="listName.set($event)"
         placeholder="List name"
       />
     </ion-item>
-    <ion-radio-group [(ngModel)]="visibility">
+    <ion-radio-group
+      [ngModel]="visibility()"
+      (ngModelChange)="visibility.set($event)"
+    >
       <ion-item button>
         <ion-radio slot="end" value="personal" checked="true" />
         <ion-label>😎 Personal</ion-label>
@@ -30,7 +34,7 @@
       <ion-row>
         <ion-col size="7">
           <ion-button
-            [disabled]="!listName || !listName.trim()"
+            [disabled]="!listName() || !listName().trim()"
             (click)="createList()"
           >
             Create list
