@@ -9,6 +9,8 @@ import (
 	"github.com/sneat-co/sneat-go-core/apicore/verify"
 )
 
+var createListItems = facade4listus.CreateListItems
+
 // httpPostCreateListItems creates list items
 func httpPostCreateListItems(w http.ResponseWriter, r *http.Request) {
 	var request dto4listus.CreateListItemsRequest
@@ -17,6 +19,6 @@ func httpPostCreateListItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var response dto4listus.CreateListItemResponse
-	response, _, err = facade4listus.CreateListItems(ctx, request)
+	response, _, err = createListItems(ctx, request)
 	apicore.ReturnJSON(ctx, w, r, http.StatusCreated, err, &response)
 }

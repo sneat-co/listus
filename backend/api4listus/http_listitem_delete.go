@@ -9,6 +9,8 @@ import (
 	"github.com/sneat-co/sneat-go-core/apicore/verify"
 )
 
+var deleteListItems = facade4listus.DeleteListItems
+
 // httpDeleteListItems deletes list items
 func httpDeleteListItems(w http.ResponseWriter, r *http.Request) {
 	var request dto4listus.ListItemIDsRequest
@@ -21,6 +23,6 @@ func httpDeleteListItems(w http.ResponseWriter, r *http.Request) {
 		apicore.ReturnError(r.Context(), w, r, err)
 		return
 	}
-	_, _, err = facade4listus.DeleteListItems(ctx, request)
+	_, _, err = deleteListItems(ctx, request)
 	apicore.ReturnJSON(ctx, w, r, http.StatusCreated, err, nil)
 }
