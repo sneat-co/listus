@@ -12,14 +12,42 @@ This repo hosts two independent toolchains in subdirectories — neither
 
 | Directory | Stack | Description |
 |-----------|-------|-------------|
-| [`frontend/`](frontend) | Nx · Angular 21 · Ionic 8 · pnpm | The `listus-app` standalone app and the `@sneat/extension-listus` library |
+| [`frontend/`](frontend) | Nx · Angular 21 · Ionic 8 · pnpm | The `listus-app` standalone app and the `@sneat/extension-listus-*` libraries (see [Library structure](#library-structure-extension-library-architecture-convention)) |
 | [`backend/`](backend) | Go 1.26 | Backend service (scaffold — health endpoint only for now) |
 
 ## Packages
 
-- **`@sneat/extension-listus`** — the listus Angular extension library
-  (`frontend/libs/ext-listus`), consumed both by `listus-app` and by
-  `sneat-apps`.
+The listus Angular extension is split into three libraries by the **extension
+library-architecture** convention (see
+[Library structure](#library-structure-extension-library-architecture-convention)):
+
+- **`@sneat/extension-listus-contract`** — DTOs/types + the `LISTUS_SERVICE`
+  token (`frontend/libs/extensions/listus/contract`).
+- **`@sneat/extension-listus-shared`** — app-facing routing, pages, components
+  (`frontend/libs/extensions/listus/shared`).
+- **`@sneat/extension-listus-internal`** — service implementations +
+  `provideListusInternal()` (`frontend/libs/extensions/listus/internal`).
+
+### Library structure (extension library-architecture convention)
+
+The listus frontend follows the **extension library-architecture** convention —
+an extension is split into three libraries by *runtime weight* and *visibility*,
+so other repos can depend on a light **contract** instead of the full bundle, and
+cross-extension calls go through dependency-inverted `InjectionToken`s rather than
+direct implementation imports. The convention is defined in
+[`sneat-co/sneat-libs` → `spec/features/extension-library-architecture`](https://github.com/sneat-co/sneat-libs/tree/main/spec/features/extension-library-architecture/README.md).
+
+| Lib | nx tags | Holds | May depend on |
+|-----|---------|-------|---------------|
+| [`@sneat/extension-listus-contract`](frontend/libs/extensions/listus/contract) | `type:contract` | List DTOs/types/enums + the `LISTUS_SERVICE` `InjectionToken` (`IListusService`). Runtime-light — no components/services. | other contracts + foundational `@sneat/*` |
+| [`@sneat/extension-listus-shared`](frontend/libs/extensions/listus/shared) | `type:shared` | The app-facing UI: routing, pages, components, space-menu. Obtains services via the `LISTUS_SERVICE` token. | `-contract` + foundational — **never `-internal`** |
+| [`@sneat/extension-listus-internal`](frontend/libs/extensions/listus/internal) | `type:internal` | `ListService` + `provideListusInternal()`. Private implementation. | `-contract` / `-shared` + foundational |
+
+The boundary matrix is enforced by `@nx/enforce-module-boundaries` in
+`frontend/eslint.config.mjs` (a `type:shared → type:internal` import fails lint).
+`-internal` is consumed only by the composition-root **app**, which wires
+`provideListusInternal()` at bootstrap (`frontend/apps/listus-app/src/main.ts`)
+to bind `LISTUS_SERVICE` to the concrete `ListService`.
 
 ## Running locally
 
