@@ -26,10 +26,11 @@ import {
 import {
   IListInfo,
   IListItemBrief,
+  IListusService,
+  LISTUS_SERVICE,
   ListType,
 } from '@sneat/extension-listus-contract';
 import { ErrorLogger, IErrorLogger } from '@sneat/core';
-import { ListService } from '../../../services/list.service';
 
 @Component({
   selector: 'listus-copy-list-items',
@@ -54,7 +55,7 @@ import { ListService } from '../../../services/list.service';
 export class CopyListItemsPageComponent implements OnInit {
   private readonly errorLogger = inject<IErrorLogger>(ErrorLogger);
   private readonly toastCrl = inject(ToastController);
-  private readonly listService = inject(ListService);
+  private readonly listService = inject<IListusService>(LISTUS_SERVICE);
 
   @Input() modal?: ModalController;
   @Input() from?: IListInfo;

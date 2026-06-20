@@ -29,10 +29,10 @@ import {
   IListContext,
   IListItemBrief,
   IListItemIDsRequest,
+  IListusService,
   ISetListItemsIsComplete,
 } from '@sneat/extension-listus-contract';
 import { ListusComponentBaseParams } from '../../../listus-component-base-params';
-import { ListService } from '../../../services';
 import { ListDialogsService } from '../../dialogs/ListDialogs.service';
 import { IListItemWithUiState } from '../list-item-with-ui-state';
 
@@ -92,7 +92,7 @@ export class ListItemComponent {
     () => this.$listItemWithUiState().brief,
   );
 
-  private get listService(): ListService {
+  private get listService(): IListusService {
     return this.params.listService;
   }
 

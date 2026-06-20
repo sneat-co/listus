@@ -21,8 +21,10 @@ import { ISpaceContext } from '@sneat/space-models';
 import {
   IListContext,
   ICreateListItemRequest,
+  IListusService,
+  LISTUS_SERVICE,
 } from '@sneat/extension-listus-contract';
-import { EmojisLoaderService, ListService } from '../../../services';
+import { EmojisLoaderService } from '../../../services';
 import { IListItemWithUiState } from '../list-item-with-ui-state';
 
 @Component({
@@ -35,7 +37,7 @@ export class NewListItemComponent {
   private readonly errorLogger = inject<IErrorLogger>(ErrorLogger);
   private readonly randomService = inject(RandomIdService);
   private readonly toastCtrl = inject(ToastController);
-  private readonly listService = inject(ListService);
+  private readonly listService = inject<IListusService>(LISTUS_SERVICE);
   private readonly emojisLoader = inject(EmojisLoaderService);
 
   protected readonly isFocused = signal(false);
