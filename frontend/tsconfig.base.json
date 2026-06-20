@@ -15,7 +15,16 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@sneat/extension-listus": ["./libs/ext-listus/src/index.ts"]
+      "@sneat/extension-listus": ["./libs/ext-listus/src/index.ts"],
+      "@sneat/extension-listus-contract": [
+        "./libs/extensions/listus/contract/src/index.ts"
+      ],
+      "@sneat/extension-listus-shared": [
+        "./libs/extensions/listus/shared/src/index.ts"
+      ],
+      "@sneat/extension-listus-internal": [
+        "./libs/extensions/listus/internal/src/index.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp"]
