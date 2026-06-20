@@ -34,19 +34,19 @@ func createItems(t *testing.T, listID string, titles ...string) dto4listus.Creat
 	return resp
 }
 
-func TestCreateList_FormedListDboMissingUserIDs(t *testing.T) {
+func TestCreateList_Succeeds(t *testing.T) {
 	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
 
-	// NOTE: CreateList builds a ListDbo that sets SpaceIDs but not UserIDs, so
-	// the formed DTO fails its own Validate(). This asserts the current
-	// behavior (the validation gate is reached and rejects the record).
+	// CreateList builds a ListDbo from the request. It must populate UserIDs
+	// (from the requesting user) as well as SpaceIDs, otherwise the formed DTO
+	// fails its own Validate(). A valid request must succeed.
 	_, err := CreateList(userCtx(testUserID), dto4listus.CreateListRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		Type:         dbo4listus.ListTypeToDo,
 		Title:        "Groceries",
 	})
-	if err == nil {
-		t.Fatal("expected CreateList to reject formed ListDbo missing userIDs")
+	if err != nil {
+		t.Fatalf("CreateList failed: %v", err)
 	}
 }
 

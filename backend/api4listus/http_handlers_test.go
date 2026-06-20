@@ -311,21 +311,20 @@ func TestHttpPostSetListItemsIsDone_500WhenFacadeFails(t *testing.T) {
 // httpPostReorderListItem
 // =============================================================================
 
-// httpPostReorderListItem passes a nil response with http.StatusOK to
-// apicore.ReturnJSON, which panics (nil response is only valid with 204). This
-// documents that the success path currently panics.
-func TestHttpPostReorderListItem_SuccessPanicsViaReturnJSON(t *testing.T) {
+// httpPostReorderListItem returns an empty success as 204 No Content, matching
+// the other empty-response handlers in this package. A nil response with 204
+// does not panic in apicore.ReturnJSON.
+func TestHttpPostReorderListItem_204OnSuccess(t *testing.T) {
 	authAsUser(t)
 	old := reorderListItem
 	t.Cleanup(func() { reorderListItem = old })
 	reorderListItem = func(ctx facade.ContextWithUser, request dto4listus.ReorderListItemsRequest) error { return nil }
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected ReturnJSON to panic for nil response with 200 status")
-		}
-	}()
 	body := `{"itemIDs":["a"],"toIndex":0}`
-	httpPostReorderListItem(httptest.NewRecorder(), newPostRequest("/v0/listus/list_items_reorder?"+listQuery, body))
+	w := httptest.NewRecorder()
+	httpPostReorderListItem(w, newPostRequest("/v0/listus/list_items_reorder?"+listQuery, body))
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204; body=%s", w.Code, w.Body.String())
+	}
 }
 
 func TestHttpPostReorderListItem_500WhenFacadeFails(t *testing.T) {

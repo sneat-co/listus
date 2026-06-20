@@ -27,6 +27,9 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 	}
 	err = dal4spaceus2.CreateSpaceItem(ctx, request.SpaceRequest, const4listus.ExtensionID, new(dbo4listus.ListusSpaceDbo),
 		func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *dal4spaceus2.ModuleSpaceWorkerParams[*dbo4listus.ListusSpaceDbo]) (err error) {
+			if err = params.GetRecords(ctx, tx); err != nil {
+				return
+			}
 
 			for id, brief := range params.SpaceModuleEntry.Data.Lists {
 				if brief.Title == request.Title {
@@ -72,6 +75,9 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 						UpdatedBy: modified.By,
 					},
 				},
+				WithUserIDs: dbmodels.WithUserIDs{
+					UserIDs: []string{modified.By},
+				},
 				WithSpaceIDs: dbmodels.WithSpaceIDs{
 					SpaceIDs: []coretypes.SpaceID{request.SpaceID},
 				},
@@ -99,12 +105,15 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			}
 			params.SpaceModuleEntry.Data.Lists[string(listID)] = listBrief
 			if params.SpaceModuleEntry.Record.Exists() {
+				params.SpaceModuleUpdates = append(params.SpaceModuleUpdates,
+					update.ByFieldPath([]string{"lists", string(listID)}, listBrief))
+				params.SpaceModuleEntry.Record.MarkAsChanged()
+			} else {
+				params.SpaceModuleEntry.Data.CreatedAt = modified.At
+				params.SpaceModuleEntry.Data.CreatedBy = modified.By
 				if err = tx.Insert(ctx, params.SpaceModuleEntry.Record); err != nil {
 					return fmt.Errorf("failed to insert team module entry record: %w", err)
 				}
-			} else {
-				params.SpaceUpdates = append(params.SpaceUpdates,
-					update.ByFieldPath([]string{"lists", listType}, listBrief))
 			}
 			return err
 		},
