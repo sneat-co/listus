@@ -26,7 +26,7 @@ import {
   IonToolbar,
   ModalController,
 } from '@ionic/angular/standalone';
-import { IListInfo, ListType } from '../../dto';
+import { IListInfo, ListType } from '@sneat/extension-listus-contract';
 import { ErrorLogger, IErrorLogger } from '@sneat/core';
 
 @Component({

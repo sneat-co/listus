@@ -1,5 +1,5 @@
 import { SpaceType } from '@sneat/core';
-import { IListGroup } from '../../dto';
+import { IListGroup } from '@sneat/extension-listus-contract';
 
 // Built-in default list groups shown for a space, for instant UX before/alongside
 // the lists persisted on the space DBO. Personal (private) and family spaces both

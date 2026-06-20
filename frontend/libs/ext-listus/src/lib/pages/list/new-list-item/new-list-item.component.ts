@@ -18,12 +18,11 @@ import {
 import { ErrorLogger, IErrorLogger } from '@sneat/core';
 import { RandomIdService } from '@sneat/random';
 import { ISpaceContext } from '@sneat/space-models';
-import { IListContext } from '../../../contexts';
 import {
-  EmojisLoaderService,
+  IListContext,
   ICreateListItemRequest,
-  ListService,
-} from '../../../services';
+} from '@sneat/extension-listus-contract';
+import { EmojisLoaderService, ListService } from '../../../services';
 import { IListItemWithUiState } from '../list-item-with-ui-state';
 
 @Component({

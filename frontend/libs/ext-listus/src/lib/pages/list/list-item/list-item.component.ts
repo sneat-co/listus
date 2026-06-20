@@ -25,13 +25,13 @@ import {
 } from '@ionic/angular/standalone';
 import { ToastOptions } from '@ionic/core/dist/types/components/toast/toast-interface';
 import { listItemAnimations } from '@sneat/core';
-import { IListItemBrief } from '../../../dto';
-import { IListContext } from '../../../contexts';
-import { ListusComponentBaseParams } from '../../../listus-component-base-params';
 import {
+  IListContext,
+  IListItemBrief,
   IListItemIDsRequest,
   ISetListItemsIsComplete,
-} from '../../../services';
+} from '@sneat/extension-listus-contract';
+import { ListusComponentBaseParams } from '../../../listus-component-base-params';
 import { ListService } from '../../../services';
 import { ListDialogsService } from '../../dialogs/ListDialogs.service';
 import { IListItemWithUiState } from '../list-item-with-ui-state';

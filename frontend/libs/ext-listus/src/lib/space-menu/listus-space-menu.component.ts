@@ -30,7 +30,7 @@ import { SpaceServiceModule } from '@sneat/space-services';
 import { zipMapBriefsWithIDs } from '@sneat/space-models';
 import { ClassName } from '@sneat/ui';
 import { takeUntil } from 'rxjs/operators';
-import { IListGroup, IListusSpaceDbo } from '../dto';
+import { IListGroup, IListusSpaceDbo } from '@sneat/extension-listus-contract';
 import { builtInListGroups } from '../pages/lists/built-in-lists';
 
 // listus-specific side menu rendered in the space "menu" outlet. Unlike the

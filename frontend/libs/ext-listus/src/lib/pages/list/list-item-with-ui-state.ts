@@ -1,5 +1,5 @@
 import { UiState } from '@sneat/dto';
-import { IListItemBrief } from '../../dto';
+import { IListItemBrief } from '@sneat/extension-listus-contract';
 
 export interface IListItemUiState extends UiState {
   readonly isChangingIsDone?: boolean;

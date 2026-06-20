@@ -23,7 +23,11 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
-import { IListInfo, IListItemBrief, ListType } from '../../..';
+import {
+  IListInfo,
+  IListItemBrief,
+  ListType,
+} from '@sneat/extension-listus-contract';
 import { ErrorLogger, IErrorLogger } from '@sneat/core';
 import { ListService } from '../../../services/list.service';
 

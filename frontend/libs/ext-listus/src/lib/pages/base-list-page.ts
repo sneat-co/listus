@@ -4,8 +4,12 @@ import { emptyTimestamp } from '@sneat/dto';
 import { SpaceItemPageBaseComponent } from '@sneat/space-components';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { IListContext } from '../contexts';
-import { IListBrief, IListDbo, ListType } from '../dto';
+import {
+  IListBrief,
+  IListContext,
+  IListDbo,
+  ListType,
+} from '@sneat/extension-listus-contract';
 import { ListusComponentBaseParams } from '../listus-component-base-params';
 
 export abstract class BaseListPage extends SpaceItemPageBaseComponent<

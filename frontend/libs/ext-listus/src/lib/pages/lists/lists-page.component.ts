@@ -34,7 +34,12 @@ import {
 import { ContactusServicesModule } from '@sneat/contactus-services';
 import { APP_INFO, eq, IAppInfo } from '@sneat/core';
 import { SpaceServiceModule } from '@sneat/space-services';
-import { IListGroup, IListInfo, IListusSpaceDbo, ListType } from '../../dto';
+import {
+  IListGroup,
+  IListInfo,
+  IListusSpaceDbo,
+  ListType,
+} from '@sneat/extension-listus-contract';
 import { builtInListGroups } from './built-in-lists';
 import {
   SpaceBaseComponent,

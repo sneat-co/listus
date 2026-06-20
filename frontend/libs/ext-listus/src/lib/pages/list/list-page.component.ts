@@ -43,15 +43,15 @@ import { SpaceServiceModule } from '@sneat/space-services';
 import { ClassName } from '@sneat/ui';
 import { ListusCoreServicesModule } from '../../services';
 import { SpaceComponentBaseParams } from '@sneat/space-components';
-import { IListItemBrief } from '../../dto';
-import { IListContext } from '../../contexts';
-import { takeUntil } from 'rxjs';
-import { ListusComponentBaseParams } from '../../listus-component-base-params';
 import {
+  IListContext,
+  IListItemBrief,
   IDeleteListItemsRequest,
   IReorderListItemsRequest,
   ISetListItemsIsComplete,
-} from '../../services';
+} from '@sneat/extension-listus-contract';
+import { takeUntil } from 'rxjs';
+import { ListusComponentBaseParams } from '../../listus-component-base-params';
 import { IListusAppStateService } from '../../services';
 import { BaseListPage } from '../base-list-page';
 import { ListDialogsService } from '../dialogs/ListDialogs.service';

@@ -1,7 +1,6 @@
 export * from './emojis';
 export * from './emojis-loader.service';
 export * from './list.service';
-export * from './interfaces';
 export * from './list-item.service';
 export * from './listus-app-state.service';
 export * from './listus-core-services.module';

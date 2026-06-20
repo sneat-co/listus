@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ModalController } from '@ionic/angular/standalone';
-import { IListInfo, IListItemBrief } from '../../dto';
+import { IListInfo, IListItemBrief } from '@sneat/extension-listus-contract';
 import { CopyListItemsPageComponent } from './copy-list-items/copy-list-items-page.component';
 
 @Injectable()
