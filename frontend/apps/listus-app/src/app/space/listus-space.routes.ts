@@ -2,7 +2,7 @@ import { Route } from '@angular/router';
 import {
   listusRoutes,
   ListusSpaceMenuComponent,
-} from '@sneat/extension-listus';
+} from '@sneat/extension-listus-shared';
 import { SpaceComponentBaseParams } from '@sneat/space-components';
 
 // Thin, listus-only space shell. It provides SpaceComponentBaseParams (which

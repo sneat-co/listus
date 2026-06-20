@@ -15,7 +15,6 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@sneat/extension-listus": ["./libs/ext-listus/src/index.ts"],
       "@sneat/extension-listus-contract": [
         "./libs/extensions/listus/contract/src/index.ts"
       ],
