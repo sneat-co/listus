@@ -29,12 +29,15 @@ export default [
               onlyDependOnLibsWithTags: ['type:contract', 'scope:foundation'],
             },
             {
+              // per-extension scope (scope:listus) is deliberately NOT allowed:
+              // -internal carries it, so allowing it would defeat the load-bearing
+              // `type:shared MUST NOT depend on type:internal` rule. Shared reaches
+              // its own contract via type:contract.
               sourceTag: 'type:shared',
               onlyDependOnLibsWithTags: [
                 'type:contract',
                 'type:shared',
                 'scope:foundation',
-                'scope:listus',
               ],
             },
             {
