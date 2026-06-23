@@ -20,7 +20,7 @@ import {
 import { ISneatUserState } from '@sneat/auth-core';
 import { IUserSpaceBrief } from '@sneat/auth-models';
 import { AuthMenuItemComponent } from '@sneat/auth-ui';
-import { ContactusServicesModule } from '@sneat/contactus-services';
+import { ContactusServicesModule } from '@sneat/extension-contactus-internal';
 import { IIdAndBrief } from '@sneat/core';
 import {
   SpaceBaseComponent,
