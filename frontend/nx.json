@@ -93,7 +93,9 @@
   },
   "release": {
     "projects": [
-      "ext-listus-contract"
+      "ext-listus-contract",
+      "ext-listus-internal",
+      "ext-listus-shared"
     ],
     "projectsRelationship": "independent",
     "docker": {
