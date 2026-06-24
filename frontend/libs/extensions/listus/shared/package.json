@@ -1,6 +1,6 @@
 {
   "name": "@sneat/extension-listus-shared",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publishConfig": {
     "access": "public"
   },
@@ -15,8 +15,8 @@
     "@sneat/auth-core": "^0.9.0",
     "@sneat/auth-models": "^0.9.0",
     "@sneat/auth-ui": "^0.9.0",
-    "@sneat/extension-contactus-internal": "0.12.1",
-    "@sneat/extension-contactus-shared": "0.12.1",
+    "@sneat/extension-contactus-internal": "0.12.2",
+    "@sneat/extension-contactus-shared": "0.12.2",
     "@sneat/core": "^0.9.0",
     "@sneat/dto": "^0.9.0",
     "@sneat/random": "^0.0.4",
