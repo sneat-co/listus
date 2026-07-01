@@ -11,6 +11,7 @@ import (
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
+	"github.com/sneat-co/listus/backend/movius/tmdbclient"
 	"github.com/sneat-co/sneat-go-core/apicore"
 	"github.com/sneat-co/sneat-go-core/apicore/verify"
 	"github.com/sneat-co/sneat-go-core/facade"
@@ -82,6 +83,10 @@ func TestRegisterHttpRoutes(t *testing.T) {
 		{http.MethodPost, "/v0/listus/list_items_set_is_done"},
 		{http.MethodDelete, "/v0/listus/list_items_delete"},
 		{http.MethodPost, "/v0/listus/list_items_reorder"},
+		{http.MethodPost, "/v0/listus/list_items_set_watch_with"},
+		{http.MethodPost, "/v0/listus/movies/search"},
+		{http.MethodPost, "/v0/listus/movies/resolve"},
+		{http.MethodPost, "/v0/listus/movies/add_to_watchlist"},
 	}
 	if len(got) != len(want) {
 		t.Fatalf("registered %d routes, want %d: %+v", len(got), len(want), got)
@@ -337,5 +342,165 @@ func TestHttpPostReorderListItem_500WhenFacadeFails(t *testing.T) {
 	httpPostReorderListItem(w, newPostRequest("/v0/listus/list_items_reorder?"+listQuery, body))
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+}
+
+// =============================================================================
+// httpPostSearchMovies
+// =============================================================================
+
+func TestHttpPostSearchMovies_200OnSuccess(t *testing.T) {
+	authAsUser(t)
+	old := searchMovies
+	t.Cleanup(func() { searchMovies = old })
+	searchMovies = func(ctx context.Context, request dto4listus.MovieSearchRequest) (dto4listus.MovieSearchResponse, error) {
+		return dto4listus.MovieSearchResponse{Movies: []tmdbclient.MovieSummary{{TmdbID: 27205, Title: "Inception", Year: 2010}}}, nil
+	}
+	w := httptest.NewRecorder()
+	httpPostSearchMovies(w, newPostRequest("/v0/listus/movies/search", `{"query":"inception"}`))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "Inception") {
+		t.Errorf("body %q missing movie title", w.Body.String())
+	}
+}
+
+func TestHttpPostSearchMovies_500WhenFacadeFails(t *testing.T) {
+	authAsUser(t)
+	old := searchMovies
+	t.Cleanup(func() { searchMovies = old })
+	searchMovies = func(ctx context.Context, request dto4listus.MovieSearchRequest) (dto4listus.MovieSearchResponse, error) {
+		return dto4listus.MovieSearchResponse{}, errBoom
+	}
+	w := httptest.NewRecorder()
+	httpPostSearchMovies(w, newPostRequest("/v0/listus/movies/search", `{"query":"inception"}`))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHttpPostSearchMovies_401WhenUnauthenticated(t *testing.T) {
+	authRejected(t)
+	w := httptest.NewRecorder()
+	httpPostSearchMovies(w, newPostRequest("/v0/listus/movies/search", `{"query":"inception"}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", w.Code)
+	}
+}
+
+// =============================================================================
+// httpPostResolveMovie
+// =============================================================================
+
+func TestHttpPostResolveMovie_200OnSuccess(t *testing.T) {
+	authAsUser(t)
+	old := resolveMovie
+	t.Cleanup(func() { resolveMovie = old })
+	resolveMovie = func(ctx context.Context, request dto4listus.MovieResolveRequest) (dto4listus.MovieResolveResponse, error) {
+		return dto4listus.MovieResolveResponse{Movie: tmdbclient.MovieDetails{MovieSummary: tmdbclient.MovieSummary{TmdbID: 27205, Title: "Inception"}}}, nil
+	}
+	w := httptest.NewRecorder()
+	httpPostResolveMovie(w, newPostRequest("/v0/listus/movies/resolve", `{"tmdbID":27205}`))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "Inception") {
+		t.Errorf("body %q missing movie title", w.Body.String())
+	}
+}
+
+func TestHttpPostResolveMovie_500WhenFacadeFails(t *testing.T) {
+	authAsUser(t)
+	old := resolveMovie
+	t.Cleanup(func() { resolveMovie = old })
+	resolveMovie = func(ctx context.Context, request dto4listus.MovieResolveRequest) (dto4listus.MovieResolveResponse, error) {
+		return dto4listus.MovieResolveResponse{}, errBoom
+	}
+	w := httptest.NewRecorder()
+	httpPostResolveMovie(w, newPostRequest("/v0/listus/movies/resolve", `{"tmdbID":27205}`))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+}
+
+// =============================================================================
+// httpPostAddMovieToWatchlist
+// =============================================================================
+
+func TestHttpPostAddMovieToWatchlist_201OnSuccess(t *testing.T) {
+	authAsUser(t)
+	old := addMovieToWatchlist
+	t.Cleanup(func() { addMovieToWatchlist = old })
+	addMovieToWatchlist = func(ctx facade.ContextWithUser, request dto4listus.AddMovieToWatchlistRequest) (dto4listus.AddMovieToWatchlistResponse, error) {
+		return dto4listus.AddMovieToWatchlistResponse{Item: &dbo4listus.ListItemBrief{ID: "it-1", ListItemBase: dbo4listus.ListItemBase{Title: "Inception"}}}, nil
+	}
+	body := `{"spaceID":"s1","tmdbID":27205}`
+	w := httptest.NewRecorder()
+	httpPostAddMovieToWatchlist(w, newPostRequest("/v0/listus/movies/add_to_watchlist", body))
+	if w.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want 201; body=%s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "it-1") {
+		t.Errorf("body %q missing created item id", w.Body.String())
+	}
+}
+
+func TestHttpPostAddMovieToWatchlist_500WhenFacadeFails(t *testing.T) {
+	authAsUser(t)
+	old := addMovieToWatchlist
+	t.Cleanup(func() { addMovieToWatchlist = old })
+	addMovieToWatchlist = func(ctx facade.ContextWithUser, request dto4listus.AddMovieToWatchlistRequest) (dto4listus.AddMovieToWatchlistResponse, error) {
+		return dto4listus.AddMovieToWatchlistResponse{}, errBoom
+	}
+	body := `{"spaceID":"s1","tmdbID":27205}`
+	w := httptest.NewRecorder()
+	httpPostAddMovieToWatchlist(w, newPostRequest("/v0/listus/movies/add_to_watchlist", body))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+}
+
+// =============================================================================
+// httpPostSetListItemWatchWith
+// =============================================================================
+
+func TestHttpPostSetListItemWatchWith_204OnSuccess(t *testing.T) {
+	authAsUser(t)
+	old := setListItemWatchWith
+	t.Cleanup(func() { setListItemWatchWith = old })
+	setListItemWatchWith = func(ctx facade.ContextWithUser, request dto4listus.SetListItemWatchWithRequest) (*dbo4listus.ListItemBrief, dal4listus.ListEntry, error) {
+		return nil, dal4listus.ListEntry{}, nil
+	}
+	body := `{"item":"it-1","watchWith":{"mode":"alone"}}`
+	w := httptest.NewRecorder()
+	httpPostSetListItemWatchWith(w, newPostRequest("/v0/listus/list_items_set_watch_with?"+listQuery, body))
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204; body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHttpPostSetListItemWatchWith_500WhenFacadeFails(t *testing.T) {
+	authAsUser(t)
+	old := setListItemWatchWith
+	t.Cleanup(func() { setListItemWatchWith = old })
+	setListItemWatchWith = func(ctx facade.ContextWithUser, request dto4listus.SetListItemWatchWithRequest) (*dbo4listus.ListItemBrief, dal4listus.ListEntry, error) {
+		return nil, dal4listus.ListEntry{}, errBoom
+	}
+	body := `{"item":"it-1","watchWith":{"mode":"alone"}}`
+	w := httptest.NewRecorder()
+	httpPostSetListItemWatchWith(w, newPostRequest("/v0/listus/list_items_set_watch_with?"+listQuery, body))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHttpPostSetListItemWatchWith_400OnInvalidWatchWith(t *testing.T) {
+	authAsUser(t)
+	body := `{"item":"it-1","watchWith":{"mode":"space"}}` // missing required ref
+	w := httptest.NewRecorder()
+	httpPostSetListItemWatchWith(w, newPostRequest("/v0/listus/list_items_set_watch_with?"+listQuery, body))
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400; body=%s", w.Code, w.Body.String())
 	}
 }

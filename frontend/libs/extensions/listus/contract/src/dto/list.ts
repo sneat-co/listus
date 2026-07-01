@@ -25,7 +25,33 @@ export type IListItemBase = IListItemCommon;
 
 export type ListItemStatus = 'done' | 'active';
 
-export interface IListItemBrief extends IListItemBase {
+// IWatchWith mirrors the Go WatchWith struct (dbo4listus/listitem.go) - who a
+// watch-list movie is (or was) watched with. Denormalized id + display title,
+// no join needed at render time.
+export type WatchWithMode = 'alone' | 'space' | 'contact';
+
+export interface IWatchWith {
+  mode: WatchWithMode;
+  // spaceID (mode==='space') or contactID (mode==='contact'); empty for 'alone'.
+  ref?: string;
+  // Denormalized display name (e.g. space title or contact name).
+  title?: string;
+}
+
+// Movie fields on a watch-typed list item. All optional so non-watch lists
+// (buy/do/cook/etc.) are completely unaffected. Mirrors the Go
+// ListItemBase movie fields 1:1 (dbo4listus/listitem.go).
+export interface IWatchMovieFields {
+  tmdbID?: number;
+  year?: number;
+  posterURL?: string;
+  overview?: string;
+  trailerYouTubeKey?: string;
+  cast?: string[]; // top ~5 cast member names, denormalized
+  watchWith?: IWatchWith;
+}
+
+export interface IListItemBrief extends IListItemBase, IWatchMovieFields {
   id: string;
   readonly created?: string; // UTC datetime
   readonly emoji?: string;
@@ -33,19 +59,29 @@ export interface IListItemBrief extends IListItemBase {
   readonly img?: string;
 }
 
+// Convenience view type for rendering a watch-list item as a movie card.
+export type WatchMovieItem = IListItemBrief &
+  Required<Pick<IWatchMovieFields, 'tmdbID'>>;
+
 export interface ListCounts {
   // TODO: Use some enumerator as IDB library does.
   active?: number;
   completed?: number;
 }
 
+// Kept in sync with the Go IsKnownListType() whitelist in
+// backend/dbo4listus/list_dbo.go - reconciled per audit finding RM-5
+// (frontend previously had cook/other/recipes/rsvp missing from Go; Go had
+// general/read missing from the frontend union).
 export type ListType =
+  | 'general'
   | 'buy'
   | 'watch'
   | 'cook'
   | 'do'
   | 'other'
   | 'recipes'
+  | 'read'
   | 'rsvp';
 
 // IListCommon is a common base class for a List & ListItem

@@ -1,0 +1,204 @@
+<ion-header>
+  <ion-toolbar color="light" class="with-back-button">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="$defaultBackUrl()" />
+    </ion-buttons>
+    <ion-title>🎬 Add to watchlist</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="cardy">
+  @switch ($step()) {
+    @case ("search") {
+      <ion-card>
+        <ion-item>
+          <ion-input
+            label="Title or actor"
+            labelPlacement="stacked"
+            placeholder="e.g. Inception or Tom Hanks"
+            [ngModel]="$query()"
+            (ngModelChange)="$query.set($event)"
+            (keyup.enter)="search()"
+          />
+        </ion-item>
+        <div class="ion-padding">
+          <ion-button
+            expand="block"
+            color="primary"
+            [disabled]="$isSearching() || !$query().trim()"
+            (click)="search()"
+          >
+            @if ($isSearching()) {
+              <ion-spinner name="lines-small" slot="start" />
+            } @else {
+              <ion-icon name="search-outline" slot="start" />
+            }
+            <ion-label>Search</ion-label>
+          </ion-button>
+        </div>
+      </ion-card>
+
+      @if ($searchError(); as searchError) {
+        <ion-card>
+          <ion-card-content>
+            <ion-text color="danger">{{ searchError }}</ion-text>
+          </ion-card-content>
+        </ion-card>
+      }
+
+      @if ($results(); as results) {
+        <ion-card>
+          <ion-list>
+            @for (movie of results; track movie.tmdbID) {
+              <ion-item button (click)="pickMovie(movie)">
+                @if (movie.posterURL) {
+                  <img
+                    slot="start"
+                    [src]="movie.posterURL"
+                    alt="{{ movie.title }} poster"
+                    width="46"
+                    height="69"
+                  />
+                } @else {
+                  <ion-icon
+                    slot="start"
+                    name="film-outline"
+                    size="large"
+                    color="medium"
+                  />
+                }
+                <ion-label class="ion-text-wrap">
+                  {{ movie.title }}
+                  @if (movie.year) {
+                    <ion-text color="medium"> ({{ movie.year }})</ion-text>
+                  }
+                </ion-label>
+              </ion-item>
+            } @empty {
+              <ion-item lines="none">
+                <ion-label color="medium"
+                  >No movies found. Try a different title or actor.</ion-label
+                >
+              </ion-item>
+            }
+          </ion-list>
+        </ion-card>
+      }
+    }
+    @case ("confirm") {
+      @if ($selectedMovie(); as movie) {
+        <ion-card>
+          <ion-item lines="none">
+            @if (movie.posterURL) {
+              <img
+                slot="start"
+                [src]="movie.posterURL"
+                alt="{{ movie.title }} poster"
+                width="60"
+                height="90"
+              />
+            } @else {
+              <ion-icon
+                slot="start"
+                name="film-outline"
+                size="large"
+                color="medium"
+              />
+            }
+            <ion-label class="ion-text-wrap">
+              <h2>{{ movie.title }}</h2>
+              @if (movie.year) {
+                <ion-text color="medium">{{ movie.year }}</ion-text>
+              }
+            </ion-label>
+          </ion-item>
+        </ion-card>
+
+        <ion-card>
+          <ion-item-divider color="light">
+            <ion-label>Watch with</ion-label>
+          </ion-item-divider>
+          <ion-radio-group
+            [value]="$watchWithMode()"
+            (ionChange)="onWatchWithModeChanged($event.detail.value)"
+          >
+            <ion-item>
+              <ion-radio value="alone" labelPlacement="end" justify="start"
+                >Alone</ion-radio
+              >
+            </ion-item>
+            <ion-item>
+              <ion-radio value="space" labelPlacement="end" justify="start">
+                With {{ space.brief?.title || "this space" }}
+              </ion-radio>
+            </ion-item>
+            <ion-item lines="none">
+              <ion-radio value="contact" labelPlacement="end" justify="start"
+                >A contact</ion-radio
+              >
+            </ion-item>
+          </ion-radio-group>
+
+          @if ($watchWithMode() === "contact") {
+            <ion-item>
+              @if ($isLoadingContacts()) {
+                <ion-spinner name="lines-small" slot="start" />
+                <ion-label color="medium">Loading contacts…</ion-label>
+              } @else if (($contacts()?.length || 0) === 0) {
+                <ion-label color="medium">No contacts yet.</ion-label>
+              } @else {
+                <ion-select
+                  label="Contact"
+                  labelPlacement="stacked"
+                  interface="popover"
+                  [ngModel]="$selectedContactID()"
+                  (ngModelChange)="$selectedContactID.set($event)"
+                >
+                  @for (contact of $contacts(); track contact.id) {
+                    <ion-select-option [value]="contact.id">{{
+                      contact.title
+                    }}</ion-select-option>
+                  }
+                </ion-select>
+              }
+            </ion-item>
+          }
+        </ion-card>
+
+        <ion-card>
+          <div class="ion-padding">
+            <ion-grid>
+              <ion-row>
+                <ion-col>
+                  <ion-button
+                    expand="full"
+                    fill="outline"
+                    [disabled]="$isSubmitting()"
+                    (click)="backToSearch()"
+                  >
+                    <ion-label>Back</ion-label>
+                  </ion-button>
+                </ion-col>
+                <ion-col>
+                  <ion-button
+                    expand="full"
+                    color="primary"
+                    [disabled]="!$canSubmit()"
+                    (click)="submit()"
+                  >
+                    @if ($isSubmitting()) {
+                      <ion-spinner name="lines-small" slot="start" />
+                    } @else {
+                      <ion-icon name="add-circle-outline" slot="start" />
+                    }
+                    <ion-label>Add to watchlist</ion-label>
+                  </ion-button>
+                </ion-col>
+              </ion-row>
+            </ion-grid>
+          </div>
+        </ion-card>
+      }
+    }
+  }
+</ion-content>

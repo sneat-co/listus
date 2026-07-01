@@ -1,0 +1,28 @@
+package api4listus
+
+import (
+	"net/http"
+
+	"github.com/sneat-co/listus/backend/dto4listus"
+	"github.com/sneat-co/listus/backend/facade4listus"
+	"github.com/sneat-co/sneat-go-core/apicore"
+	"github.com/sneat-co/sneat-go-core/apicore/verify"
+)
+
+var setListItemWatchWith = facade4listus.SetListItemWatchWith
+
+// httpPostSetListItemWatchWith updates who a watch-list movie is/was watched with.
+func httpPostSetListItemWatchWith(w http.ResponseWriter, r *http.Request) {
+	var request dto4listus.SetListItemWatchWithRequest
+	request.ListRequest = getListRequestParamsFromURL(r)
+	ctx, err := apicore.VerifyAuthenticatedRequestAndDecodeBody(w, r, verify.DefaultJsonWithAuthRequired, &request)
+	if err != nil {
+		return
+	}
+	if err = request.Validate(); err != nil {
+		apicore.ReturnError(r.Context(), w, r, err)
+		return
+	}
+	_, _, err = setListItemWatchWith(ctx, request)
+	apicore.ReturnJSON(ctx, w, r, http.StatusNoContent, err, nil)
+}

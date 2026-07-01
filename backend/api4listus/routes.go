@@ -14,4 +14,8 @@ func RegisterHttpRoutes(handle extension.HTTPHandleFunc) {
 	handle(http.MethodPost, "/v0/listus/list_items_set_is_done", httpPostSetListItemsIsDone)
 	handle(http.MethodDelete, "/v0/listus/list_items_delete", httpDeleteListItems)
 	handle(http.MethodPost, "/v0/listus/list_items_reorder", httpPostReorderListItem)
+	handle(http.MethodPost, "/v0/listus/list_items_set_watch_with", httpPostSetListItemWatchWith)
+	handle(http.MethodPost, "/v0/listus/movies/search", httpPostSearchMovies)
+	handle(http.MethodPost, "/v0/listus/movies/resolve", httpPostResolveMovie)
+	handle(http.MethodPost, "/v0/listus/movies/add_to_watchlist", httpPostAddMovieToWatchlist)
 }

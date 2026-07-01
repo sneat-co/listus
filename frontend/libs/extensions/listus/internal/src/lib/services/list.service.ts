@@ -12,6 +12,8 @@ import { ModuleSpaceItemService } from '@sneat/space-services';
 import { Observable, throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
+  AddMovieToWatchlistRequest,
+  AddMovieToWatchlistResponse,
   IListBrief,
   IListContext,
   IListDbo,
@@ -23,6 +25,11 @@ import {
   IListItemsCommandParams,
   IReorderListItemsRequest,
   ISetListItemsIsComplete,
+  ResolveMovieRequest,
+  ResolveMovieResponse,
+  SearchMoviesRequest,
+  SearchMoviesResponse,
+  SetListItemWatchWithRequest,
 } from '@sneat/extension-listus-contract';
 
 @Injectable()
@@ -117,6 +124,47 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
       map((listContext) => {
         return this.onListSnapshot(space, listID, listType, listContext.dbo);
       }),
+    );
+  }
+
+  // Read-only TMDB proxy - no spaceID needed (see backend/api4listus/http_movie_search.go).
+  public searchMovies(
+    request: SearchMoviesRequest,
+  ): Observable<SearchMoviesResponse> {
+    return this.sneatApiService.post('listus/movies/search', request);
+  }
+
+  // Read-only TMDB proxy - no spaceID needed (see backend/api4listus/http_movie_resolve.go).
+  public resolveMovie(
+    request: ResolveMovieRequest,
+  ): Observable<ResolveMovieResponse> {
+    return this.sneatApiService.post('listus/movies/resolve', request);
+  }
+
+  // Resolves the movie server-side (by tmdbID or query) and appends it, fully
+  // enriched, to the space's canonical watch!movies list - auto-creating the
+  // list on first use (see backend/facade4listus/movie_watch.go).
+  public addMovieToWatchlist(
+    request: AddMovieToWatchlistRequest,
+  ): Observable<AddMovieToWatchlistResponse> {
+    return this.sneatApiService.post(
+      'listus/movies/add_to_watchlist',
+      request,
+    );
+  }
+
+  public setListItemWatchWith(
+    request: SetListItemWatchWithRequest,
+  ): Observable<void> {
+    const params = new HttpParams({
+      fromObject: {
+        spaceID: request.spaceID,
+        listID: request.listID,
+      },
+    });
+    return this.sneatApiService.post(
+      `listus/list_items_set_watch_with?${params.toString()}`,
+      { item: request.item, watchWith: request.watchWith },
     );
   }
 

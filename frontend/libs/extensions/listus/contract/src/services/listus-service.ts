@@ -4,12 +4,19 @@ import { Observable } from 'rxjs';
 import { IListContext } from '../contexts';
 import { ListType } from '../dto';
 import {
+  AddMovieToWatchlistRequest,
+  AddMovieToWatchlistResponse,
   ICreateListRequest,
   IDeleteListItemsRequest,
   IListItemResult,
   IListItemsCommandParams,
   IReorderListItemsRequest,
   ISetListItemsIsComplete,
+  ResolveMovieRequest,
+  ResolveMovieResponse,
+  SearchMoviesRequest,
+  SearchMoviesResponse,
+  SetListItemWatchWithRequest,
 } from './interfaces';
 
 // IListusService is the runtime-light contract the listus pages and components
@@ -34,6 +41,15 @@ export interface IListusService {
     listType: ListType,
     listID: string,
   ): Observable<IListContext>;
+  // Movie search/resolve are read-only TMDB proxies (see listus/movies/search
+  // & listus/movies/resolve); addMovieToWatchlist resolves a movie server-side
+  // and appends it (fully enriched) to the space's canonical watch!movies list.
+  searchMovies(request: SearchMoviesRequest): Observable<SearchMoviesResponse>;
+  resolveMovie(request: ResolveMovieRequest): Observable<ResolveMovieResponse>;
+  addMovieToWatchlist(
+    request: AddMovieToWatchlistRequest,
+  ): Observable<AddMovieToWatchlistResponse>;
+  setListItemWatchWith(request: SetListItemWatchWithRequest): Observable<void>;
 }
 
 export const LISTUS_SERVICE = new InjectionToken<IListusService>(
