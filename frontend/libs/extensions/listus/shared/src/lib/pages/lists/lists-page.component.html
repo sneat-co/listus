@@ -30,8 +30,9 @@
         <ion-item-divider
           (click)="clickGroup(listGroup)"
           color="light"
-          class="with-buttons"
-          tappable
+          class="with-buttons clickable-divider"
+          role="button"
+          tabindex="0"
         >
           <ion-icon
             slot="start"
@@ -82,7 +83,7 @@
             ) {
               <ion-item-sliding #ionItemSliding>
                 <ion-item
-                  tappable
+                  button
                   detail="false"
                   (click)="goList(list)"
                   [lines]="
