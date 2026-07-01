@@ -219,6 +219,12 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
       return;
     }
     super.setList(list);
+    // Watch-typed lists render as movie cards, not the generic checklist -
+    // route to the "cards" segment as soon as the list type is known (the
+    // segment control itself is not wired up to any UI toggle yet).
+    if (list.brief?.type === 'watch' && this.segment() !== 'cards') {
+      this.segment.set('cards');
+    }
     let allListItems: IListItemWithUiState[] | undefined =
       list.dbo === undefined
         ? undefined

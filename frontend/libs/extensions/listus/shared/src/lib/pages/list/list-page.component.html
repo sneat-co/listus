@@ -89,7 +89,11 @@
     <!--			</ion-segment>-->
     <!--		</div>-->
 
-    @if (doneFilter() === "all" && (allListItems()?.length || 0) > 1) {
+    @if (
+      $listType() !== "watch" &&
+      doneFilter() === "all" &&
+      (allListItems()?.length || 0) > 1
+    ) {
       <ion-item color="light" class="ion-item-no-border">
         <ion-label slot="end" color="medium" style="font-size: smaller"
           >List mode:
@@ -115,29 +119,35 @@
     <!--			</p>-->
     <!--		</ng-container>-->
 
-    <ion-list>
-      <ion-reorder-group
-        (ionItemReorder)="reorder($event)"
-        [disabled]="
-          isReordering() || listMode() !== 'reorder' || doneFilter() !== 'all'
-        "
-      >
-        @for (item of listItems(); track item.brief.id) {
-          <ion-reorder>
-            <listus-list-item
-              [showDoneCheckbox]="doneFilter() !== 'all'"
-              [$doneFilter]="doneFilter() || 'all'"
-              [$listMode]="doneFilter() === 'all' ? listMode() : 'swipe'"
-              [$listItemWithUiState]="item"
-              [$list]="list"
-              (itemClicked)="goListItem($event)"
-              (itemChanged)="itemChanged($event)"
-              (listChanged)="setList($event)"
-            />
-          </ion-reorder>
-        }
-      </ion-reorder-group>
-    </ion-list>
+    @if ($listType() !== "watch") {
+      <!-- Watch-typed lists render as movie cards (see the "cards" segment
+        below) instead of this generic checklist. -->
+      <ion-list>
+        <ion-reorder-group
+          (ionItemReorder)="reorder($event)"
+          [disabled]="
+            isReordering() ||
+            listMode() !== 'reorder' ||
+            doneFilter() !== 'all'
+          "
+        >
+          @for (item of listItems(); track item.brief.id) {
+            <ion-reorder>
+              <listus-list-item
+                [showDoneCheckbox]="doneFilter() !== 'all'"
+                [$doneFilter]="doneFilter() || 'all'"
+                [$listMode]="doneFilter() === 'all' ? listMode() : 'swipe'"
+                [$listItemWithUiState]="item"
+                [$list]="list"
+                (itemClicked)="goListItem($event)"
+                (itemChanged)="itemChanged($event)"
+                (listChanged)="setList($event)"
+              />
+            </ion-reorder>
+          }
+        </ion-reorder-group>
+      </ion-list>
+    }
 
     @if (
       segment() !== "settings" &&
@@ -297,7 +307,7 @@
       }
     }
     @case ("cards") {
-      @if (list?.dbo?.items) {
+      @if (list?.dbo) {
         <div style="padding-top: 0.5em; padding-bottom: 0.5em">
           @switch (list?.brief?.type) {
             @case ("watch") {
@@ -337,6 +347,13 @@
             }
           }
         </div>
+      } @else {
+        <ion-card>
+          <ion-card-content>
+            <ion-spinner name="lines" class="ion-margin-end" />
+            <ion-text color="medium">Loading…</ion-text>
+          </ion-card-content>
+        </ion-card>
       }
     }
   }

@@ -16,8 +16,8 @@
             label="Title or actor"
             labelPlacement="stacked"
             placeholder="e.g. Inception or Tom Hanks"
-            [ngModel]="query()"
-            (ngModelChange)="query.set($event)"
+            [ngModel]="$query()"
+            (ngModelChange)="$query.set($event)"
             (keyup.enter)="search()"
           />
         </ion-item>
@@ -25,7 +25,7 @@
           <ion-button
             expand="block"
             color="primary"
-            [disabled]="$isSearching() || !query().trim()"
+            [disabled]="$isSearching() || !$query().trim()"
             (click)="search()"
           >
             @if ($isSearching()) {

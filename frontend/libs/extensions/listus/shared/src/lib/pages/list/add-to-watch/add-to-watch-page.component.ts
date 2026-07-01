@@ -109,7 +109,7 @@ export class AddToWatchPageComponent extends SpacePageBaseComponent {
   protected listID?: string;
 
   protected readonly $step = signal<AddToWatchStep>('search');
-  protected readonly query = signal('');
+  protected readonly $query = signal('');
   protected readonly $isSearching = signal(false);
   protected readonly $searchError = signal<string | undefined>(undefined);
   protected readonly $results = signal<MovieSummary[] | undefined>(undefined);
@@ -152,7 +152,7 @@ export class AddToWatchPageComponent extends SpacePageBaseComponent {
   }
 
   protected search(): void {
-    const query = this.query().trim();
+    const query = this.$query().trim();
     if (!query) {
       return;
     }
