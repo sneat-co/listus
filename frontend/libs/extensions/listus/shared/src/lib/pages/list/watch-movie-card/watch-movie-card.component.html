@@ -1,0 +1,91 @@
+@let item = $item();
+
+<ion-card [class.watched]="$isDone()">
+  <ion-card-content>
+    <div class="movie-card-layout">
+      @if (item.posterURL) {
+        <img
+          class="poster"
+          [src]="item.posterURL"
+          alt="{{ item.title }} poster"
+          width="92"
+          height="138"
+        />
+      } @else {
+        <div class="poster poster-placeholder">
+          <ion-icon name="film-outline" size="large" color="medium" />
+        </div>
+      }
+
+      <div class="movie-card-body">
+        <h2 class="ion-text-wrap">
+          {{ item.title }}
+          @if (item.year) {
+            <ion-text color="medium">({{ item.year }})</ion-text>
+          }
+        </h2>
+
+        @if ($watchWithLabel(); as watchWithLabel) {
+          <ion-badge color="light">{{ watchWithLabel }}</ion-badge>
+        }
+
+        @if ($overviewSnippet(); as overview) {
+          <p class="ion-text-wrap">
+            <ion-text color="medium">{{ overview }}</ion-text>
+          </p>
+        }
+
+        @if ($castLine(); as castLine) {
+          <p class="ion-text-wrap">
+            <ion-text color="medium"
+              ><i>Cast:</i> {{ castLine }}</ion-text
+            >
+          </p>
+        }
+
+        <div class="movie-card-actions">
+          @if (item.trailerYouTubeKey) {
+            <ion-button
+              size="small"
+              fill="clear"
+              aria-label="Watch trailer on YouTube"
+              (click)="openTrailer($event)"
+            >
+              <ion-icon name="logo-youtube" slot="start" color="danger" />
+              Trailer
+            </ion-button>
+          }
+
+          <ion-button
+            size="small"
+            [fill]="$isDone() ? 'solid' : 'outline'"
+            [color]="$isDone() ? 'success' : 'medium'"
+            [disabled]="$isBusy()"
+            (click)="toggleWatched($event)"
+          >
+            @if ($isBusy()) {
+              <ion-spinner name="lines-small" slot="start" />
+            } @else {
+              <ion-icon
+                [name]="$isDone() ? 'checkmark-circle' : 'square-outline'"
+                slot="start"
+              />
+            }
+            {{ $isDone() ? "Watched" : "Mark watched" }}
+          </ion-button>
+
+          <ion-button
+            size="small"
+            fill="clear"
+            color="danger"
+            aria-label="Remove from watchlist"
+            [disabled]="$isBusy()"
+            (click)="deleteItem($event)"
+          >
+            <ion-icon name="trash-outline" />
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  </ion-card-content>
+</ion-card>

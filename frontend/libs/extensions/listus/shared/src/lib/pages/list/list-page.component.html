@@ -300,7 +300,23 @@
       @if (list?.dbo?.items) {
         <div style="padding-top: 0.5em; padding-bottom: 0.5em">
           @switch (list?.brief?.type) {
-            @case ("watch") {}
+            @case ("watch") {
+              @for (item of listItems() || []; track item.brief.id) {
+                <listus-watch-movie-card
+                  [$listItemWithUiState]="item"
+                  [$list]="list"
+                  (itemChanged)="itemChanged($event)"
+                />
+              } @empty {
+                <ion-card>
+                  <ion-card-content>
+                    <ion-text color="medium"
+                      >No movies yet. Tap + to add one to watch.</ion-text
+                    >
+                  </ion-card-content>
+                </ion-card>
+              }
+            }
             @default {
               @for (item of listItems() || []; track item.brief.id) {
                 <ion-card button (click)="goListItem(item.brief)">

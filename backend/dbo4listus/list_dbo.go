@@ -28,12 +28,21 @@ const (
 	ListTypeToWatch ListType = "watch"
 
 	ListTypeToRead ListType = "read"
+
+	// ListTypeCook, ListTypeOther, ListTypeRecipes & ListTypeRsvp reconcile the
+	// FE/BE ListType enum drift flagged by audit RM-5 - the frontend union
+	// (contract/src/dto/list.ts) already allowed these, Go rejected them.
+	ListTypeCook    ListType = "cook"
+	ListTypeOther   ListType = "other"
+	ListTypeRecipes ListType = "recipes"
+	ListTypeRsvp    ListType = "rsvp"
 )
 
 // IsKnownListType checks if it is a known list type
 func IsKnownListType(v string) bool {
 	switch v {
-	case ListTypeGeneral, ListTypeToBuy, ListTypeToDo, ListTypeToWatch, ListTypeToRead:
+	case ListTypeGeneral, ListTypeToBuy, ListTypeToDo, ListTypeToWatch, ListTypeToRead,
+		ListTypeCook, ListTypeOther, ListTypeRecipes, ListTypeRsvp:
 		return true
 	}
 	return false

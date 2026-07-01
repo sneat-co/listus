@@ -5,6 +5,10 @@ import {
   IListItemBase,
   IListItemBrief,
   IListItemDbo,
+  IWatchMovieFields,
+  IWatchWith,
+  MovieDetails,
+  MovieSummary,
 } from '../dto';
 import { IListContext } from '../contexts';
 import { ISpaceContext, ISpaceRequest } from '@sneat/space-models';
@@ -88,7 +92,9 @@ export interface IListRequest extends ISpaceRequest {
   // readonly listType: ListType;
 }
 
-export interface ICreateListItemRequest extends IListItemBase {
+export interface ICreateListItemRequest
+  extends IListItemBase,
+    IWatchMovieFields {
   id: string;
 }
 
@@ -112,4 +118,41 @@ export type IDeleteListItemsRequest = IListItemIDsRequest;
 
 export interface ISetListItemsIsComplete extends IListItemIDsRequest {
   isDone: boolean;
+}
+
+// Movie search/resolve/add-to-watchlist request & response DTOs - mirror the
+// Go dto4listus request/response structs (backend/dto4listus/dto_movie.go)
+// field-for-field so JSON (de)serialization matches exactly.
+
+export interface SearchMoviesRequest {
+  query: string;
+}
+
+export interface SearchMoviesResponse {
+  movies: MovieSummary[];
+}
+
+export interface ResolveMovieRequest {
+  tmdbID: number;
+}
+
+export interface ResolveMovieResponse {
+  movie: MovieDetails;
+}
+
+// Either tmdbID or query is required (validated server-side); watchWith is
+// optional - omitting it lets the backend default it (currently 'alone').
+export interface AddMovieToWatchlistRequest extends ISpaceRequest {
+  tmdbID?: number;
+  query?: string;
+  watchWith?: IWatchWith;
+}
+
+export interface AddMovieToWatchlistResponse {
+  item: IListItemBrief;
+}
+
+export interface SetListItemWatchWithRequest extends IListRequest {
+  item: string; // itemID
+  watchWith: IWatchWith;
 }

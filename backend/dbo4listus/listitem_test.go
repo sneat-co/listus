@@ -38,6 +38,39 @@ func TestListItemBase_Validate(t *testing.T) {
 	}
 }
 
+func TestWatchWith_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		v       WatchWith
+		wantErr bool
+	}{
+		{"alone", WatchWith{Mode: WatchWithModeAlone}, false},
+		{"space", WatchWith{Mode: WatchWithModeSpace, Ref: "space1", Title: "Family"}, false},
+		{"space_missing_ref", WatchWith{Mode: WatchWithModeSpace}, true},
+		{"contact", WatchWith{Mode: WatchWithModeContact, Ref: "contact1", Title: "Alex"}, false},
+		{"contact_missing_ref", WatchWith{Mode: WatchWithModeContact}, true},
+		{"unknown_mode", WatchWith{Mode: "sometimes"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.v.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("WatchWith.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestListItemBase_Validate_WatchWith(t *testing.T) {
+	valid := ListItemBase{Title: "Inception", WatchWith: &WatchWith{Mode: WatchWithModeAlone}}
+	if err := valid.Validate(); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	invalid := ListItemBase{Title: "Inception", WatchWith: &WatchWith{Mode: WatchWithModeSpace}}
+	if err := invalid.Validate(); err == nil {
+		t.Error("expected error for watchWith with missing ref")
+	}
+}
+
 func TestListItemBrief_Validate(t *testing.T) {
 	tests := []struct {
 		name    string

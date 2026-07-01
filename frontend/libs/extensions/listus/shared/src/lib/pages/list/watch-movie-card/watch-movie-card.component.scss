@@ -1,0 +1,49 @@
+:host {
+  display: block;
+}
+
+.movie-card-layout {
+  display: flex;
+  gap: 0.75em;
+}
+
+.poster {
+  flex: 0 0 auto;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.poster-placeholder {
+  width: 92px;
+  height: 138px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ion-color-light);
+}
+
+.movie-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 0.25em;
+  }
+
+  p {
+    margin: 0.25em 0;
+  }
+}
+
+.movie-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25em;
+  margin-top: 0.5em;
+}
+
+ion-card.watched .poster {
+  opacity: 0.6;
+}

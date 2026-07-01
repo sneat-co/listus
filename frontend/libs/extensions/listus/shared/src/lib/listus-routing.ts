@@ -14,6 +14,15 @@ export const listusRoutes: Route[] = [
     // ...guardRoute,
   },
   {
+    path: 'list/:listType/:listID/add',
+    data: { title: 'Add to watchlist' },
+    // canActivate: [AuthGuard],
+    loadComponent: () =>
+      import('./pages/list/add-to-watch/add-to-watch-page.component').then(
+        (m) => m.AddToWatchPageComponent,
+      ),
+  },
+  {
     path: 'list/:listType/:listID',
     data: { title: 'List' },
     // canActivate: [AuthGuard],

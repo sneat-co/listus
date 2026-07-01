@@ -58,6 +58,7 @@ import { ListDialogsService } from '../dialogs/ListDialogs.service';
 import { IListItemWithUiState } from './list-item-with-ui-state';
 import { ListItemComponent } from './list-item/list-item.component';
 import { NewListItemComponent } from './new-list-item/new-list-item.component';
+import { WatchMovieCardComponent } from './watch-movie-card/watch-movie-card.component';
 
 type ListPageSegment = 'list' | 'cards' | 'recipes' | 'settings' | 'discover';
 type ListPagePerforming =
@@ -74,6 +75,7 @@ type ListPagePerforming =
     ContactusServicesModule,
     ListItemComponent,
     NewListItemComponent,
+    WatchMovieCardComponent,
     SpaceServiceModule,
     SharedWithComponent,
     IonHeader,
@@ -245,23 +247,19 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
   // }
 
   protected removeIsWatchedFromWatchlist(): void {
-    this.errorLogger.logError(
-      'removeIsWatchedFromWatchlist is not implemented yet',
+    const watchedItems = this.allListItems()?.filter(
+      (li) => li.brief.status === 'done',
     );
-    // 	console.log('remove');
-    // 	movies.forEach(movie => {
-    // 		// console.log(movie.watchedByUserIds);
-    // 		if (this.isWatched(movie, this.userId)) {
-    // 			console.log('remove movie');
-    // 			this.listusService.deleteListItem(this.createListItemCommandParams(movie))
-    // 				.subscribe(
-    // 					listDto => {
-    // 						this.setList(listDto);
-    // 					},
-    // 					this.errorLogger.logError,
-    // 				);
-    // 		}
-    // 	});
+    if (!watchedItems?.length) {
+      alert('You have no watched movies');
+      return;
+    }
+    // Irreversible bulk delete - a short single-button confirm is enough here
+    // (see sneat-specs/standards/frontend-ux/modals.md "Destructive confirmation").
+    if (!confirm('Delete watched movies?')) {
+      return;
+    }
+    this.deleteItems(watchedItems);
   }
 
   protected itemChanged(changedItem: {
@@ -397,22 +395,24 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
         break;
       case 'rsvp':
         break;
-      case 'watch':
-        this.errorLogger.logError('Not implemented yet');
-        // this.teamNav.navigateForwardToSpacePage(
-        // 	'list/add-to-watch',
-        // 	{
-        // 		list: this.listId,
-        // 	},
-        // 	{
-        // 		listInfo: this.listInfo,
-        // 		listDto: this.listDto,
-        // 	},
-        // 	{
-        // 		excludeCommuneId: true,
-        // 	},
-        // );
+      case 'watch': {
+        if (!this.space || !this.list?.id) {
+          this.errorLogger.logError('no space or list context');
+          break;
+        }
+        this.spaceNav
+          .navigateForwardToSpacePage(
+            this.space,
+            `list/${this.list.type}/${this.listID}/add`,
+            { state: { list: this.list } },
+          )
+          .catch(
+            this.errorLogger.logErrorHandler(
+              'Failed to navigate to add-to-watch page',
+            ),
+          );
         break;
+      }
       default:
         this.focusAddInput();
         break;
