@@ -29,7 +29,13 @@ import { filter, map } from 'rxjs';
         <ion-menu menuId="mainMenu" contentId="main" #menu>
           <ion-header>
             <ion-toolbar color="light">
-              <ion-title [routerLink]="'/'" tappable (click)="menu.close()">
+              <ion-title
+                class="clickable-title"
+                role="button"
+                tabindex="0"
+                [routerLink]="'/'"
+                (click)="menu.close()"
+              >
                 Listus.app
               </ion-title>
             </ion-toolbar>
@@ -46,6 +52,7 @@ import { filter, map } from 'rxjs';
       </ion-split-pane>
     </ion-app>
   `,
+  styles: [`.clickable-title { cursor: pointer; }`],
   imports: [
     IonApp,
     IonSplitPane,

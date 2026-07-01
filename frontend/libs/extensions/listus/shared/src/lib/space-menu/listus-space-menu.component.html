@@ -31,7 +31,7 @@
 
   <!-- Lists of the selected space. -->
   <ion-item
-    tappable
+    button
     [routerLink]="spacePageUrl('lists')"
     routerDirection="root"
     [disabled]="$disabled()"
@@ -44,7 +44,7 @@
   @for (group of $listGroups(); track group.id) {
     @for (list of group.lists || []; track list.id) {
       <ion-item
-        tappable
+        button
         class="ion-padding-start"
         [routerLink]="spacePageUrl('list/' + list.type + '/' + list.id)"
         routerDirection="root"

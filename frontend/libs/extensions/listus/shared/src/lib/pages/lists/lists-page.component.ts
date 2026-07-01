@@ -59,6 +59,7 @@ import { ClassName } from '@sneat/ui';
 @Component({
   selector: 'listus-lists-page',
   templateUrl: './lists-page.component.html',
+  styles: [`.clickable-divider { cursor: pointer; }`],
   imports: [
     FormsModule,
     ListusCoreServicesModule,
