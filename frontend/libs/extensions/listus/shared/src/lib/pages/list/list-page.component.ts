@@ -1,9 +1,9 @@
 import { NgOptimizedImage } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  effect,
   signal,
   viewChild,
   inject,
@@ -115,7 +115,7 @@ type ListPagePerforming =
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ListPageComponent extends BaseListPage implements AfterViewInit {
+export class ListPageComponent extends BaseListPage {
   private readonly listDialogs = inject(ListDialogsService);
   private readonly listusAppStateService = inject(IListusAppStateService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
@@ -151,6 +151,36 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
     super(params);
     const listusAppStateService = this.listusAppStateService;
     this.preloader.markAsPreloaded('list');
+
+    // Wire up the "add new item" component reactively rather than once in
+    // ngAfterViewInit: it is rendered conditionally (watch/recipes lists and the
+    // "settings" segment omit it), so the view child appears and disappears as
+    // the user navigates. An effect re-subscribes whenever it (re)appears and
+    // tears the old subscriptions down on change/destroy. Absence is a valid
+    // state — no error is logged for it.
+    effect((onCleanup) => {
+      const newListItem = this.newListItem();
+      if (!newListItem) {
+        return;
+      }
+      const subscriptions = [
+        newListItem.adding.subscribe((item: IListItemWithUiState) => {
+          this.addingItems.push(item);
+          this.applyFilter();
+        }),
+        newListItem.added.subscribe((item: IListItemWithUiState) => {
+          this.addingItems = this.addingItems.filter(
+            (v) => v.brief.id !== item.brief.id,
+          );
+          this.applyFilter();
+        }),
+        newListItem.failedToAdd.subscribe((id: string): void => {
+          this.addingItems = this.addingItems.filter((v) => v.brief.id !== id);
+        }),
+      ];
+      onCleanup(() => subscriptions.forEach((sub) => sub.unsubscribe()));
+    });
+
     if (location.pathname.includes('/lists')) {
       // TODO: document why & how it is possible
       return;
@@ -161,28 +191,6 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
       // watched movies (it used to be a visible control that did nothing).
       this.applyFilter();
     });
-  }
-
-  ngAfterViewInit(): void /* Intentionally not ngOnInit */ {
-    const newListItem = this.newListItem();
-    if (newListItem) {
-      newListItem.adding.subscribe((item: IListItemWithUiState) => {
-        this.addingItems.push(item);
-        this.applyFilter();
-      });
-      newListItem.added.subscribe((item: IListItemWithUiState) => {
-        this.addingItems = this.addingItems.filter(
-          (v) => v.brief.id !== item.brief.id,
-        );
-        this.applyFilter();
-      });
-
-      newListItem.failedToAdd.subscribe((id: string): void => {
-        this.addingItems = this.addingItems.filter((v) => v.brief.id !== id);
-      });
-    } else {
-      this.errorLogger.logError('newListItem component is not initialized');
-    }
   }
 
   public setEditMode(e: Event, v: 'reorder' | 'swipe'): boolean {
