@@ -17,5 +17,6 @@ func RegisterHttpRoutes(handle extension.HTTPHandleFunc) {
 	handle(http.MethodPost, "/v0/listus/list_items_set_watch_with", httpPostSetListItemWatchWith)
 	handle(http.MethodPost, "/v0/listus/movies/search", httpPostSearchMovies)
 	handle(http.MethodPost, "/v0/listus/movies/resolve", httpPostResolveMovie)
+	handle(http.MethodPost, "/v0/listus/movies/identify", httpPostIdentifyMovies)
 	handle(http.MethodPost, "/v0/listus/movies/add_to_watchlist", httpPostAddMovieToWatchlist)
 }

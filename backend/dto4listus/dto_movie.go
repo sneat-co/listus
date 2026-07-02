@@ -29,6 +29,28 @@ type MovieSearchResponse struct {
 	Movies []tmdbclient.MovieSummary `json:"movies"`
 }
 
+// MovieIdentifyRequest identifies movies from a vague natural-language
+// description ("that submarine movie with the guy from Titanic") via AI title
+// guesses grounded through TMDB search. Like MovieSearchRequest it is a
+// read-only proxy, so it does not require a space context.
+type MovieIdentifyRequest struct {
+	Description string `json:"description"`
+}
+
+// Validate returns error if not valid
+func (v MovieIdentifyRequest) Validate() error {
+	if strings.TrimSpace(v.Description) == "" {
+		return validation.NewErrRequestIsMissingRequiredField("description")
+	}
+	return nil
+}
+
+// MovieIdentifyResponse returns TMDB candidates for the AI title guesses,
+// merged & deduped, for the user to disambiguate.
+type MovieIdentifyResponse struct {
+	Movies []tmdbclient.MovieSummary `json:"movies"`
+}
+
 // MovieResolveRequest fully resolves a single movie by its TMDB id.
 type MovieResolveRequest struct {
 	TmdbID int `json:"tmdbID"`
