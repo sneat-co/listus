@@ -389,17 +389,23 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
       throw new Error('!this.listItems');
     }
     switch (this.list?.brief?.type) {
+      // These types all render the inline `listus-new-list-item` add field
+      // (see the template's `$listType() !== "watch" && $listType() !== "recipes"`
+      // guard), so the header "+" button should just focus it, same as `default`.
+      // Previously each was a bare `break`, silently no-opping the "+" button
+      // (e.g. on the built-in Groceries "buy" list) instead of focusing the add
+      // input - the user still could type directly into the always-visible
+      // input, but the toolbar button did nothing.
       case 'buy':
-        break;
       case 'cook':
-        break;
       case 'do':
-        break;
       case 'other':
+      case 'rsvp':
+        this.focusAddInput();
         break;
       case 'recipes':
-        break;
-      case 'rsvp':
+        // Recipes lists don't render the inline add field - adding a recipe
+        // needs its own flow, not yet implemented.
         break;
       case 'watch': {
         if (!this.space || !this.list?.id) {
