@@ -8,6 +8,8 @@ import {
   AddMovieToWatchlistResponse,
   ICreateListRequest,
   IDeleteListItemsRequest,
+  IdentifyMoviesRequest,
+  IdentifyMoviesResponse,
   IListItemResult,
   IListItemsCommandParams,
   IReorderListItemsRequest,
@@ -41,11 +43,15 @@ export interface IListusService {
     listType: ListType,
     listID: string,
   ): Observable<IListContext>;
-  // Movie search/resolve are read-only TMDB proxies (see listus/movies/search
-  // & listus/movies/resolve); addMovieToWatchlist resolves a movie server-side
-  // and appends it (fully enriched) to the space's canonical watch!movies list.
+  // Movie search/resolve/identify are read-only TMDB/AI proxies (see
+  // listus/movies/{search,resolve,identify}); addMovieToWatchlist resolves a
+  // movie server-side and appends it (fully enriched) to the watch list given
+  // by request.listID - or to the canonical watch!movies list when omitted.
   searchMovies(request: SearchMoviesRequest): Observable<SearchMoviesResponse>;
   resolveMovie(request: ResolveMovieRequest): Observable<ResolveMovieResponse>;
+  identifyMovies(
+    request: IdentifyMoviesRequest,
+  ): Observable<IdentifyMoviesResponse>;
   addMovieToWatchlist(
     request: AddMovieToWatchlistRequest,
   ): Observable<AddMovieToWatchlistResponse>;

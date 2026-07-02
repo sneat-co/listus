@@ -12,11 +12,20 @@ import (
 
 // AddMovieToWatchlist resolves a movie (by tmdbID, or by taking the first hit
 // of a free-text search query) via movius/tmdbclient and appends it as a
-// fully-enriched item to the space's canonical watch!movies list
-// (dbo4listus.WatchMoviesListID), creating the list on first use.
+// fully-enriched item to the watch list identified by request.ListID - or,
+// when ListID is omitted, to the space's canonical watch!movies list
+// (dbo4listus.WatchMoviesListID), creating that standard list on first use.
+// Non-canonical watch lists must already exist (createListItemsTxWorker only
+// auto-creates standard lists), so a typo'd ListID fails loudly instead of
+// silently landing the movie in a different list.
 func AddMovieToWatchlist(ctx facade.ContextWithUser, request dto4listus.AddMovieToWatchlistRequest) (response dto4listus.AddMovieToWatchlistResponse, err error) {
 	if err = request.Validate(); err != nil {
 		return
+	}
+
+	listID := request.ListID
+	if listID == "" {
+		listID = dbo4listus.WatchMoviesListID
 	}
 
 	tmdbID := request.TmdbID
@@ -64,7 +73,7 @@ func AddMovieToWatchlist(ctx facade.ContextWithUser, request dto4listus.AddMovie
 	createResponse, _, err := CreateListItems(ctx, dto4listus.CreateListItemsRequest{
 		ListRequest: dto4listus.ListRequest{
 			SpaceRequest: request.SpaceRequest,
-			ListID:       dbo4listus.WatchMoviesListID,
+			ListID:       listID,
 		},
 		Items: []dto4listus.CreateListItemRequest{item},
 	})

@@ -157,6 +157,9 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
     }
     listusAppStateService.changed.subscribe((appState) => {
       this.isHideWatched.set(!appState.showWatched);
+      // Re-filter so the persisted "Hide watched" toggle actually hides/shows
+      // watched movies (it used to be a visible control that did nothing).
+      this.applyFilter();
     });
   }
 
@@ -435,6 +438,29 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
     this.newListItem()?.focus();
   }
 
+  // Navigates to the Discover page for this list (route
+  // `list/:listType/:listID/discover` - shipped by the consuming app, e.g.
+  // sneat-apps' movies Discover page over `listus/movies/identify`). Entry
+  // points: the watch-list footer "Discover" button and the (previously dead)
+  // "Got it, show recommendations" button of the discover segment.
+  protected goDiscover(): void {
+    if (!this.space || !this.list?.id) {
+      this.errorLogger.logError('no space or list context');
+      return;
+    }
+    this.spaceNav
+      .navigateForwardToSpacePage(
+        this.space,
+        `list/${this.list.type}/${this.listID}/discover`,
+        { state: { list: this.list } },
+      )
+      .catch(
+        this.errorLogger.logErrorHandler(
+          'Failed to navigate to discover page',
+        ),
+      );
+  }
+
   protected openCopyListItemsDialog(
     listItem?: IListItemBrief,
     event?: Event,
@@ -540,7 +566,7 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
 
   private applyFilter(): void {
     const allListItems = this.allListItems();
-    const doneFilter = this.doneFilter();
+    let doneFilter = this.doneFilter();
     if (!doneFilter) {
       if (
         !allListItems?.length ||
@@ -550,13 +576,22 @@ export class ListPageComponent extends BaseListPage implements AfterViewInit {
       } else {
         this.doneFilter.set('all');
       }
+      // Re-read so the very first filter run uses the defaulted value instead
+      // of `undefined` (which matched no branch and rendered an empty list
+      // until the next applyFilter() call).
+      doneFilter = this.doneFilter();
     }
+    // On watch lists the persisted "Hide watched" footer toggle additionally
+    // filters out watched (done) movies, on top of the All/Active/Completed
+    // segment.
+    const hideWatched = this.$listType() === 'watch' && this.isHideWatched();
     const filtered =
       allListItems?.filter(
         (li) =>
-          doneFilter === 'all' ||
-          (doneFilter === 'completed' && li.brief.status === 'done') ||
-          (doneFilter === 'active' && li.brief.status !== 'done'),
+          (doneFilter === 'all' ||
+            (doneFilter === 'completed' && li.brief.status === 'done') ||
+            (doneFilter === 'active' && li.brief.status !== 'done')) &&
+          !(hideWatched && li.brief.status === 'done'),
       ) || [];
     this.listItems.set([...filtered, ...this.addingItems]);
   }

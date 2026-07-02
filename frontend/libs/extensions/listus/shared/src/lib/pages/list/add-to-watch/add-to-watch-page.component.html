@@ -144,6 +144,20 @@
               @if ($isLoadingContacts()) {
                 <ion-spinner name="lines-small" slot="start" />
                 <ion-label color="medium">Loading contacts…</ion-label>
+              } @else if ($contactsError(); as contactsError) {
+                <ion-label color="danger" class="ion-text-wrap">{{
+                  contactsError
+                }}</ion-label>
+                <ion-button
+                  slot="end"
+                  size="small"
+                  fill="outline"
+                  color="danger"
+                  (click)="loadContacts()"
+                >
+                  <ion-icon name="refresh-outline" slot="start" />
+                  <ion-label>Retry</ion-label>
+                </ion-button>
               } @else if (($contacts()?.length || 0) === 0) {
                 <ion-label color="medium">No contacts yet.</ion-label>
               } @else {

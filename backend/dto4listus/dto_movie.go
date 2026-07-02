@@ -1,6 +1,7 @@
 package dto4listus
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/sneat-co/listus/backend/dbo4listus"
@@ -70,10 +71,15 @@ type MovieResolveResponse struct {
 }
 
 // AddMovieToWatchlistRequest resolves a movie (by tmdbID or a free-text
-// search query - first search match wins) and appends it to the space's
-// canonical watch!movies list (dbo4listus.WatchMoviesListID).
+// search query - first search match wins) and appends it to the watch list
+// identified by ListID; when ListID is omitted it defaults to the space's
+// canonical watch!movies list (dbo4listus.WatchMoviesListID). ListID must be
+// a watch-typed list key - honoring it fixes the UX-audit blocker where
+// adding from a non-canonical watch list silently wrote to the canonical one.
 type AddMovieToWatchlistRequest struct {
 	dto4spaceus.SpaceRequest
+	// ListID is optional; empty means the canonical watch!movies list.
+	ListID    dbo4listus.ListKey    `json:"listID,omitempty"`
 	TmdbID    int                   `json:"tmdbID,omitempty"`
 	Query     string                `json:"query,omitempty"`
 	WatchWith *dbo4listus.WatchWith `json:"watchWith,omitempty"`
@@ -83,6 +89,15 @@ type AddMovieToWatchlistRequest struct {
 func (v AddMovieToWatchlistRequest) Validate() error {
 	if err := v.SpaceRequest.Validate(); err != nil {
 		return err
+	}
+	if v.ListID != "" {
+		if err := v.ListID.Validate(); err != nil {
+			return validation.NewErrBadRequestFieldValue("listID", err.Error())
+		}
+		if v.ListID.ListType() != dbo4listus.ListTypeToWatch {
+			return validation.NewErrBadRequestFieldValue("listID",
+				fmt.Sprintf("movies can only be added to a watch list, got list type %q", v.ListID.ListType()))
+		}
 	}
 	if v.TmdbID <= 0 && strings.TrimSpace(v.Query) == "" {
 		return validation.NewValidationError("either tmdbID or query is required")

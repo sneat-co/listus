@@ -124,6 +124,7 @@ export class AddToWatchPageComponent extends SpacePageBaseComponent {
   protected readonly $contacts = signal<IContactOption[] | undefined>(
     undefined,
   );
+  protected readonly $contactsError = signal<string | undefined>(undefined);
   protected readonly $isLoadingContacts = signal(false);
   protected readonly $isSubmitting = signal(false);
 
@@ -190,11 +191,13 @@ export class AddToWatchPageComponent extends SpacePageBaseComponent {
     }
   }
 
-  private loadContacts(): void {
+  // protected (not private) so the error card's Retry button can call it.
+  protected loadContacts(): void {
     if (!this.space?.id) {
       return;
     }
     this.$isLoadingContacts.set(true);
+    this.$contactsError.set(undefined);
     this.contactService.watchSpaceContacts(this.space).subscribe({
       next: (contacts) => {
         this.$contacts.set(
@@ -207,7 +210,14 @@ export class AddToWatchPageComponent extends SpacePageBaseComponent {
       },
       error: (err) => {
         this.errorLogger.logError(err, 'Failed to load contacts');
-        this.$contacts.set([]);
+        // Fable refactoring: setting `$contacts([])` here made a load FAILURE
+        // render as the "No contacts yet." EMPTY state (UX audit: error must
+        // not masquerade as empty) - keep contacts undefined and surface a
+        // dedicated error state with a Retry affordance instead.
+        // this.$contacts.set([]);
+        this.$contactsError.set(
+          'Failed to load contacts. Please check your connection and retry.',
+        );
         this.$isLoadingContacts.set(false);
       },
     });
@@ -223,8 +233,15 @@ export class AddToWatchPageComponent extends SpacePageBaseComponent {
       return;
     }
     this.$isSubmitting.set(true);
+    const listType = this.listType();
+    const listID = this.listID;
     const request: AddMovieToWatchlistRequest = {
       spaceID: this.space.id,
+      // Target the watch list this page was opened from (full list key, e.g.
+      // "watch!movies") so the movie lands in the list the user is looking
+      // at; when omitted the backend defaults to the canonical watch!movies
+      // list, which silently mis-filed adds from non-canonical watch lists.
+      listID: listType && listID ? `${listType}!${listID}` : undefined,
       tmdbID: movie.tmdbID,
       watchWith,
     };
