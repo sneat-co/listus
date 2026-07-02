@@ -1,6 +1,6 @@
 {
   "name": "@sneat/extension-listus-internal",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publishConfig": {
     "access": "public"
   },
@@ -13,7 +13,7 @@
     "@sneat/core": "^0.9.0",
     "@sneat/space-models": "^0.9.0",
     "@sneat/space-services": "^0.9.0",
-    "@sneat/extension-listus-contract": "^0.0.1",
+    "@sneat/extension-listus-contract": "^0.0.2",
     "vitest": "^4.0.9"
   },
   "sideEffects": false

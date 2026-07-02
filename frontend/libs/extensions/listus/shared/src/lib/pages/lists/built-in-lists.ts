@@ -25,5 +25,11 @@ export function builtInListGroups(spaceType?: SpaceType): IListGroup[] {
       title: 'To Do',
       lists: [{ id: 'chores', type: 'do', emoji: '🧹', title: 'Chores' }],
     },
+    {
+      id: 'watch',
+      type: 'watch',
+      title: 'To Watch',
+      lists: [{ id: 'movies', type: 'watch', emoji: '📽️', title: 'Movies' }],
+    },
   ];
 }
