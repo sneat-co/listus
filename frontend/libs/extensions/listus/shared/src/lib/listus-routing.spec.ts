@@ -17,6 +17,12 @@ describe('listusRoutes', () => {
     ).toBe(true);
   });
 
+  it('exposes the discover route under the list detail route', () => {
+    expect(
+      listusRoutes.some((r) => r.path === 'list/:listType/:listID/discover'),
+    ).toBe(true);
+  });
+
   it('lazy-loads every route via loadComponent', () => {
     for (const route of listusRoutes) {
       expect(typeof route.loadComponent).toBe('function');

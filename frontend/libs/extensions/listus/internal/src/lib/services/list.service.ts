@@ -21,6 +21,8 @@ import {
   ICreateListItemsRequest,
   ICreateListRequest,
   IDeleteListItemsRequest,
+  IdentifyMoviesRequest,
+  IdentifyMoviesResponse,
   IListItemResult,
   IListItemsCommandParams,
   IReorderListItemsRequest,
@@ -141,9 +143,19 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
     return this.sneatApiService.post('listus/movies/resolve', request);
   }
 
+  // Identifies movies from a vague natural-language description via AI title
+  // guesses grounded through TMDB search. Read-only proxy like search/resolve
+  // - no spaceID needed (see backend/api4listus/http_movie_identify.go).
+  public identifyMovies(
+    request: IdentifyMoviesRequest,
+  ): Observable<IdentifyMoviesResponse> {
+    return this.sneatApiService.post('listus/movies/identify', request);
+  }
+
   // Resolves the movie server-side (by tmdbID or query) and appends it, fully
-  // enriched, to the space's canonical watch!movies list - auto-creating the
-  // list on first use (see backend/facade4listus/movie_watch.go).
+  // enriched, to the watch list given by request.listID - or to the space's
+  // canonical watch!movies list when listID is omitted, auto-creating that
+  // standard list on first use (see backend/facade4listus/movie_watch.go).
   public addMovieToWatchlist(
     request: AddMovieToWatchlistRequest,
   ): Observable<AddMovieToWatchlistResponse> {

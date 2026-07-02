@@ -23,6 +23,15 @@ export const listusRoutes: Route[] = [
       ),
   },
   {
+    path: 'list/:listType/:listID/discover',
+    data: { title: 'Discover movies' },
+    // canActivate: [AuthGuard],
+    loadComponent: () =>
+      import('./pages/list/discover/discover-page.component').then(
+        (m) => m.DiscoverPageComponent,
+      ),
+  },
+  {
     path: 'list/:listType/:listID',
     data: { title: 'List' },
     // canActivate: [AuthGuard],

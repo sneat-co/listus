@@ -9,11 +9,17 @@ export interface MovieSummary {
   title: string;
   year?: number;
   posterURL?: string;
+  // Overview is the movie synopsis. TMDB returns it on search results too, so
+  // candidate lists (e.g. the Discover "identify by description" flow) can
+  // show a short overview without resolving each candidate.
+  overview?: string;
 }
 
 // MovieDetails is the fully-enriched movie data used to populate a watch-list item.
 export interface MovieDetails extends MovieSummary {
-  overview?: string;
+  // Fable refactoring: `overview` moved up into MovieSummary (mirroring the Go
+  // change in backend/movius/tmdbclient/types.go) so search/identify
+  // candidates carry it; MovieDetails still exposes it via the extends.
   trailerYouTubeKey?: string;
   cast?: string[]; // top ~5 cast member names
 }

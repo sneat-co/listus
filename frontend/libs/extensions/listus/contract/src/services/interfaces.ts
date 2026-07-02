@@ -140,9 +140,24 @@ export interface ResolveMovieResponse {
   movie: MovieDetails;
 }
 
+// Identifies movies from a vague natural-language description ("that
+// submarine movie with the guy from Titanic") via AI title guesses grounded
+// through TMDB search. Read-only proxy like search/resolve - no spaceID.
+export interface IdentifyMoviesRequest {
+  description: string;
+}
+
+export interface IdentifyMoviesResponse {
+  movies: MovieSummary[];
+}
+
 // Either tmdbID or query is required (validated server-side); watchWith is
 // optional - omitting it lets the backend default it (currently 'alone').
 export interface AddMovieToWatchlistRequest extends ISpaceRequest {
+  // Full list key of the target watch list, e.g. `watch!movies` or
+  // `watch!ab` - must be of the `watch` list type (validated server-side).
+  // Optional: omitting it defaults to the canonical `watch!movies` list.
+  listID?: string;
   tmdbID?: number;
   query?: string;
   watchWith?: IWatchWith;

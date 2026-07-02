@@ -1,0 +1,123 @@
+<ion-header>
+  <ion-toolbar color="light" class="with-back-button">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="$defaultBackUrl()" />
+    </ion-buttons>
+    <ion-title>🧭 Discover movies</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="cardy">
+  <ion-card>
+    <ion-item>
+      <ion-textarea
+        label="Describe a movie"
+        labelPlacement="stacked"
+        placeholder="e.g. that submarine movie with the guy from Titanic"
+        [autoGrow]="true"
+        rows="2"
+        [ngModel]="$description()"
+        (ngModelChange)="$description.set($event)"
+      />
+    </ion-item>
+    <div class="ion-padding">
+      <ion-button
+        expand="block"
+        color="primary"
+        [disabled]="$isIdentifying() || !$description().trim()"
+        (click)="identify()"
+      >
+        @if ($isIdentifying()) {
+          <ion-spinner name="lines-small" slot="start" />
+        } @else {
+          <ion-icon name="compass-outline" slot="start" />
+        }
+        <ion-label>Identify movies</ion-label>
+      </ion-button>
+    </div>
+  </ion-card>
+
+  @if ($identifyError(); as identifyError) {
+    <ion-card>
+      <ion-card-content>
+        <ion-text color="danger">{{ identifyError }}</ion-text>
+        <ion-button
+          fill="outline"
+          color="danger"
+          size="small"
+          class="ion-margin-start"
+          (click)="identify()"
+        >
+          <ion-icon name="refresh-outline" slot="start" />
+          <ion-label>Retry</ion-label>
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  }
+
+  @if ($results(); as results) {
+    <ion-card>
+      <ion-list>
+        @for (movie of results; track movie.tmdbID) {
+          <ion-item>
+            @if (movie.posterURL) {
+              <img
+                slot="start"
+                [src]="movie.posterURL"
+                alt="{{ movie.title }} poster"
+                width="46"
+                height="69"
+              />
+            } @else {
+              <ion-icon
+                slot="start"
+                name="film-outline"
+                size="large"
+                color="medium"
+              />
+            }
+            <ion-label class="ion-text-wrap">
+              {{ movie.title }}
+              @if (movie.year) {
+                <ion-text color="medium"> ({{ movie.year }})</ion-text>
+              }
+              @if (movie.overview) {
+                <p>{{ movie.overview }}</p>
+              }
+            </ion-label>
+            @if ($addedTmdbIDs().has(movie.tmdbID)) {
+              <ion-icon
+                slot="end"
+                name="checkmark-circle-outline"
+                color="success"
+                aria-label="Added to watchlist"
+              />
+            } @else {
+              <ion-button
+                slot="end"
+                fill="outline"
+                [disabled]="$addingTmdbID() !== undefined"
+                (click)="addToWatchlist(movie)"
+                aria-label="Add {{ movie.title }} to watchlist"
+              >
+                @if ($addingTmdbID() === movie.tmdbID) {
+                  <ion-spinner name="lines-small" slot="start" />
+                } @else {
+                  <ion-icon name="add-circle-outline" slot="start" />
+                }
+                <ion-label>Add</ion-label>
+              </ion-button>
+            }
+          </ion-item>
+        } @empty {
+          <ion-item lines="none">
+            <ion-label color="medium"
+              >No movies matched that description. Try adding more
+              details.</ion-label
+            >
+          </ion-item>
+        }
+      </ion-list>
+    </ion-card>
+  }
+</ion-content>
