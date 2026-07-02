@@ -86,6 +86,7 @@ func TestRegisterHttpRoutes(t *testing.T) {
 		{http.MethodPost, "/v0/listus/list_items_set_watch_with"},
 		{http.MethodPost, "/v0/listus/movies/search"},
 		{http.MethodPost, "/v0/listus/movies/resolve"},
+		{http.MethodPost, "/v0/listus/movies/identify"},
 		{http.MethodPost, "/v0/listus/movies/add_to_watchlist"},
 	}
 	if len(got) != len(want) {
@@ -421,6 +422,50 @@ func TestHttpPostResolveMovie_500WhenFacadeFails(t *testing.T) {
 	httpPostResolveMovie(w, newPostRequest("/v0/listus/movies/resolve", `{"tmdbID":27205}`))
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+}
+
+// =============================================================================
+// httpPostIdentifyMovies
+// =============================================================================
+
+func TestHttpPostIdentifyMovies_200OnSuccess(t *testing.T) {
+	authAsUser(t)
+	old := identifyMovies
+	t.Cleanup(func() { identifyMovies = old })
+	identifyMovies = func(ctx context.Context, request dto4listus.MovieIdentifyRequest) (dto4listus.MovieIdentifyResponse, error) {
+		return dto4listus.MovieIdentifyResponse{Movies: []tmdbclient.MovieSummary{{TmdbID: 27205, Title: "Inception", Year: 2010}}}, nil
+	}
+	w := httptest.NewRecorder()
+	httpPostIdentifyMovies(w, newPostRequest("/v0/listus/movies/identify", `{"description":"a dream heist movie"}`))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "Inception") {
+		t.Errorf("body %q missing movie title", w.Body.String())
+	}
+}
+
+func TestHttpPostIdentifyMovies_500WhenFacadeFails(t *testing.T) {
+	authAsUser(t)
+	old := identifyMovies
+	t.Cleanup(func() { identifyMovies = old })
+	identifyMovies = func(ctx context.Context, request dto4listus.MovieIdentifyRequest) (dto4listus.MovieIdentifyResponse, error) {
+		return dto4listus.MovieIdentifyResponse{}, errBoom
+	}
+	w := httptest.NewRecorder()
+	httpPostIdentifyMovies(w, newPostRequest("/v0/listus/movies/identify", `{"description":"a dream heist movie"}`))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHttpPostIdentifyMovies_401WhenUnauthenticated(t *testing.T) {
+	authRejected(t)
+	w := httptest.NewRecorder()
+	httpPostIdentifyMovies(w, newPostRequest("/v0/listus/movies/identify", `{"description":"a dream heist movie"}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", w.Code)
 	}
 }
 
