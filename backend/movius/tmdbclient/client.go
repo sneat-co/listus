@@ -81,6 +81,7 @@ type searchMovieResponse struct {
 		Title       string `json:"title"`
 		ReleaseDate string `json:"release_date"`
 		PosterPath  string `json:"poster_path"`
+		Overview    string `json:"overview"`
 	} `json:"results"`
 }
 
@@ -100,6 +101,7 @@ func (c *Client) SearchMovie(ctx context.Context, query string) ([]MovieSummary,
 			Title:     r.Title,
 			Year:      yearFromReleaseDate(r.ReleaseDate),
 			PosterURL: PosterURL(r.PosterPath),
+			Overview:  r.Overview,
 		})
 	}
 	return summaries, nil
@@ -114,6 +116,7 @@ type searchPersonResponse struct {
 			ReleaseDate string `json:"release_date"`
 			PosterPath  string `json:"poster_path"`
 			MediaType   string `json:"media_type"`
+			Overview    string `json:"overview"`
 		} `json:"known_for"`
 	} `json:"results"`
 }
@@ -139,6 +142,7 @@ func (c *Client) SearchPerson(ctx context.Context, actor string) ([]MovieSummary
 				Title:     kf.Title,
 				Year:      yearFromReleaseDate(kf.ReleaseDate),
 				PosterURL: PosterURL(kf.PosterPath),
+				Overview:  kf.Overview,
 			})
 		}
 	}
@@ -170,8 +174,8 @@ func (c *Client) GetMovie(ctx context.Context, tmdbID int) (MovieDetails, error)
 			Title:     resp.Title,
 			Year:      yearFromReleaseDate(resp.ReleaseDate),
 			PosterURL: PosterURL(resp.PosterPath),
+			Overview:  resp.Overview,
 		},
-		Overview: resp.Overview,
 	}, nil
 }
 

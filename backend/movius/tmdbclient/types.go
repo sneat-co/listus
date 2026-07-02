@@ -13,12 +13,18 @@ type MovieSummary struct {
 	Title     string `json:"title"`
 	Year      int    `json:"year,omitempty"`
 	PosterURL string `json:"posterURL,omitempty"`
+	// Overview is the movie synopsis. TMDB returns it on search results too, so
+	// candidate lists (e.g. the bot "/find by description" flow) can show a
+	// short overview without resolving each candidate.
+	Overview string `json:"overview,omitempty"`
 }
 
 // MovieDetails is the fully-enriched movie data used to populate a watch-list item.
 type MovieDetails struct {
 	MovieSummary
-	Overview          string   `json:"overview,omitempty"`
+	// Fable refactoring: Overview moved into MovieSummary (still promoted here)
+	// so that search/identify candidates carry a short overview - see above.
+	// Overview          string   `json:"overview,omitempty"`
 	TrailerYouTubeKey string   `json:"trailerYouTubeKey,omitempty"`
 	Cast              []string `json:"cast,omitempty"` // top ~5 cast member names
 }
