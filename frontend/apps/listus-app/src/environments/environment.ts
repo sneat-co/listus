@@ -24,6 +24,10 @@ export const listusAppEnvironmentConfig: IEnvironmentConfig =
       messagingSenderId: '588648831063',
       measurementId: 'G-TYBDTV738R',
     },
+    // GA4 for listus.app — the app reports to the per-domain property/stream for
+    // listus.app (every hit tagged surface=app). Sends via gtag through the
+    // shared analytics fan-out (see provideSneatAnalytics).
+    googleAnalytics: { measurementId: 'G-WTTENB504F' },
     // Full-page redirect sign-in is the robust default for a freshly-deployed
     // domain. BaseAppComponent completes it via getRedirectResult().
     signInMethod: 'redirect',
