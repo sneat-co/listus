@@ -24,7 +24,7 @@ const (
 	EnvModel = "ANTHROPIC_MODEL"
 
 	// DefaultModel is the Claude model used unless ANTHROPIC_MODEL is set.
-	DefaultModel = "claude-sonnet-5"
+	DefaultModel = "claude-sonnet-4-6"
 
 	// MaxGuesses caps how many title guesses we ask for and accept.
 	MaxGuesses = 5
