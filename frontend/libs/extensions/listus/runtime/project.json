@@ -1,7 +1,7 @@
 {
-  "name": "ext-listus-contract",
+  "name": "ext-listus-runtime",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/extensions/listus/contract/src",
+  "sourceRoot": "libs/extensions/listus/runtime/src",
   "prefix": "lib",
   "projectType": "library",
   "release": {
@@ -14,8 +14,8 @@
     }
   },
   "tags": [
-    "type:contract",
-    "scope:listus"
+    "layer:runtime",
+    "domain:listus"
   ],
   "targets": {
     "build": {
@@ -24,12 +24,12 @@
         "{workspaceRoot}/dist/{projectRoot}"
       ],
       "options": {
-        "project": "libs/extensions/listus/contract/ng-package.json",
-        "tsConfig": "libs/extensions/listus/contract/tsconfig.lib.json"
+        "project": "libs/extensions/listus/runtime/ng-package.json",
+        "tsConfig": "libs/extensions/listus/runtime/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
-          "tsConfig": "libs/extensions/listus/contract/tsconfig.lib.prod.json"
+          "tsConfig": "libs/extensions/listus/runtime/tsconfig.lib.prod.json"
         },
         "development": {}
       },
@@ -44,7 +44,7 @@
       "executor": "@nx/angular:unit-test",
       "options": {
         "watch": false,
-        "runnerConfig": "libs/extensions/listus/contract/vitest.config.ts"
+        "runnerConfig": "libs/extensions/listus/runtime/vitest.config.ts"
       }
     },
     "lint": {

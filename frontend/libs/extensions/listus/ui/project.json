@@ -1,7 +1,7 @@
 {
-  "name": "ext-listus-shared",
+  "name": "ext-listus-ui",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/extensions/listus/shared/src",
+  "sourceRoot": "libs/extensions/listus/ui/src",
   "prefix": "lib",
   "projectType": "library",
   "release": {
@@ -14,8 +14,8 @@
     }
   },
   "tags": [
-    "type:shared",
-    "scope:listus"
+    "layer:ui",
+    "domain:listus"
   ],
   "targets": {
     "build": {
@@ -24,12 +24,12 @@
         "{workspaceRoot}/dist/{projectRoot}"
       ],
       "options": {
-        "project": "libs/extensions/listus/shared/ng-package.json",
-        "tsConfig": "libs/extensions/listus/shared/tsconfig.lib.json"
+        "project": "libs/extensions/listus/ui/ng-package.json",
+        "tsConfig": "libs/extensions/listus/ui/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
-          "tsConfig": "libs/extensions/listus/shared/tsconfig.lib.prod.json"
+          "tsConfig": "libs/extensions/listus/ui/tsconfig.lib.prod.json"
         },
         "development": {}
       },
@@ -44,7 +44,7 @@
       "executor": "@nx/angular:unit-test",
       "options": {
         "watch": false,
-        "runnerConfig": "libs/extensions/listus/shared/vitest.config.ts"
+        "runnerConfig": "libs/extensions/listus/ui/vitest.config.ts"
       }
     },
     "lint": {

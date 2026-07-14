@@ -21,53 +21,41 @@ export default [
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
-              sourceTag: 'scope:listus',
-              onlyDependOnLibsWithTags: ['scope:listus'],
-            },
-            {
-              sourceTag: 'type:contract',
-              onlyDependOnLibsWithTags: ['type:contract', 'scope:foundation'],
-            },
-            {
-              // per-extension scope (scope:listus) is deliberately NOT allowed:
-              // -internal carries it, so allowing it would defeat the load-bearing
-              // `type:shared MUST NOT depend on type:internal` rule. Shared reaches
-              // its own contract via type:contract.
-              sourceTag: 'type:shared',
+              sourceTag: 'layer:contract',
               onlyDependOnLibsWithTags: [
-                'type:contract',
-                'type:shared',
+                'layer:contract',
                 'scope:foundation',
               ],
             },
             {
-              sourceTag: 'type:internal',
+              sourceTag: 'layer:ui',
               onlyDependOnLibsWithTags: [
-                'type:contract',
-                'type:shared',
-                'type:internal',
+                'layer:contract',
+                'layer:ui',
                 'scope:foundation',
-                'scope:listus',
               ],
             },
             {
-              // The app is the composition root: it may consume every tier,
-              // including type:internal (to wire provider factories at bootstrap).
-              sourceTag: 'type:app',
+              sourceTag: 'layer:runtime',
               onlyDependOnLibsWithTags: [
-                'type:lib',
-                'type:contract',
-                'type:shared',
-                'type:internal',
+                'layer:contract',
+                'layer:ui',
+                'layer:runtime',
+                'scope:foundation',
               ],
             },
             {
-              sourceTag: 'type:e2e',
-              onlyDependOnLibsWithTags: ['type:app', 'type:lib'],
+              sourceTag: 'layer:app',
+              onlyDependOnLibsWithTags: [
+                'layer:contract',
+                'layer:ui',
+                'layer:runtime',
+                'scope:foundation',
+              ],
             },
             {
-              sourceTag: 'type:lib',
-              onlyDependOnLibsWithTags: ['type:lib', 'type:contract'],
+              sourceTag: 'layer:e2e',
+              onlyDependOnLibsWithTags: ['layer:app'],
             },
           ],
         },

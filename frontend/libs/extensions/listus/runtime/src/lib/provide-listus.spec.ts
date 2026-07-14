@@ -1,10 +1,10 @@
 import { LISTUS_SERVICE } from '@sneat/extension-listus-contract';
 import { ListService } from './services';
-import { provideListusInternal } from './provide-listus-internal';
+import { provideListus } from './provide-listus';
 
-describe('provideListusInternal', () => {
+describe('provideListus', () => {
   it('provides ListService and binds it to LISTUS_SERVICE', () => {
-    const providers = provideListusInternal();
+    const providers = provideListus();
     expect(providers).toContain(ListService);
     expect(providers).toContainEqual({
       provide: LISTUS_SERVICE,

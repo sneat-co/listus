@@ -1,5 +1,5 @@
 {
-  "name": "@sneat/extension-listus-internal",
+  "name": "@sneat/extension-listus",
   "version": "0.0.3",
   "publishConfig": {
     "access": "public"
@@ -9,11 +9,11 @@
     "@angular/common": "^21.0.0",
     "@angular/fire": "^20.0.0",
     "rxjs": "^7.0.0",
-    "@sneat/api": "^0.9.0",
-    "@sneat/core": "^0.9.0",
-    "@sneat/space-models": "^0.9.0",
-    "@sneat/space-services": "^0.9.0",
-    "@sneat/extension-listus-contract": "^0.0.3",
+    "@sneat/api": "^0.22.0",
+    "@sneat/core": "^0.22.0",
+    "@sneat/space-models": "^0.22.0",
+    "@sneat/space-services": "^0.22.0",
+    "@sneat/extension-listus-contract": "^0.0.4",
     "vitest": "^4.0.9"
   },
   "sideEffects": false

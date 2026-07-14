@@ -5,8 +5,8 @@
   "prefix": "listus",
   "sourceRoot": "apps/listus-app/src",
   "tags": [
-    "type:app",
-    "scope:listus"
+    "layer:app",
+    "domain:listus"
   ],
   "targets": {
     "build": {

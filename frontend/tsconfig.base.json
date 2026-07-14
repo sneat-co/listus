@@ -15,14 +15,11 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@sneat/extension-listus-contract": [
-        "./libs/extensions/listus/contract/src/index.ts"
+      "@sneat/extension-listus-ui": [
+        "./libs/extensions/listus/ui/src/index.ts"
       ],
-      "@sneat/extension-listus-shared": [
-        "./libs/extensions/listus/shared/src/index.ts"
-      ],
-      "@sneat/extension-listus-internal": [
-        "./libs/extensions/listus/internal/src/index.ts"
+      "@sneat/extension-listus": [
+        "./libs/extensions/listus/runtime/src/index.ts"
       ]
     }
   },

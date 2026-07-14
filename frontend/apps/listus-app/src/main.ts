@@ -7,7 +7,7 @@ import {
   provideRolesByType,
 } from '@sneat/app';
 import { authRoutes } from '@sneat/auth-ui';
-import { provideListusInternal } from '@sneat/extension-listus-internal';
+import { provideListus } from '@sneat/extension-listus';
 import { App } from './app/app';
 import { appRoutes } from './app/app.routes';
 import { listusAppEnvironmentConfig } from './environments/environment';
@@ -18,7 +18,7 @@ bootstrapApplication(App, {
     ...getStandardSneatProviders(listusAppEnvironmentConfig),
     // Bind the listus contract token (LISTUS_SERVICE) to its concrete
     // implementation. The app is the composition root and may wire -internal.
-    ...provideListusInternal(),
+    ...provideListus(),
     provideAppInfo({ appId: 'listus', appTitle: 'Listus.app' }),
     provideRouter([...appRoutes, ...authRoutes]),
     provideRolesByType(undefined),

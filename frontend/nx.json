@@ -93,16 +93,15 @@
   },
   "release": {
     "projects": [
-      "ext-listus-contract",
-      "ext-listus-internal",
-      "ext-listus-shared"
+      "ext-listus-runtime",
+      "ext-listus-ui"
     ],
-    "projectsRelationship": "independent",
-    "docker": {
-      "skipVersionActions": true
-    },
+    "projectsRelationship": "fixed",
     "version": {
-      "preVersionCommand": "pnpm dlx nx run-many -t build"
+      "conventionalCommits": true,
+      "fallbackCurrentVersionResolver": "disk",
+      "preVersionCommand": "pnpm exec nx run-many -t build --projects=ext-listus-runtime,ext-listus-ui",
+      "versionActions": "@nx/js/src/release/version-actions"
     }
   },
   "plugins": [

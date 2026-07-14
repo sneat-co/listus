@@ -1,0 +1,20 @@
+name: Publish Listus packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - frontend/**
+      - .github/workflows/publish.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    uses: sneat-co/cicd/.github/workflows/npm-publish.yml@main
+    with:
+      working-directory: frontend
+      build-command: pnpm exec nx run-many -t build --projects=ext-listus-runtime,ext-listus-ui
+      publish-command: pnpm exec nx release --yes && git push --follow-tags
+    secrets: inherit

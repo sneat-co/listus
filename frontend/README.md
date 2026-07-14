@@ -17,7 +17,7 @@ pnpm install
 
 ```bash
 pnpm exec nx serve listus-app          # run the app locally
-pnpm exec nx build ext-listus-shared   # build a publishable tier library
+pnpm exec nx build ext-listus-ui       # build the public UI library
 pnpm exec nx run-many -t lint test build
 pnpm exec nx e2e listus-app-e2e        # end-to-end tests
 ```
@@ -30,9 +30,8 @@ frontend/
 │   └── listus-app/                  # standalone listus.app (Ionic shell)
 └── libs/
     └── extensions/listus/
-        ├── contract/                # @sneat/extension-listus-contract
-        ├── shared/                  # @sneat/extension-listus-shared
-        └── internal/                # @sneat/extension-listus-internal
+        ├── ui/                      # @sneat/extension-listus-ui
+        └── runtime/                 # @sneat/extension-listus
 ```
 
 > Projects are generated incrementally during the extraction; see the repo
