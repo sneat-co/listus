@@ -92,6 +92,10 @@
     }
   },
   "release": {
+    "releaseTagPattern": "v{version}",
+    "changelog": {
+      "automaticFromRef": true
+    },
     "projects": [
       "ext-listus-runtime",
       "ext-listus-ui"
