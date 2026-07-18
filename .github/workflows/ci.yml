@@ -13,11 +13,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Backend and frontend run in parallel via shared reusable workflows.
+  # Backend runs strongo's Standard Go CI (lint · test · build) AND auto-tags the
+  # next backend/vX.Y.Z on push to main (conventional-commit version bump).
   backend:
-    uses: sneat-co/cicd/.github/workflows/go-ci.yml@main
+    uses: strongo/cicd/.github/workflows/workflow.yml@main
+    permissions:
+      contents: write
+    secrets:
+      GH_TOKEN: ${{ secrets.SNEAT_CI_READWRITE_TOKEN }}
     with:
-      working-directory: backend
+      working_directory: backend
+      GOPRIVATE: github.com/sneat-co
+      goprivate_git_host: github.com/sneat-co
+      tag_prefix: backend/v
 
   frontend:
     uses: sneat-co/cicd/.github/workflows/nx-ci.yml@main
