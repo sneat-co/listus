@@ -16,15 +16,16 @@ import (
 
 // Presentation DTOs used when rendering a list.
 type (
-	List             = dal4listus.ListEntry
-	ListEntry        = dal4listus.ListEntry
-	ListItem         = dbo4listus.ListItemBrief
-	ListItemIn       = dbo4listus.ListItemBase
-	ListItemBase     = dbo4listus.ListItemBase
-	ListID           = dbo4listus.ListKey
-	ListType         = dbo4listus.ListType
-	ListWorker       = dal4listus.ListWorker
-	ListWorkerParams = dal4listus.ListWorkerParams
+	List                 = dal4listus.ListEntry
+	ListEntry            = dal4listus.ListEntry
+	ListItem             = dbo4listus.ListItemBrief
+	ListItemIn           = dbo4listus.ListItemBase
+	ListItemBase         = dbo4listus.ListItemBase
+	ListID               = dbo4listus.ListKey
+	ListType             = dbo4listus.ListType
+	ListWorker           = dal4listus.ListWorker
+	ListWorkerParams     = dal4listus.ListWorkerParams
+	ReadwriteTransaction = dal.ReadwriteTransaction
 )
 
 const (

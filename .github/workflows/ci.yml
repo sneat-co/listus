@@ -18,37 +18,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Enforce backend dependency direction
+        shell: bash
         run: |
-          if rg -n '"github\.com/sneat-co/sneat-go/|"github\.com/sneat-co/sneat-bots|"github\.com/bots-go-framework' backend --glob '*.go'; then
+          set +e
+          matches="$(git grep -nE '"github\.com/sneat-co/sneat-go/|"github\.com/sneat-co/sneat-bots|"github\.com/bots-go-framework' -- ':(glob)backend/**/*.go')"
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            printf '%s\n' "$matches" >&2
             echo 'Listus backend must not depend on the host or bot delivery packages.' >&2
             exit 1
           fi
-
-  coverage:
-    needs: architecture
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
-      - name: Enforce backend coverage floor (78.3%)
-        working-directory: backend
-        env:
-          GOPRIVATE: github.com/sneat-co
-        run: |
-          go test -coverpkg=./... -coverprofile=coverage.out ./...
-          coverage="$(go tool cover -func=coverage.out | awk '/^total:/ {print $3}' | tr -d '%')"
-          awk -v coverage="$coverage" 'BEGIN { exit !(coverage + 0 >= 78.3) }' || {
-            echo "coverage ${coverage}% is below the 78.3% floor" >&2
+          if [ "$status" -ne 1 ]; then
+            echo "git grep failed with status $status" >&2
             exit 1
-          }
+          fi
+          set +e
+          backend_matches="$(git grep -nE '"github\.com/sneat-co/[^" ]+/backend' -- ':(glob)backend/**/*.go')"
+          backend_status=$?
+          set -e
+          if [ "$backend_status" -eq 0 ]; then
+            foreign_backends="$(printf '%s\n' "$backend_matches" | grep -v '"github\.com/sneat-co/listus/backend' || true)"
+            if [ -n "$foreign_backends" ]; then
+              printf '%s\n' "$foreign_backends" >&2
+              echo 'Listus backend must not import sibling backend implementations.' >&2
+              exit 1
+            fi
+          elif [ "$backend_status" -ne 1 ]; then
+            echo "git grep failed with status $backend_status" >&2
+            exit "$backend_status"
+          fi
 
   # Backend runs strongo's Standard Go CI (lint · test · build) AND auto-tags the
   # next backend/vX.Y.Z on push to main (conventional-commit version bump).
   backend:
-    needs: [architecture, coverage]
+    needs: architecture
     uses: strongo/cicd/.github/workflows/workflow.yml@main
     permissions:
       contents: write
@@ -59,6 +63,7 @@ jobs:
       GOPRIVATE: github.com/sneat-co
       goprivate_git_host: github.com/sneat-co
       tag_prefix: backend/v
+      min_test_coverage_percent: 78.3
 
   frontend:
     uses: sneat-co/cicd/.github/workflows/nx-ci.yml@main
