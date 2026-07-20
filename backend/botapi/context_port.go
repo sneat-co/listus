@@ -5,7 +5,6 @@ package botapi
 import (
 	"context"
 
-	"github.com/dal-go/dalgo/dal"
 	"github.com/sneat-co/sneat-go-core/facade"
 )
 
@@ -26,14 +25,4 @@ func NewContextWithUser(ctx context.Context, user UserContext) ContextWithUser {
 
 func NewUserContext(userID string) UserContext {
 	return facade.NewUserContext(userID)
-}
-
-// WithDBProvider and GetDB exist for legacy callback rendering while the
-// persistence dependency remains hidden behind Listus' application port.
-func WithDBProvider(ctx context.Context, provider func(context.Context) (dal.DB, error)) context.Context {
-	return facade.WithSneatDBProvider(ctx, provider)
-}
-
-func GetDB(ctx context.Context) (dal.DB, error) {
-	return facade.GetSneatDB(ctx)
 }

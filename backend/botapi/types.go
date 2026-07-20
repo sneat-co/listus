@@ -6,12 +6,9 @@
 package botapi
 
 import (
-	"github.com/dal-go/dalgo/dal"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
-	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/sneat-go-core/coretypes"
-	"github.com/sneat-co/sneat-go-core/facade"
 )
 
 // Presentation DTOs used when rendering a list.
@@ -23,9 +20,6 @@ type (
 	ListItemBase         = dbo4listus.ListItemBase
 	ListID               = dbo4listus.ListKey
 	ListType             = dbo4listus.ListType
-	ListWorker           = dal4listus.ListWorker
-	ListWorkerParams     = dal4listus.ListWorkerParams
-	ReadwriteTransaction = dal.ReadwriteTransaction
 )
 
 const (
@@ -50,12 +44,4 @@ func NewList(spaceID coretypes.SpaceID, listID ListID) List {
 
 func NewListEntry(spaceID coretypes.SpaceID, listID ListID) ListEntry {
 	return dal4listus.NewListEntry(spaceID, listID)
-}
-
-// RunListWorker is retained for legacy bot callback rendering while keeping
-// the DAL implementation behind this Listus-owned port.
-func RunListWorker(ctx facade.ContextWithUser, request dto4listus.ListRequest, worker ListWorker) error {
-	return dal4listus.RunListWorker(ctx, request, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *dal4listus.ListWorkerParams) error {
-		return worker(ctx, tx, params)
-	})
 }
