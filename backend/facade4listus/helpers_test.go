@@ -21,7 +21,7 @@ const testUserID = "user1"
 // newTestDBWithSpace builds an in-memory dalgo DB seeded with a single Space
 // record (members = userIDs) and wires facade.GetSneatDB to it. The module
 // space worker reads this Space to enforce membership access.
-func newTestDBWithSpace(t *testing.T, spaceID coretypes.SpaceID, userIDs ...string) dal.DB {
+func newTestDBWithSpace(t *testing.T, spaceID coretypes.SpaceID, userIDs ...string) (context.Context, dal.DB) {
 	t.Helper()
 	db := sneatcoretesting.NewMemoryDB()
 	now := time.Now()
@@ -42,12 +42,11 @@ func newTestDBWithSpace(t *testing.T, spaceID coretypes.SpaceID, userIDs ...stri
 	}); err != nil {
 		t.Fatalf("failed to seed space: %v", err)
 	}
-	facade.GetSneatDB = func(context.Context) (dal.DB, error) { return db, nil }
-	return db
+	return facade.WithSneatDB(context.Background(), db), db
 }
 
-func userCtx(userID string) facade.ContextWithUser {
-	return facade.NewContextWithUserID(context.Background(), userID)
+func userCtx(ctx context.Context, userID string) facade.ContextWithUser {
+	return facade.NewContextWithUserID(ctx, userID)
 }
 
 func spaceRequest(spaceID coretypes.SpaceID) dto4spaceus.SpaceRequest {

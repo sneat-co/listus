@@ -1,6 +1,7 @@
 package facade4listus
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sneat-co/listus/backend/dal4listus"
@@ -12,7 +13,7 @@ import (
 
 const testSpaceID coretypes.SpaceID = "space1"
 
-func createItems(t *testing.T, listID string, titles ...string) dto4listus.CreateListItemResponse {
+func createItems(t *testing.T, ctx context.Context, listID string, titles ...string) dto4listus.CreateListItemResponse {
 	t.Helper()
 	items := make([]dto4listus.CreateListItemRequest, len(titles))
 	for i, title := range titles {
@@ -24,7 +25,7 @@ func createItems(t *testing.T, listID string, titles ...string) dto4listus.Creat
 			ListItemBase: dbo4listus.ListItemBase{Title: title},
 		}
 	}
-	resp, _, err := CreateListItems(userCtx(testUserID), dto4listus.CreateListItemsRequest{
+	resp, _, err := CreateListItems(userCtx(ctx, testUserID), dto4listus.CreateListItemsRequest{
 		ListRequest: listRequest(testSpaceID, listID),
 		Items:       items,
 	})
@@ -35,12 +36,12 @@ func createItems(t *testing.T, listID string, titles ...string) dto4listus.Creat
 }
 
 func TestCreateList_Succeeds(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
 	// CreateList builds a ListDbo from the request. It must populate UserIDs
 	// (from the requesting user) as well as SpaceIDs, otherwise the formed DTO
 	// fails its own Validate(). A valid request must succeed.
-	_, err := CreateList(userCtx(testUserID), dto4listus.CreateListRequest{
+	_, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		Type:         dbo4listus.ListTypeToDo,
 		Title:        "Groceries",
@@ -51,8 +52,8 @@ func TestCreateList_Succeeds(t *testing.T) {
 }
 
 func TestCreateList_InvalidRequest(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	_, err := CreateList(userCtx(testUserID), dto4listus.CreateListRequest{
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	_, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		// missing Type
 		Title: "X",
@@ -63,9 +64,9 @@ func TestCreateList_InvalidRequest(t *testing.T) {
 }
 
 func TestCreateListItems_StandardListCreatesAndDeductsEmoji(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
-	resp := createItems(t, dbo4listus.BuyGroceriesListID, "Milk", "Banana")
+	resp := createItems(t, ctx, dbo4listus.BuyGroceriesListID, "Milk", "Banana")
 	if len(resp.CreatedItems) != 2 {
 		t.Fatalf("created %d items, want 2", len(resp.CreatedItems))
 	}
@@ -84,20 +85,20 @@ func TestCreateListItems_StandardListCreatesAndDeductsEmoji(t *testing.T) {
 }
 
 func TestCreateListItems_DedupSameTitle(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	createItems(t, dbo4listus.DoTasksListID, "Task A")
-	createItems(t, dbo4listus.DoTasksListID, "Task A")
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	createItems(t, ctx, dbo4listus.DoTasksListID, "Task A")
+	createItems(t, ctx, dbo4listus.DoTasksListID, "Task A")
 
 	// Read back the list and assert a single item.
-	list := getListData(t, dbo4listus.DoTasksListID)
+	list := getListData(t, ctx, dbo4listus.DoTasksListID)
 	if len(list.Items) != 1 {
 		t.Errorf("expected 1 deduped item, got %d", len(list.Items))
 	}
 }
 
 func TestCreateListItems_NonStandardListNotFound(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	_, _, err := CreateListItems(userCtx(testUserID), dto4listus.CreateListItemsRequest{
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	_, _, err := CreateListItems(userCtx(ctx, testUserID), dto4listus.CreateListItemsRequest{
 		ListRequest: listRequest(testSpaceID, "do!custom"),
 		Items:       []dto4listus.CreateListItemRequest{{ListItemBase: dbo4listus.ListItemBase{Title: "X"}}},
 	})
@@ -107,13 +108,13 @@ func TestCreateListItems_NonStandardListNotFound(t *testing.T) {
 }
 
 func TestCreateListItems_AppendsToExistingList(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 	// First create establishes (inserts) the standard list.
-	createItems(t, dbo4listus.DoTasksListID, "First")
+	createItems(t, ctx, dbo4listus.DoTasksListID, "First")
 	// Second create must take the "list already exists" update branch.
-	createItems(t, dbo4listus.DoTasksListID, "Second")
+	createItems(t, ctx, dbo4listus.DoTasksListID, "Second")
 
-	list := getListData(t, dbo4listus.DoTasksListID)
+	list := getListData(t, ctx, dbo4listus.DoTasksListID)
 	if len(list.Items) != 2 {
 		t.Errorf("expected 2 items after append, got %d", len(list.Items))
 	}
@@ -123,11 +124,11 @@ func TestCreateListItems_AppendsToExistingList(t *testing.T) {
 }
 
 func TestSetListItemsIsDone(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	resp := createItems(t, dbo4listus.DoTasksListID, "Task A")
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	resp := createItems(t, ctx, dbo4listus.DoTasksListID, "Task A")
 	id := resp.CreatedItems[0].ID
 
-	changed, _, err := SetListItemsIsDone(userCtx(testUserID), dto4listus.ListItemsSetIsDoneRequest{
+	changed, _, err := SetListItemsIsDone(userCtx(ctx, testUserID), dto4listus.ListItemsSetIsDoneRequest{
 		ListItemIDsRequest: dto4listus.ListItemIDsRequest{ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID), ItemIDs: []string{id}},
 		IsDone:             true,
 	})
@@ -142,7 +143,7 @@ func TestSetListItemsIsDone(t *testing.T) {
 	}
 
 	// Marking the same again as done changes nothing.
-	changed2, _, err := SetListItemsIsDone(userCtx(testUserID), dto4listus.ListItemsSetIsDoneRequest{
+	changed2, _, err := SetListItemsIsDone(userCtx(ctx, testUserID), dto4listus.ListItemsSetIsDoneRequest{
 		ListItemIDsRequest: dto4listus.ListItemIDsRequest{ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID), ItemIDs: []string{id}},
 		IsDone:             true,
 	})
@@ -154,7 +155,7 @@ func TestSetListItemsIsDone(t *testing.T) {
 	}
 
 	// Un-done.
-	changed3, _, err := SetListItemsIsDone(userCtx(testUserID), dto4listus.ListItemsSetIsDoneRequest{
+	changed3, _, err := SetListItemsIsDone(userCtx(ctx, testUserID), dto4listus.ListItemsSetIsDoneRequest{
 		ListItemIDsRequest: dto4listus.ListItemIDsRequest{ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID), ItemIDs: []string{id}},
 		IsDone:             false,
 	})
@@ -167,11 +168,11 @@ func TestSetListItemsIsDone(t *testing.T) {
 }
 
 func TestDeleteListItems(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	resp := createItems(t, dbo4listus.DoTasksListID, "A", "B", "C")
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	resp := createItems(t, ctx, dbo4listus.DoTasksListID, "A", "B", "C")
 	ids := []string{resp.CreatedItems[0].ID, resp.CreatedItems[1].ID}
 
-	deleted, _, err := DeleteListItems(userCtx(testUserID), dto4listus.ListItemIDsRequest{
+	deleted, _, err := DeleteListItems(userCtx(ctx, testUserID), dto4listus.ListItemIDsRequest{
 		ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID),
 		ItemIDs:     ids,
 	})
@@ -181,7 +182,7 @@ func TestDeleteListItems(t *testing.T) {
 	if len(deleted) != 2 {
 		t.Fatalf("deleted %d, want 2", len(deleted))
 	}
-	list := getListData(t, dbo4listus.DoTasksListID)
+	list := getListData(t, ctx, dbo4listus.DoTasksListID)
 	if len(list.Items) != 1 {
 		t.Errorf("expected 1 remaining item, got %d", len(list.Items))
 	}
@@ -191,10 +192,10 @@ func TestDeleteListItems(t *testing.T) {
 }
 
 func TestDeleteListItems_Wildcard(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	createItems(t, dbo4listus.DoTasksListID, "A", "B")
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	createItems(t, ctx, dbo4listus.DoTasksListID, "A", "B")
 
-	deleted, _, err := DeleteListItems(userCtx(testUserID), dto4listus.ListItemIDsRequest{
+	deleted, _, err := DeleteListItems(userCtx(ctx, testUserID), dto4listus.ListItemIDsRequest{
 		ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID),
 		ItemIDs:     []string{"*"},
 	})
@@ -204,19 +205,19 @@ func TestDeleteListItems_Wildcard(t *testing.T) {
 	if len(deleted) != 2 {
 		t.Errorf("expected 2 deleted, got %d", len(deleted))
 	}
-	list := getListData(t, dbo4listus.DoTasksListID)
+	list := getListData(t, ctx, dbo4listus.DoTasksListID)
 	if len(list.Items) != 0 {
 		t.Errorf("expected empty list, got %d items", len(list.Items))
 	}
 }
 
 func TestReorderListItem(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	resp := createItems(t, dbo4listus.DoTasksListID, "A", "B", "C")
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	resp := createItems(t, ctx, dbo4listus.DoTasksListID, "A", "B", "C")
 	cID := resp.CreatedItems[2].ID
 
 	// Move "C" to index 0.
-	err := ReorderListItem(userCtx(testUserID), dto4listus.ReorderListItemsRequest{
+	err := ReorderListItem(userCtx(ctx, testUserID), dto4listus.ReorderListItemsRequest{
 		ListItemIDsRequest: dto4listus.ListItemIDsRequest{
 			ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID),
 			ItemIDs:     []string{cID},
@@ -226,7 +227,7 @@ func TestReorderListItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReorderListItem failed: %v", err)
 	}
-	list := getListData(t, dbo4listus.DoTasksListID)
+	list := getListData(t, ctx, dbo4listus.DoTasksListID)
 	if len(list.Items) != 3 || list.Items[0].Title != "C" {
 		titles := make([]string, len(list.Items))
 		for i, it := range list.Items {
@@ -237,8 +238,8 @@ func TestReorderListItem(t *testing.T) {
 }
 
 func TestReorderListItem_InvalidRequest(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	err := ReorderListItem(userCtx(testUserID), dto4listus.ReorderListItemsRequest{
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	err := ReorderListItem(userCtx(ctx, testUserID), dto4listus.ReorderListItemsRequest{
 		ListItemIDsRequest: dto4listus.ListItemIDsRequest{
 			ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID),
 			ItemIDs:     []string{"a"},
@@ -251,17 +252,17 @@ func TestReorderListItem_InvalidRequest(t *testing.T) {
 }
 
 func TestDeleteList_NotImplementedWorker(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 	// deleteListTxWorker always returns "not implemented", so DeleteList must surface an error.
-	err := DeleteList(userCtx(testUserID), listRequest(testSpaceID, dbo4listus.DoTasksListID))
+	err := DeleteList(userCtx(ctx, testUserID), listRequest(testSpaceID, dbo4listus.DoTasksListID))
 	if err == nil {
 		t.Error("expected error from DeleteList (worker not implemented)")
 	}
 }
 
 func TestDeleteList_InvalidRequest(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	err := DeleteList(userCtx(testUserID), dto4listus.ListRequest{
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	err := DeleteList(userCtx(ctx, testUserID), dto4listus.ListRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		ListID:       "invalid",
 	})
@@ -271,9 +272,9 @@ func TestDeleteList_InvalidRequest(t *testing.T) {
 }
 
 // getListData reads a list record directly from the seeded DB.
-func getListData(t *testing.T, listID string) *dbo4listus.ListDbo {
+func getListData(t *testing.T, baseCtx context.Context, listID string) *dbo4listus.ListDbo {
 	t.Helper()
-	ctx := userCtx(testUserID)
+	ctx := userCtx(baseCtx, testUserID)
 	db, err := facade.GetSneatDB(ctx)
 	if err != nil {
 		t.Fatalf("get db: %v", err)
@@ -323,5 +324,5 @@ func TestDeductListItemEmoji(t *testing.T) {
 
 func TestClearListNoop(t *testing.T) {
 	// ClearList is currently a no-op; ensure it can be called without panic.
-	ClearList(userCtx(testUserID), nil, "do!tasks")
+	ClearList(userCtx(context.Background(), testUserID), nil, "do!tasks")
 }

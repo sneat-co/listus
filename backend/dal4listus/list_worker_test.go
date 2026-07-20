@@ -21,7 +21,7 @@ const (
 	testSpaceID coretypes.SpaceID = "space1"
 )
 
-func seedDB(t *testing.T) dal.DB {
+func seedDB(t *testing.T) (context.Context, dal.DB) {
 	t.Helper()
 	db := sneatcoretesting.NewMemoryDB()
 	now := time.Now()
@@ -41,22 +41,21 @@ func seedDB(t *testing.T) dal.DB {
 	}); err != nil {
 		t.Fatalf("failed to seed space: %v", err)
 	}
-	facade.GetSneatDB = func(context.Context) (dal.DB, error) { return db, nil }
-	return db
+	return facade.WithSneatDB(context.Background(), db), db
 }
 
-func userCtx() facade.ContextWithUser {
-	return facade.NewContextWithUserID(context.Background(), testUserID)
+func userCtx(ctx context.Context) facade.ContextWithUser {
+	return facade.NewContextWithUserID(ctx, testUserID)
 }
 
 func TestRunListWorker_InvokesWorkerForStandardList(t *testing.T) {
-	_ = seedDB(t)
+	ctx, _ := seedDB(t)
 	request := dto4listus.ListRequest{
 		SpaceRequest: dto4spaceus.SpaceRequest{SpaceID: testSpaceID},
 		ListID:       dbo4listus.DoTasksListID,
 	}
 	var called bool
-	err := RunListWorker(userCtx(), request, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *ListWorkerParams) error {
+	err := RunListWorker(userCtx(ctx), request, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *ListWorkerParams) error {
 		called = true
 		if params.List.ID != string(dbo4listus.DoTasksListID) {
 			t.Errorf("worker list ID = %q, want %q", params.List.ID, dbo4listus.DoTasksListID)
@@ -76,13 +75,13 @@ func TestRunListWorker_InvokesWorkerForStandardList(t *testing.T) {
 }
 
 func TestRunListWorker_PropagatesWorkerError(t *testing.T) {
-	_ = seedDB(t)
+	ctx, _ := seedDB(t)
 	request := dto4listus.ListRequest{
 		SpaceRequest: dto4spaceus.SpaceRequest{SpaceID: testSpaceID},
 		ListID:       dbo4listus.DoTasksListID,
 	}
 	wantErr := context.Canceled
-	err := RunListWorker(userCtx(), request, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *ListWorkerParams) error {
+	err := RunListWorker(userCtx(ctx), request, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *ListWorkerParams) error {
 		return wantErr
 	})
 	if err == nil {
@@ -91,7 +90,7 @@ func TestRunListWorker_PropagatesWorkerError(t *testing.T) {
 }
 
 func TestGetListByID_NotFound(t *testing.T) {
-	db := seedDB(t)
+	_, db := seedDB(t)
 	entry := NewListEntry(testSpaceID, dbo4listus.DoTasksListID)
 	err := GetListByID(context.Background(), db, entry)
 	if err == nil || !dal.IsNotFound(err) {
@@ -100,7 +99,7 @@ func TestGetListByID_NotFound(t *testing.T) {
 }
 
 func TestGetListForUpdate_RoundTrip(t *testing.T) {
-	db := seedDB(t)
+	_, db := seedDB(t)
 	// Insert a list record, then read it back via GetListForUpdate inside a tx.
 	entry := NewListEntry(testSpaceID, dbo4listus.DoTasksListID)
 	entry.Data.Type = dbo4listus.ListTypeToDo
