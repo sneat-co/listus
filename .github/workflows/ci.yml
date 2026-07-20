@@ -13,9 +13,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce backend dependency direction
+        run: |
+          ! rg -n '"github\.com/sneat-co/sneat-go/|"github\.com/sneat-co/sneat-bots|"github\.com/bots-go-framework' backend --glob '*.go'
+
   # Backend runs strongo's Standard Go CI (lint · test · build) AND auto-tags the
   # next backend/vX.Y.Z on push to main (conventional-commit version bump).
   backend:
+    needs: architecture
     uses: strongo/cicd/.github/workflows/workflow.yml@main
     permissions:
       contents: write
