@@ -8,12 +8,12 @@ import (
 )
 
 func TestGetList_ReturnsListWithItems(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
 	// Seed a standard list with one item via CreateListItems.
-	createItems(t, dbo4listus.DoTasksListID, "Task A")
+	createItems(t, ctx, dbo4listus.DoTasksListID, "Task A")
 
-	list, err := GetList(userCtx(testUserID), listRequest(testSpaceID, dbo4listus.DoTasksListID))
+	list, err := GetList(userCtx(ctx, testUserID), listRequest(testSpaceID, dbo4listus.DoTasksListID))
 	if err != nil {
 		t.Fatalf("GetList failed: %v", err)
 	}
@@ -29,10 +29,10 @@ func TestGetList_ReturnsListWithItems(t *testing.T) {
 }
 
 func TestGetList_NonExistentStandardList_ReturnsNotFound(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
 	// DoTasksListID is a standard list that has never been written — should be not found.
-	_, err := GetList(userCtx(testUserID), listRequest(testSpaceID, dbo4listus.DoTasksListID))
+	_, err := GetList(userCtx(ctx, testUserID), listRequest(testSpaceID, dbo4listus.DoTasksListID))
 	if err == nil {
 		t.Fatal("expected not-found error, got nil")
 	}
@@ -42,23 +42,23 @@ func TestGetList_NonExistentStandardList_ReturnsNotFound(t *testing.T) {
 }
 
 func TestGetList_NonMemberUser_ReturnsError(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
 	// Seed the list as the member user.
-	createItems(t, dbo4listus.DoTasksListID, "Task A")
+	createItems(t, ctx, dbo4listus.DoTasksListID, "Task A")
 
 	// A user that is not in the space's UserIDs should be rejected.
-	_, err := GetList(userCtx("non-member-user"), listRequest(testSpaceID, dbo4listus.DoTasksListID))
+	_, err := GetList(userCtx(ctx, "non-member-user"), listRequest(testSpaceID, dbo4listus.DoTasksListID))
 	if err == nil {
 		t.Fatal("expected error for non-member user, got nil")
 	}
 }
 
 func TestGetList_InvalidRequest_ReturnsValidationError(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
 	// Empty ListID should fail validation before hitting the DB.
-	_, err := GetList(userCtx(testUserID), listRequest(testSpaceID, ""))
+	_, err := GetList(userCtx(ctx, testUserID), listRequest(testSpaceID, ""))
 	if err == nil {
 		t.Error("expected validation error for empty listID")
 	}

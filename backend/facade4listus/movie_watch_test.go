@@ -41,7 +41,7 @@ func seedWatchList(t *testing.T, db dal.DB, spaceID coretypes.SpaceID, listID db
 // the real facade + mock-movie round trip without any network calls.
 
 func TestSearchMovies_ByTitle(t *testing.T) {
-	response, err := SearchMovies(userCtx(testUserID), dto4listus.MovieSearchRequest{Query: "inception"})
+	response, err := SearchMovies(userCtx(context.Background(), testUserID), dto4listus.MovieSearchRequest{Query: "inception"})
 	if err != nil {
 		t.Fatalf("SearchMovies failed: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestSearchMovies_ByTitle(t *testing.T) {
 }
 
 func TestSearchMovies_ByActor(t *testing.T) {
-	response, err := SearchMovies(userCtx(testUserID), dto4listus.MovieSearchRequest{Query: "Keanu Reeves"})
+	response, err := SearchMovies(userCtx(context.Background(), testUserID), dto4listus.MovieSearchRequest{Query: "Keanu Reeves"})
 	if err != nil {
 		t.Fatalf("SearchMovies failed: %v", err)
 	}
@@ -61,13 +61,13 @@ func TestSearchMovies_ByActor(t *testing.T) {
 }
 
 func TestSearchMovies_InvalidRequest(t *testing.T) {
-	if _, err := SearchMovies(userCtx(testUserID), dto4listus.MovieSearchRequest{}); err == nil {
+	if _, err := SearchMovies(userCtx(context.Background(), testUserID), dto4listus.MovieSearchRequest{}); err == nil {
 		t.Error("expected error for empty query")
 	}
 }
 
 func TestResolveMovie_Succeeds(t *testing.T) {
-	response, err := ResolveMovie(userCtx(testUserID), dto4listus.MovieResolveRequest{TmdbID: 27205})
+	response, err := ResolveMovie(userCtx(context.Background(), testUserID), dto4listus.MovieResolveRequest{TmdbID: 27205})
 	if err != nil {
 		t.Fatalf("ResolveMovie failed: %v", err)
 	}
@@ -77,15 +77,15 @@ func TestResolveMovie_Succeeds(t *testing.T) {
 }
 
 func TestResolveMovie_NotFound(t *testing.T) {
-	if _, err := ResolveMovie(userCtx(testUserID), dto4listus.MovieResolveRequest{TmdbID: 999999}); err == nil {
+	if _, err := ResolveMovie(userCtx(context.Background(), testUserID), dto4listus.MovieResolveRequest{TmdbID: 999999}); err == nil {
 		t.Error("expected error for unknown movie id")
 	}
 }
 
 func TestAddMovieToWatchlist_ByTmdbID(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
-	response, err := AddMovieToWatchlist(userCtx(testUserID), dto4listus.AddMovieToWatchlistRequest{
+	response, err := AddMovieToWatchlist(userCtx(ctx, testUserID), dto4listus.AddMovieToWatchlistRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		TmdbID:       27205, // Inception
 	})
@@ -108,9 +108,9 @@ func TestAddMovieToWatchlist_ByTmdbID(t *testing.T) {
 }
 
 func TestAddMovieToWatchlist_ByQuery_WithWatchWith(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
-	response, err := AddMovieToWatchlist(userCtx(testUserID), dto4listus.AddMovieToWatchlistRequest{
+	response, err := AddMovieToWatchlist(userCtx(ctx, testUserID), dto4listus.AddMovieToWatchlistRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		Query:        "The Matrix",
 		WatchWith:    &dbo4listus.WatchWith{Mode: dbo4listus.WatchWithModeSpace, Ref: "space1", Title: "Family"},
@@ -127,9 +127,9 @@ func TestAddMovieToWatchlist_ByQuery_WithWatchWith(t *testing.T) {
 }
 
 func TestAddMovieToWatchlist_NoMatchForQuery(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
-	if _, err := AddMovieToWatchlist(userCtx(testUserID), dto4listus.AddMovieToWatchlistRequest{
+	if _, err := AddMovieToWatchlist(userCtx(ctx, testUserID), dto4listus.AddMovieToWatchlistRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		Query:        "no such movie exists xyz",
 	}); err == nil {
@@ -138,9 +138,9 @@ func TestAddMovieToWatchlist_NoMatchForQuery(t *testing.T) {
 }
 
 func TestAddMovieToWatchlist_ExplicitCanonicalListID(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
-	response, err := AddMovieToWatchlist(userCtx(testUserID), dto4listus.AddMovieToWatchlistRequest{
+	response, err := AddMovieToWatchlist(userCtx(ctx, testUserID), dto4listus.AddMovieToWatchlistRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		ListID:       dbo4listus.WatchMoviesListID,
 		TmdbID:       27205, // Inception
@@ -154,11 +154,11 @@ func TestAddMovieToWatchlist_ExplicitCanonicalListID(t *testing.T) {
 }
 
 func TestAddMovieToWatchlist_HonorsTargetListID(t *testing.T) {
-	db := newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, db := newTestDBWithSpace(t, testSpaceID, testUserID)
 	targetListID := dbo4listus.ListKey("watch!kids")
 	seedWatchList(t, db, testSpaceID, targetListID, "Kids movies")
 
-	response, err := AddMovieToWatchlist(userCtx(testUserID), dto4listus.AddMovieToWatchlistRequest{
+	response, err := AddMovieToWatchlist(userCtx(ctx, testUserID), dto4listus.AddMovieToWatchlistRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		ListID:       targetListID,
 		TmdbID:       27205, // Inception
@@ -169,8 +169,6 @@ func TestAddMovieToWatchlist_HonorsTargetListID(t *testing.T) {
 	if response.Item == nil || response.Item.Title != "Inception" {
 		t.Fatalf("expected Inception item, got: %+v", response.Item)
 	}
-
-	ctx := context.Background()
 
 	// The movie must land in the TARGET list...
 	target := dal4listus.NewListEntry(testSpaceID, targetListID)
@@ -189,11 +187,11 @@ func TestAddMovieToWatchlist_HonorsTargetListID(t *testing.T) {
 }
 
 func TestAddMovieToWatchlist_UnknownTargetListFails(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
 	// A non-canonical watch list that does not exist must fail loudly instead
 	// of silently falling back to the canonical list.
-	if _, err := AddMovieToWatchlist(userCtx(testUserID), dto4listus.AddMovieToWatchlistRequest{
+	if _, err := AddMovieToWatchlist(userCtx(ctx, testUserID), dto4listus.AddMovieToWatchlistRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		ListID:       "watch!does-not-exist",
 		TmdbID:       27205,
@@ -203,7 +201,7 @@ func TestAddMovieToWatchlist_UnknownTargetListFails(t *testing.T) {
 }
 
 func TestAddMovieToWatchlist_RejectsNonWatchListID(t *testing.T) {
-	if _, err := AddMovieToWatchlist(userCtx(testUserID), dto4listus.AddMovieToWatchlistRequest{
+	if _, err := AddMovieToWatchlist(userCtx(context.Background(), testUserID), dto4listus.AddMovieToWatchlistRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		ListID:       dbo4listus.BuyGroceriesListID,
 		TmdbID:       27205,
@@ -213,7 +211,7 @@ func TestAddMovieToWatchlist_RejectsNonWatchListID(t *testing.T) {
 }
 
 func TestAddMovieToWatchlist_InvalidRequest(t *testing.T) {
-	if _, err := AddMovieToWatchlist(userCtx(testUserID), dto4listus.AddMovieToWatchlistRequest{
+	if _, err := AddMovieToWatchlist(userCtx(context.Background(), testUserID), dto4listus.AddMovieToWatchlistRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		// missing both TmdbID and Query
 	}); err == nil {
@@ -222,12 +220,12 @@ func TestAddMovieToWatchlist_InvalidRequest(t *testing.T) {
 }
 
 func TestSetListItemWatchWith_Succeeds(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
 
-	created := createItems(t, "watch!movies", "Inception")
+	created := createItems(t, ctx, "watch!movies", "Inception")
 	itemID := created.CreatedItems[0].ID
 
-	item, _, err := SetListItemWatchWith(userCtx(testUserID), dto4listus.SetListItemWatchWithRequest{
+	item, _, err := SetListItemWatchWith(userCtx(ctx, testUserID), dto4listus.SetListItemWatchWithRequest{
 		ListItemRequest: dto4listus.ListItemRequest{
 			ListRequest: listRequest(testSpaceID, "watch!movies"),
 			ItemID:      itemID,
@@ -243,10 +241,10 @@ func TestSetListItemWatchWith_Succeeds(t *testing.T) {
 }
 
 func TestSetListItemWatchWith_ItemNotFound(t *testing.T) {
-	_ = newTestDBWithSpace(t, testSpaceID, testUserID)
-	_ = createItems(t, "watch!movies", "Inception")
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	_ = createItems(t, ctx, "watch!movies", "Inception")
 
-	if _, _, err := SetListItemWatchWith(userCtx(testUserID), dto4listus.SetListItemWatchWithRequest{
+	if _, _, err := SetListItemWatchWith(userCtx(ctx, testUserID), dto4listus.SetListItemWatchWithRequest{
 		ListItemRequest: dto4listus.ListItemRequest{
 			ListRequest: listRequest(testSpaceID, "watch!movies"),
 			ItemID:      "does-not-exist",
