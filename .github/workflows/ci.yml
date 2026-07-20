@@ -19,12 +19,36 @@ jobs:
       - uses: actions/checkout@v4
       - name: Enforce backend dependency direction
         run: |
-          ! rg -n '"github\.com/sneat-co/sneat-go/|"github\.com/sneat-co/sneat-bots|"github\.com/bots-go-framework' backend --glob '*.go'
+          if rg -n '"github\.com/sneat-co/sneat-go/|"github\.com/sneat-co/sneat-bots|"github\.com/bots-go-framework' backend --glob '*.go'; then
+            echo 'Listus backend must not depend on the host or bot delivery packages.' >&2
+            exit 1
+          fi
+
+  coverage:
+    needs: architecture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Enforce backend coverage floor (78.3%)
+        working-directory: backend
+        env:
+          GOPRIVATE: github.com/sneat-co
+        run: |
+          go test -coverpkg=./... -coverprofile=coverage.out ./...
+          coverage="$(go tool cover -func=coverage.out | awk '/^total:/ {print $3}' | tr -d '%')"
+          awk -v coverage="$coverage" 'BEGIN { exit !(coverage + 0 >= 78.3) }' || {
+            echo "coverage ${coverage}% is below the 78.3% floor" >&2
+            exit 1
+          }
 
   # Backend runs strongo's Standard Go CI (lint · test · build) AND auto-tags the
   # next backend/vX.Y.Z on push to main (conventional-commit version bump).
   backend:
-    needs: architecture
+    needs: [architecture, coverage]
     uses: strongo/cicd/.github/workflows/workflow.yml@main
     permissions:
       contents: write
