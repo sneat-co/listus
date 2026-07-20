@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dal-go/dalgo/adapters/dalgo2memory"
+	"github.com/sneat-co/sneat-go-core/sneatcoretesting"
 	"github.com/dal-go/dalgo/dal"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
@@ -23,7 +23,7 @@ const testUserID = "user1"
 // space worker reads this Space to enforce membership access.
 func newTestDBWithSpace(t *testing.T, spaceID coretypes.SpaceID, userIDs ...string) dal.DB {
 	t.Helper()
-	db := dalgo2memory.NewDB()
+	db := sneatcoretesting.NewMemoryDB()
 	now := time.Now()
 	space := dbo4spaceus.NewSpaceEntry(spaceID)
 	space.Data.Type = coretypes.SpaceTypeFamily
