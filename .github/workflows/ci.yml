@@ -75,6 +75,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
       - name: Configure private Go module access
         run: |
           git config --global url."https://x-access-token:${{ secrets.SNEAT_CI_READWRITE_TOKEN }}@github.com/".insteadOf "https://github.com/"
