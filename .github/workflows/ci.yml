@@ -88,8 +88,9 @@ jobs:
             exit 1
           }
 
-  # Backend runs strongo's Standard Go CI (lint · test · build) AND auto-tags the
-  # next backend/vX.Y.Z on push to main (conventional-commit version bump).
+  # Backend runs strongo's Standard Go CI (lint · test · build). Backend module
+  # tags are published explicitly from a verified main commit; this repository's
+  # npm package lives below the root, so the shared npm bump job cannot run here.
   backend:
     needs: [architecture, botapi-coverage]
     # Pin the validated reusable workflow. New action dependencies require an
@@ -101,6 +102,7 @@ jobs:
       GH_TOKEN: ${{ secrets.SNEAT_CI_READWRITE_TOKEN }}
     with:
       working_directory: backend
+      disable-version-bumping: true
       GOPRIVATE: github.com/sneat-co
       goprivate_git_host: github.com/sneat-co
       tag_prefix: backend/v
