@@ -1,47 +1,85 @@
 // Copyright 2026 Sneat.app
 
-// Package botapi exposes the narrow Listus data vocabulary consumed by bot
-// delivery adapters. It deliberately keeps storage package names out of bot
-// code; persistence remains an implementation detail of Listus.
+// Package botapi exposes Listus application operations for bot delivery. Its
+// exported data is deliberately value-only: persistence, transactions, and
+// facade contexts remain internal to the Listus backend.
 package botapi
 
-import (
-	"github.com/sneat-co/listus/backend/dal4listus"
-	"github.com/sneat-co/listus/backend/dbo4listus"
-	"github.com/sneat-co/sneat-go-core/coretypes"
-)
+import botapp "github.com/sneat-co/ext-listus/backend/botapp"
 
-// Presentation DTOs used when rendering a list.
-type (
-	List                 = dal4listus.ListEntry
-	ListEntry            = dal4listus.ListEntry
-	ListItem             = dbo4listus.ListItemBrief
-	ListItemIn           = dbo4listus.ListItemBase
-	ListItemBase         = dbo4listus.ListItemBase
-	ListID               = dbo4listus.ListKey
-	ListType             = dbo4listus.ListType
-)
+// SpaceRef is the portable host contract used to select a Listus space.
+type SpaceRef = botapp.SpaceRef
+
+// ListRef identifies a Listus list without exposing a datastore key or a
+// backend record.
+type ListRef struct {
+	Space SpaceRef
+	ID    string
+}
+
+// ListItemInput is a bot-supplied list item. It contains presentation data
+// only; ownership and audit fields are assigned by Listus.
+type ListItemInput struct {
+	ID                string
+	Title             string
+	Emoji             string
+	Status            string
+	TmdbID            int
+	Year              int
+	PosterURL         string
+	Overview          string
+	TrailerYouTubeKey string
+	Cast              []string
+	WatchWith         *WatchWith
+}
+
+// WatchWith is the presentation-safe watch companion reference for a movie.
+type WatchWith struct {
+	Mode  string
+	Ref   string
+	Title string
+}
+
+// ListItemView is the data bot delivery may render after a Listus operation.
+type ListItemView = ListItemInput
+
+// ListView is a presentation-safe projection of a Listus list.
+type ListView struct {
+	ID    string
+	Type  string
+	Title string
+	Emoji string
+	Count int
+	Items []ListItemView
+}
+
+// CreateListItemsRequest asks Listus to add the supplied items to a list.
+type CreateListItemsRequest struct {
+	List  ListRef
+	Items []ListItemInput
+}
+
+// ListItemsRequest addresses one or more items in a list.
+type ListItemsRequest struct {
+	List    ListRef
+	ItemIDs []string
+}
+
+// SetListItemsDoneRequest changes completion state for addressed list items.
+type SetListItemsDoneRequest struct {
+	ListItemsRequest
+	IsDone bool
+}
+
+// ListItemsResult returns the changed presentation values and their list.
+type ListItemsResult struct {
+	Items []ListItemView
+	List  ListView
+}
 
 const (
-	GroceriesListID = dbo4listus.BuyGroceriesListID
-	TasksListID     = dbo4listus.DoTasksListID
-	MoviesListID    = dbo4listus.WatchMoviesListID
-	BooksListID     = dbo4listus.ReadBooksListID
-
-	ListTypeToBuy   = dbo4listus.ListTypeToBuy
-	ListTypeToDo    = dbo4listus.ListTypeToDo
-	ListTypeToWatch = dbo4listus.ListTypeToWatch
-	ListTypeToRead  = dbo4listus.ListTypeToRead
+	GroceriesListID = "buy!groceries"
+	TasksListID     = "do!tasks"
+	MoviesListID    = "watch!movies"
+	BooksListID     = "read!books"
 )
-
-func NewListID(listType ListType, name string) ListID {
-	return dbo4listus.NewListKey(listType, name)
-}
-
-func NewList(spaceID coretypes.SpaceID, listID ListID) List {
-	return dal4listus.NewListEntry(spaceID, listID)
-}
-
-func NewListEntry(spaceID coretypes.SpaceID, listID ListID) ListEntry {
-	return dal4listus.NewListEntry(spaceID, listID)
-}

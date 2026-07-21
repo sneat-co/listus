@@ -8,6 +8,11 @@ Listus domain rules, storage, and application facades live here. Bot delivery
 `github.com/sneat-co/sneat-bots/extensions/listus`; this module must not import
 bot-framework packages, Sneat-Bots, or Sneat-Go.
 
+`botapi/` is the bot-facing application surface. It consumes the portable
+`github.com/sneat-co/ext-listus/backend/botapp` contract and exports only value
+requests and views; DALgo records, transactions, and facade contexts remain
+private implementation details.
+
 ## Requirements
 
 - Go 1.26+
