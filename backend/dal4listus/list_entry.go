@@ -2,21 +2,19 @@ package dal4listus
 
 import (
 	"fmt"
-
-	"github.com/dal-go/dalgo/dal"
-	"github.com/dal-go/dalgo/record"
+	dalrecord "github.com/dal-go/record"
 	"github.com/sneat-co/listus/backend/const4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dbo4spaceus"
 	"github.com/sneat-co/sneat-go-core/coretypes"
 )
 
-type ListEntry = record.DataWithID[string, *dbo4listus.ListDbo]
+type ListEntry = dalrecord.DataWithID[string, *dbo4listus.ListDbo]
 
 // NewListKey creates a new list key
-func NewListKey(spaceID coretypes.SpaceID, listKey dbo4listus.ListKey) *dal.Key {
+func NewListKey(spaceID coretypes.SpaceID, listKey dbo4listus.ListKey) *dalrecord.Key {
 	spaceModuleKey := dbo4spaceus.NewSpaceModuleKey(spaceID, const4listus.ExtensionID)
-	return dal.NewKeyWithParentAndID(spaceModuleKey, dbo4listus.ListsCollection, string(listKey))
+	return dalrecord.NewKeyWithParentAndID(spaceModuleKey, dbo4listus.ListsCollection, string(listKey))
 }
 
 func NewListEntry(spaceID coretypes.SpaceID, listKey dbo4listus.ListKey) (list ListEntry) {
@@ -25,6 +23,6 @@ func NewListEntry(spaceID coretypes.SpaceID, listKey dbo4listus.ListKey) (list L
 	list.FullID = fmt.Sprintf("%s/%s", spaceID, listKey) // TODO: Do we need this?
 	list.Key = key
 	list.Data = new(dbo4listus.ListDbo)
-	list.Record = dal.NewRecordWithData(key, list.Data)
+	list.Record = dalrecord.NewRecordWithData(key, list.Data)
 	return
 }

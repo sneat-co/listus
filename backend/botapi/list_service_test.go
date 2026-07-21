@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dbo4spaceus"
@@ -136,7 +137,7 @@ func TestPresentationProjectionsDoNotExposePersistenceValues(t *testing.T) {
 }
 
 func TestIsNotFound(t *testing.T) {
-	if !IsNotFound(dal.ErrRecordNotFound) || IsNotFound(errors.New("other")) {
+	if !IsNotFound(record.ErrRecordNotFound) || IsNotFound(errors.New("other")) {
 		t.Fatal("IsNotFound() did not preserve not-found semantics")
 	}
 }

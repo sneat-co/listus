@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/dal-go/dalgo/update"
+	"github.com/dal-go/record"
+	"github.com/dal-go/record/update"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dal4spaceus"
@@ -27,7 +28,7 @@ func RunListWorker(ctx facade.ContextWithUser, request dto4listus.ListRequest, w
 				List:                    NewListEntry(request.SpaceID, request.ListID),
 			}
 			if err = GetListForUpdate(ctx, tx, params.List); err != nil {
-				if dal.IsNotFound(err) && dbo4listus.IsStandardList(request.ListID) {
+				if record.IsNotFound(err) && dbo4listus.IsStandardList(request.ListID) {
 					// It's OK to miss a standard list record - should be created automatically
 				} else {
 					return err

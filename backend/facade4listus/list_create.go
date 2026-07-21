@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/dal-go/dalgo/update"
+	"github.com/dal-go/record"
+	"github.com/dal-go/record/update"
 	"github.com/sneat-co/listus/backend/const4listus"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
@@ -90,7 +91,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 				return fmt.Errorf("formed listDbo DTO struct is not valid: %w", err)
 			}
 			listKey := dal4listus.NewListKey(request.SpaceID, listID)
-			listRecord := dal.NewRecordWithData(listKey, &listDbo)
+			listRecord := record.NewRecordWithData(listKey, &listDbo)
 			if err = tx.Insert(ctx, listRecord); err != nil {
 				return fmt.Errorf("failed to insert listDbo record")
 			}

@@ -3,7 +3,7 @@ package facade4listus
 import (
 	"testing"
 
-	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 )
 
@@ -36,7 +36,7 @@ func TestGetList_NonExistentStandardList_ReturnsNotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected not-found error, got nil")
 	}
-	if !dal.IsNotFound(err) {
+	if !record.IsNotFound(err) {
 		t.Errorf("expected IsNotFound(err) == true, got err=%v", err)
 	}
 }
