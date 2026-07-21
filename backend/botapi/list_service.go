@@ -6,7 +6,8 @@ import (
 	"context"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/dal-go/dalgo/update"
+	"github.com/dal-go/record"
+	"github.com/dal-go/record/update"
 	"github.com/sneat-co/listus/backend/const4listus"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
@@ -77,7 +78,7 @@ func ClearListItems(ctx context.Context, userID string, ref ListRef) (ListView, 
 
 // IsNotFound reports whether a Listus operation could not find its requested
 // value. It intentionally exposes no DAL type or persistence capability.
-func IsNotFound(err error) bool { return dal.IsNotFound(err) }
+func IsNotFound(err error) bool { return record.IsNotFound(err) }
 
 func contextWithUser(ctx context.Context, userID string) facade.ContextWithUser {
 	return facade.NewContextWithUserID(ctx, userID)

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sneat-co/sneat-go-core/sneatcoretesting"
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dbo4spaceus"
@@ -14,6 +14,7 @@ import (
 	"github.com/sneat-co/sneat-go-core/coretypes"
 	"github.com/sneat-co/sneat-go-core/facade"
 	"github.com/sneat-co/sneat-go-core/models/dbmodels"
+	"github.com/sneat-co/sneat-go-core/sneatcoretesting"
 )
 
 const (
@@ -93,7 +94,7 @@ func TestGetListByID_NotFound(t *testing.T) {
 	_, db := seedDB(t)
 	entry := NewListEntry(testSpaceID, dbo4listus.DoTasksListID)
 	err := GetListByID(context.Background(), db, entry)
-	if err == nil || !dal.IsNotFound(err) {
+	if err == nil || !record.IsNotFound(err) {
 		t.Fatalf("expected not-found error, got %v", err)
 	}
 }
