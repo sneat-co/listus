@@ -3,8 +3,15 @@
 Go service for listus. Module path: `github.com/sneat-co/listus/backend`
 (the module is rooted here in `backend/`, not at the repo root).
 
-> **Status: scaffold.** Only a health endpoint is implemented. Listus domain
-> endpoints are intentionally deferred.
+Listus domain rules, storage, and application facades live here. Bot delivery
+(profiles, commands, callbacks, and rendering) lives in
+`github.com/sneat-co/sneat-bots/extensions/listus`; this module must not import
+bot-framework packages, Sneat-Bots, or Sneat-Go.
+
+`botapi/` is the bot-facing application surface. It consumes the portable
+`github.com/sneat-co/ext-listus/backend/botapp` contract and exports only value
+requests and views; DALgo records, transactions, and facade contexts remain
+private implementation details.
 
 ## Requirements
 

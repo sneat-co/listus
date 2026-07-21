@@ -14,6 +14,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sneat-co/ext-contactus/backend v0.1.2 h1:RDyhAMoxxpImGlGJ4z08l8LZ36gZ/HzW66mtlN6Nwy0=
 github.com/sneat-co/ext-contactus/backend v0.1.2/go.mod h1:WMIv14fXKzCiPcMp6hYi7RPVFofJU4u3XrRi1Rd0hnA=
+github.com/sneat-co/ext-listus/backend v0.0.5 h1:+fa+jzLDSANPO0Bjtn0IDoOggRZ0ex6YRvBlBMZUf6Q=
+github.com/sneat-co/ext-listus/backend v0.0.5/go.mod h1:YJA8WtyGX/INQDz95bzp31zol2A42jJw0921f1am3Uk=
 github.com/sneat-co/sneat-core-modules v0.53.3 h1:l5NK+xxoisTU1qZLQ1Pp7hh1GO5h9bnMUHDr3tGTtrY=
 github.com/sneat-co/sneat-core-modules v0.53.3/go.mod h1:aIra7zNQ+84RTJ+JbF5mzp3PN7Xi0RpvOk3D3IhsSy0=
 github.com/sneat-co/sneat-go-core v0.60.3 h1:S/rc0Em28U8HcgcsxpvnsuvcEI3Bk2Z5BFYnJf7kFos=

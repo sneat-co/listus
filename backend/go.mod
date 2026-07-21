@@ -4,6 +4,7 @@ go 1.26
 
 require (
 	github.com/dal-go/dalgo v0.63.0
+	github.com/sneat-co/ext-listus/backend v0.0.5
 	github.com/sneat-co/sneat-core-modules v0.53.3
 	github.com/sneat-co/sneat-go-core v0.60.3
 	github.com/strongo/logus v0.4.1

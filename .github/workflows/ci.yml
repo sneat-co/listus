@@ -13,10 +13,88 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce backend dependency direction
+        shell: bash
+        run: |
+          set +e
+          matches="$(git grep -nE '"github\.com/sneat-co/sneat-go/|"github\.com/sneat-co/sneat-bots|"github\.com/bots-go-framework' -- ':(glob)backend/**/*.go')"
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            printf '%s\n' "$matches" >&2
+            echo 'Listus backend must not depend on the host or bot delivery packages.' >&2
+            exit 1
+          fi
+          if [ "$status" -ne 1 ]; then
+            echo "git grep failed with status $status" >&2
+            exit 1
+          fi
+          set +e
+          backend_matches="$(git grep -nE '"github\.com/sneat-co/[^" ]+/backend' -- ':(glob)backend/**/*.go')"
+          backend_status=$?
+          set -e
+          if [ "$backend_status" -eq 0 ]; then
+            foreign_backends="$(printf '%s\n' "$backend_matches" | grep -vE '"github\.com/sneat-co/(listus|ext-listus)/backend' || true)"
+            if [ -n "$foreign_backends" ]; then
+              printf '%s\n' "$foreign_backends" >&2
+              echo 'Listus backend must not import sibling backend implementations.' >&2
+              exit 1
+            fi
+          elif [ "$backend_status" -ne 1 ]; then
+            echo "git grep failed with status $backend_status" >&2
+            exit "$backend_status"
+          fi
+          set +e
+          bot_surface_matches="$(git grep -nE '^type [A-Z][A-Za-z0-9_]*[[:space:]]*=[[:space:]]*.*(dal4listus|dbo4listus|dto4listus|facade)|^func [A-Z][A-Za-z0-9_]*\([^)]*(dal\.|record\.|facade\.)' -- ':(glob)backend/botapi/*.go')"
+          bot_surface_status=$?
+          set -e
+          if [ "$bot_surface_status" -eq 0 ]; then
+            printf '%s\n' "$bot_surface_matches" >&2
+            echo 'Listus bot API must expose value data, never DALgo records, transactions, or facade capabilities.' >&2
+            exit 1
+          fi
+          if [ "$bot_surface_status" -ne 1 ]; then
+            echo "git grep failed with status $bot_surface_status" >&2
+            exit "$bot_surface_status"
+          fi
+
+  botapi-coverage:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      GOWORK: "off"
+      GOPRIVATE: github.com/sneat-co
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Configure private Go module access
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.SNEAT_CI_READWRITE_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - name: Enforce bot API coverage floor (90%)
+        run: |
+          go test -coverprofile=botapi-coverage.out ./botapi
+          coverage="$(go tool cover -func=botapi-coverage.out | awk '/^total:/ {print $3}' | tr -d '%')"
+          awk -v coverage="$coverage" 'BEGIN { exit !(coverage + 0 >= 90.0) }' || {
+            echo "botapi coverage ${coverage}% is below the 90.0% floor" >&2
+            exit 1
+          }
+
   # Backend runs strongo's Standard Go CI (lint · test · build) AND auto-tags the
   # next backend/vX.Y.Z on push to main (conventional-commit version bump).
   backend:
-    uses: strongo/cicd/.github/workflows/workflow.yml@main
+    needs: [architecture, botapi-coverage]
+    # Pin the validated reusable workflow. New action dependencies require an
+    # explicit review against this repository's selected-action policy.
+    uses: strongo/cicd/.github/workflows/workflow.yml@63952f8f48296bf5cbce9c91be579827b7b9cd06
     permissions:
       contents: write
     secrets:
@@ -26,6 +104,7 @@ jobs:
       GOPRIVATE: github.com/sneat-co
       goprivate_git_host: github.com/sneat-co
       tag_prefix: backend/v
+      min_test_coverage_percent: 78.3
 
   frontend:
     uses: sneat-co/cicd/.github/workflows/nx-ci.yml@main
