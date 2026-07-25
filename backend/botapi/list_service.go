@@ -99,6 +99,8 @@ func createListItems(inputs []ListItemInput) []dto4listus.CreateListItemRequest 
 			ListItemBase: dbo4listus.ListItemBase{
 				Title:             input.Title,
 				Emoji:             input.Emoji,
+				Quantity:          input.Quantity,
+				Unit:              input.Unit,
 				Status:            const4listus.ListItemStatus(input.Status),
 				TmdbID:            input.TmdbID,
 				Year:              input.Year,
@@ -143,6 +145,8 @@ func listItemView(item *dbo4listus.ListItemBrief) ListItemView {
 		ID:                item.ID,
 		Title:             item.Title,
 		Emoji:             item.Emoji,
+		Quantity:          item.Quantity,
+		Unit:              item.Unit,
 		Status:            string(item.Status),
 		TmdbID:            item.TmdbID,
 		Year:              item.Year,

@@ -48,6 +48,20 @@ type ListItemBase struct {
 
 	Status const4listus.ListItemStatus `json:"status,omitempty" firestore:"status,omitempty"`
 
+	// The following fields are optional and let a "buy"-typed list item (a
+	// shopping list) express a structured amount without changing what the
+	// item is: the title stays the bare noun (e.g. "milk"), so "bought milk"
+	// still matches by title and two differently-sized entries of the same
+	// product still collide as the same item. Kept compact & flat as items
+	// are rewritten as a whole array on every mutation (see ListDbo.Items).
+	// All omitempty so non-buy lists are completely unaffected.
+
+	// Quantity is the numeric amount of Unit (e.g. 2). Zero means unspecified.
+	Quantity float64 `json:"quantity,omitempty" firestore:"quantity,omitempty"`
+	// Unit is a caller-supplied unit label (e.g. "L", "kg", "pcs"), stored
+	// verbatim. No enum, normalisation, or conversion happens at this layer.
+	Unit string `json:"unit,omitempty" firestore:"unit,omitempty"`
+
 	// The following fields are optional and only used by "watch"-typed list
 	// items (movies). Kept compact & flat as items are rewritten as a whole
 	// array on every mutation (see ListDbo.Items). All omitempty so non-watch
@@ -78,6 +92,15 @@ func (v ListItemBase) IsDone() bool {
 func (v ListItemBase) Validate() error {
 	if strings.TrimSpace(v.Title) == "" {
 		return validation.NewErrRecordIsMissingRequiredField("title")
+	}
+	if v.Quantity < 0 {
+		return validation.NewErrBadRecordFieldValue("quantity", "must not be negative")
+	}
+	if v.Unit != strings.TrimSpace(v.Unit) {
+		return validation.NewErrBadRecordFieldValue("unit", "must not have leading or trailing whitespace")
+	}
+	if v.Unit != "" && v.Quantity == 0 {
+		return validation.NewErrBadRecordFieldValue("unit", "requires a quantity")
 	}
 	if v.WatchWith != nil {
 		if err := v.WatchWith.Validate(); err != nil {

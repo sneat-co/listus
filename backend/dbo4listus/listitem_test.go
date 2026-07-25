@@ -38,6 +38,29 @@ func TestListItemBase_Validate(t *testing.T) {
 	}
 }
 
+func TestListItemBase_Validate_QuantityUnit(t *testing.T) {
+	tests := []struct {
+		name    string
+		v       ListItemBase
+		wantErr bool
+	}{
+		{"neither", ListItemBase{Title: "Milk"}, false},
+		{"quantity_without_unit", ListItemBase{Title: "Apples", Quantity: 3}, false},
+		{"quantity_and_unit", ListItemBase{Title: "Milk", Quantity: 2, Unit: "L"}, false},
+		{"negative_quantity", ListItemBase{Title: "Milk", Quantity: -1, Unit: "L"}, true},
+		{"padded_unit", ListItemBase{Title: "Milk", Quantity: 2, Unit: " L"}, true},
+		{"padded_unit_trailing", ListItemBase{Title: "Milk", Quantity: 2, Unit: "L "}, true},
+		{"unit_without_quantity", ListItemBase{Title: "Milk", Unit: "L"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.v.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("ListItemBase.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestWatchWith_Validate(t *testing.T) {
 	tests := []struct {
 		name    string

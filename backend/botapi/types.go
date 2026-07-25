@@ -20,9 +20,14 @@ type ListRef struct {
 // ListItemInput is a bot-supplied list item. It contains presentation data
 // only; ownership and audit fields are assigned by Listus.
 type ListItemInput struct {
-	ID                string
-	Title             string
-	Emoji             string
+	ID    string
+	Title string
+	Emoji string
+	// Quantity is the numeric amount of Unit (e.g. 2). Zero means unspecified.
+	Quantity float64
+	// Unit is a caller-supplied unit label (e.g. "L", "kg", "pcs"), stored
+	// verbatim. No enum, normalisation, or conversion happens at this layer.
+	Unit              string
 	Status            string
 	TmdbID            int
 	Year              int
