@@ -85,6 +85,28 @@ func TestListServicePresentationOperations(t *testing.T) {
 	}
 }
 
+func TestListServiceCreateItemWithQuantityAndUnit_RoundTrip(t *testing.T) {
+	ctx := serviceTestContext(t)
+	ref := serviceListRef()
+	created, err := CreateListItems(ctx, serviceTestUserID, CreateListItemsRequest{
+		List:  ref,
+		Items: []ListItemInput{{ID: "item1", Title: "milk", Quantity: 2, Unit: "L"}},
+	})
+	if err != nil || len(created.Items) != 1 {
+		t.Fatalf("CreateListItems() = %+v, %v", created, err)
+	}
+	if got := created.Items[0]; got.Title != "milk" || got.Quantity != 2 || got.Unit != "L" {
+		t.Fatalf("CreateListItems() item = %+v, want title=milk quantity=2 unit=L", got)
+	}
+	list, err := GetList(ctx, serviceTestUserID, ref)
+	if err != nil || len(list.Items) != 1 {
+		t.Fatalf("GetList() = %+v, %v", list, err)
+	}
+	if got := list.Items[0]; got.Title != "milk" || got.Quantity != 2 || got.Unit != "L" {
+		t.Fatalf("GetList() item = %+v, want title=milk quantity=2 unit=L", got)
+	}
+}
+
 func TestBotDataUsesValueOnlyContractTypes(t *testing.T) {
 	ref := ListRef{Space: SpaceRef{ID: "space1", Type: "family"}, ID: TasksListID}
 	if ref.Space.ID != "space1" || ref.ID != TasksListID {
