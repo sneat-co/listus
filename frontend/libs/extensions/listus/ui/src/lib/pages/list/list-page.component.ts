@@ -35,9 +35,9 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
-import { ContactusServicesModule } from '@sneat/extension-contactus-internal';
-import { SharedWithComponent } from '@sneat/extension-contactus-shared';
+} from '@ionic/angular';
+import { ContactusServicesModule } from '@sneat/extension-contactus';
+import { SharedWithComponent } from '@sneat/extension-contactus-ui';
 import { RandomIdService } from '@sneat/random';
 import { SpaceServiceModule } from '@sneat/space-services';
 import { ClassName } from '@sneat/ui';

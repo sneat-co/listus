@@ -13,7 +13,6 @@
     "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "@sneat/extension-listus-ui": [
         "./libs/extensions/listus/ui/src/index.ts"

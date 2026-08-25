@@ -33,8 +33,8 @@ import {
   IonTitle,
   IonToolbar,
   ToastController,
-} from '@ionic/angular/standalone';
-import { ContactService } from '@sneat/extension-contactus-internal';
+} from '@ionic/angular';
+import { ContactService } from '@sneat/extension-contactus';
 import {
   AddMovieToWatchlistRequest,
   IWatchWith,

@@ -16,11 +16,11 @@ import {
   IonSelect,
   IonSelectOption,
   MenuController,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { ISneatUserState } from '@sneat/auth-core';
 import { IUserSpaceBrief } from '@sneat/auth-models';
 import { AuthMenuItemComponent } from '@sneat/auth-ui';
-import { ContactusServicesModule } from '@sneat/extension-contactus-internal';
+import { ContactusServicesModule } from '@sneat/extension-contactus';
 import { IIdAndBrief } from '@sneat/core';
 import {
   SpaceBaseComponent,

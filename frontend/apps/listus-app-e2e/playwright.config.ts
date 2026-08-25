@@ -22,9 +22,13 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
-  /* Run your local dev server before starting the tests */
+  /* Serve the production build statically rather than the Vite dev server:
+   * in a worktree, the dev server's prebundle cache resolves through the git
+   * commondir into the canonical clone's .angular/cache, which causes
+   * JIT-compiler errors and e2e timeouts. serve-static builds once and serves
+   * the plain output, sidestepping that. */
   webServer: {
-    command: 'pnpm exec nx run listus-app:serve',
+    command: 'pnpm exec nx run listus-app:serve-static',
     url: 'http://localhost:4200',
     reuseExistingServer: true,
     cwd: workspaceRoot,

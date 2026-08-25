@@ -6,7 +6,7 @@ import {
   IonMenuButton,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { UserRequiredFieldsService } from '@sneat/auth-ui';
 import { SpacesCardComponent } from '@sneat/space-components';
 import { SpaceService } from '@sneat/space-services';

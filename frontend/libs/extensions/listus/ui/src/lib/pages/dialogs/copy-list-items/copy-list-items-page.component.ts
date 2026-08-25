@@ -5,6 +5,7 @@ import {
   OnInit,
   signal,
   inject,
+  input
 } from '@angular/core';
 import {
   ModalController,
@@ -22,7 +23,7 @@ import {
   IonRow,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import {
   IListInfo,
   IListItemBrief,
@@ -57,13 +58,15 @@ export class CopyListItemsPageComponent implements OnInit {
   private readonly toastCrl = inject(ToastController);
   private readonly listService = inject<IListusService>(LISTUS_SERVICE);
 
-  @Input() modal?: ModalController;
-  @Input() from?: IListInfo;
-  @Input() to?: IListInfo;
+  readonly modal = input<ModalController>();
+  readonly from = input<IListInfo>();
+  readonly to = input<IListInfo>();
 
   protected readonly $listItems = signal<IListItemBrief[] | undefined>(
     undefined,
   );
+  // TODO: Skipped for migration because:
+  //  Accessor inputs cannot be migrated as they are too complex.
   @Input()
   set listItems(value: IListItemBrief[] | undefined) {
     this.$listItems.set(value);
@@ -83,7 +86,7 @@ export class CopyListItemsPageComponent implements OnInit {
   }
 
   cancel(): void {
-    this.modal?.dismiss().catch(this.errorLogger.logError);
+    this.modal()?.dismiss().catch(this.errorLogger.logError);
   }
 
   addSelected(): void {
@@ -140,12 +143,13 @@ export class CopyListItemsPageComponent implements OnInit {
   }
 
   private loadList(): void {
-    if (this.from?.id) {
+    const from = this.from();
+    if (from?.id) {
       this.listService
         .getListById(
           { id: 'TO_BE_IMPLEMENTED' },
           'TO_BE_IMPLEMENTED' as ListType,
-          this.from.id,
+          from.id,
         )
         .subscribe({
           next: (list) => {
@@ -168,6 +172,6 @@ export class CopyListItemsPageComponent implements OnInit {
       message: `${this.selectedListItemIds.length} items copied`,
     });
     toast.present().catch(this.errorLogger.logError);
-    await this.modal?.dismiss();
+    await this.modal()?.dismiss();
   }
 }

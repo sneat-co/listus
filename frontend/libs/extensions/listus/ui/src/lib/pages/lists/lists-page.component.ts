@@ -30,8 +30,8 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
-import { ContactusServicesModule } from '@sneat/extension-contactus-internal';
+} from '@ionic/angular';
+import { ContactusServicesModule } from '@sneat/extension-contactus';
 import { APP_INFO, eq, IAppInfo } from '@sneat/core';
 import { SpaceServiceModule } from '@sneat/space-services';
 import {
@@ -449,7 +449,7 @@ export class ListsPageComponent extends SpaceBaseComponent {
         if (!passedList.type) {
           throw new Error(`!passedList[${i}]`);
         }
-        if (!passedList.space && this.space.type === 'private') {
+        if (!passedList.space && this.space.type === 'personal') {
           passedList = {
             ...passedList,
             space: createShortSpaceInfoFromDbo(this.space),

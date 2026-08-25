@@ -9,6 +9,7 @@ export default defineConfig({
     // specs. All assertions still pass; don't let these unhandled async errors
     // fail the run.
     dangerouslyIgnoreUnhandledErrors: true,
+    setupFiles: ['apps/listus-app/src/test-setup.ts'],
     server: { deps: { inline: [/@ionic/, /ionicons/, /@sneat/] } },
     deps: {
       optimizer: {

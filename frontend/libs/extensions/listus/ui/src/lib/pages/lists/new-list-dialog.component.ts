@@ -2,10 +2,10 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  Input,
   signal,
   viewChild,
   inject,
+  input
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -25,7 +25,7 @@ import {
   IonTitle,
   IonToolbar,
   ModalController,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { IListInfo, ListType } from '@sneat/extension-listus-contract';
 import { ErrorLogger, IErrorLogger } from '@sneat/core';
 
@@ -59,11 +59,11 @@ export class NewListDialogComponent implements AfterViewInit {
   protected readonly listNameInput = viewChild<IonInput>('listNameInput');
 
   public readonly listName = signal('');
-  public readonly visibility = signal<'private' | 'family'>('private');
+  public readonly visibility = signal<'personal' | 'family'>('personal');
 
-  @Input() title?: string;
-  @Input() listType?: ListType;
-  @Input() modal?: ModalController;
+  readonly title = input<string>();
+  readonly listType = input<ListType>();
+  readonly modal = input<ModalController>();
 
   ngAfterViewInit(): void /* Intentionally not ngOnInit */ {
     setTimeout(() => {
@@ -74,7 +74,8 @@ export class NewListDialogComponent implements AfterViewInit {
   }
 
   createList(): void {
-    if (!this.listType) {
+    const listType = this.listType();
+    if (!listType) {
       this.errorLogger.logError('list type is not set');
       return;
     }
@@ -84,7 +85,7 @@ export class NewListDialogComponent implements AfterViewInit {
         type: visibility,
         title: visibility.substr(0, 1).toUpperCase() + visibility.substr(1),
       },
-      type: this.listType,
+      type: listType,
       title: this.listName(),
       emoji: '📝',
     };
@@ -96,6 +97,6 @@ export class NewListDialogComponent implements AfterViewInit {
   }
 
   async closeDialog(listInfo?: IListInfo): Promise<void> {
-    await this.modal?.dismiss(listInfo, 'cancel');
+    await this.modal()?.dismiss(listInfo, 'cancel');
   }
 }

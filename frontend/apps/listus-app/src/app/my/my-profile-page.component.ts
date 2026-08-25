@@ -6,7 +6,7 @@ import {
   IonHeader,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { UserAuthAccountsComponent } from '@sneat/auth-ui';
 import { UserCountryComponent } from '@sneat/components';
 
