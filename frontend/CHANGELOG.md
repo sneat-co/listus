@@ -1,3 +1,21 @@
+## 0.0.5 (2026-08-25)
+
+### 🚀 Features
+
+- **frontend:** migrate to Ionic 9, Angular 22, zoneless change detection ([e57fede](https://github.com/sneat-co/listus/commit/e57fede))
+- **listus:** structured quantity and unit on a list item ([#38](https://github.com/sneat-co/listus/pull/38))
+
+### 🩹 Fixes
+
+- **ci:** disable npm version bump for Go module ([#36](https://github.com/sneat-co/listus/pull/36))
+- **ci:** migrate nx.json release.releaseTagPattern to nested releaseTag.pattern ([ea5b042](https://github.com/sneat-co/listus/commit/ea5b042))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok @trakhimenok
+- Claude Fable 5
+- Claude Opus 5
+
 ## 0.0.4 (2026-07-14)
 
 ### 🚀 Features
