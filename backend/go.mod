@@ -1,6 +1,6 @@
 module github.com/sneat-co/listus/backend
 
-go 1.26
+go 1.27.0
 
 require (
 	github.com/dal-go/dalgo v0.63.1
