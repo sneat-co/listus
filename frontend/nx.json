@@ -92,7 +92,9 @@
     }
   },
   "release": {
-    "releaseTagPattern": "v{version}",
+    "releaseTag": {
+      "pattern": "v{version}"
+    },
     "changelog": {
       "automaticFromRef": true
     },
