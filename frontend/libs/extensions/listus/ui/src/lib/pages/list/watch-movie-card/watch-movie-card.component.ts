@@ -16,7 +16,7 @@ import {
   IonSpinner,
   IonText,
   ToastController,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import {
   IListContext,
   IListItemBrief,

@@ -22,8 +22,8 @@ import {
   IonReorder,
   IonSpinner,
   IonText,
-} from '@ionic/angular/standalone';
-import { ToastOptions } from '@ionic/core/dist/types/components/toast/toast-interface';
+} from '@ionic/angular';
+import type { ToastOptions } from '@ionic/core';
 import { listItemAnimations } from '@sneat/core';
 import {
   IListContext,

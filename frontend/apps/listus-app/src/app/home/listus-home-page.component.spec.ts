@@ -37,7 +37,7 @@ describe('ListusHomePageComponent', () => {
     }),
   );
 
-  it('renders the spaces list for a user with spaces (all DI resolves, no NG0201)', () => {
+  it('renders the spaces list for a user with spaces (all DI resolves, no NG0201)', async () => {
     const fixture = TestBed.createComponent(ListusHomePageComponent);
     // detectChanges constructs the embedded SpacesListComponent; if a provider
     // (SpaceService / UserRequiredFieldsService) is missing this throws NG0201.
@@ -45,5 +45,15 @@ describe('ListusHomePageComponent', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('sneat-spaces-card')).toBeTruthy();
     expect(host.querySelector('sneat-spaces-list')).toBeTruthy();
+
+    // The embedded SpacesList opens a live Firestore listener. Let it settle,
+    // then destroy the fixture explicitly (rather than relying on TestBed's
+    // post-test teardown) so ngOnDestroy unsubscribes it before this test
+    // returns. Without this, jsdom has no emulator to connect to, the
+    // listener's reconnect-retry timer fires after the environment injector
+    // is gone, and @angular/fire's zoneless emission wrapper (which calls
+    // runInInjectionContext per emission) throws an unhandled NG0205.
+    await fixture.whenStable();
+    fixture.destroy();
   });
 });

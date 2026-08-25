@@ -10,7 +10,7 @@ import {
   IonSplitPane,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { BaseAppComponent } from '@sneat/app';
 import { AuthMenuItemComponent } from '@sneat/auth-ui';
 import { filter, map } from 'rxjs';
