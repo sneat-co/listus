@@ -108,8 +108,7 @@
     "verdaccio": "^6.3.2",
     "vite": "^7.3.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "4.0.9",
-    "zone.js": "0.16.2"
+    "vitest": "4.0.9"
   },
   "nx": {
     "includedScripts": []
