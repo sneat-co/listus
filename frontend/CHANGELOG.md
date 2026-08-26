@@ -1,3 +1,18 @@
+## 0.1.0 (2026-08-26)
+
+### 🚀 Features
+
+- ⚠️  **ext-listus-runtime,ext-listus-ui:** bump sneat-libs to 0.27.0, remove @angular/fire ([a5ac055](https://github.com/sneat-co/listus/commit/a5ac055))
+
+### ⚠️  Breaking Changes
+
+- **ext-listus-runtime,ext-listus-ui:** bump sneat-libs to 0.27.0, remove @angular/fire  ([a5ac055](https://github.com/sneat-co/listus/commit/a5ac055))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok
+- Claude Fable 5
+
 ## 0.0.5 (2026-08-25)
 
 ### 🚀 Features
