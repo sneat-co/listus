@@ -104,6 +104,8 @@ func TestGetListForUpdate_RoundTrip(t *testing.T) {
 	// Insert a list record, then read it back via GetListForUpdate inside a tx.
 	entry := NewListEntry(testSpaceID, dbo4listus.DoTasksListID)
 	entry.Data.Type = dbo4listus.ListTypeToDo
+	entry.Data.WithUserIDs = dbmodels.WithUserIDs{UserIDs: []string{testUserID}}
+	entry.Data.WithSpaceIDs = dbmodels.WithSingleSpaceID(testSpaceID)
 	if err := db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		return tx.Insert(ctx, entry.Record)
 	}); err != nil {
