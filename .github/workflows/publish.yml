@@ -6,6 +6,13 @@ on:
     paths:
       - frontend/**
       - .github/workflows/publish.yml
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Dry run (resolves and prints the publish plan, does not actually publish)
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -16,5 +23,5 @@ jobs:
     with:
       working-directory: frontend
       build-command: pnpm exec nx run-many -t build --projects=ext-listus-runtime,ext-listus-ui
-      publish-command: pnpm exec nx release --yes && git push --follow-tags
+      publish-command: ${{ inputs.dry_run && 'pnpm exec nx release --yes --dry-run' || 'pnpm exec nx release --yes && git push --follow-tags' }}
     secrets: inherit

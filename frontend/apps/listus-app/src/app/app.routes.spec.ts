@@ -1,3 +1,4 @@
+import { sneatAuthGuard } from '@sneat/auth-core';
 import { appRoutes } from './app.routes';
 
 describe('appRoutes', () => {
@@ -13,7 +14,7 @@ describe('appRoutes', () => {
   it('guards the root path so unauthenticated users go to login', () => {
     const root = appRoutes.find((r) => r.path === '');
     expect(root?.canActivate?.length).toBeGreaterThan(0);
-    expect(typeof root?.data?.['authGuardPipe']).toBe('function');
+    expect(root?.canActivate?.[0]).toBe(sneatAuthGuard);
   });
 
   it('mounts the space-scoped routes lazily', () => {

@@ -1,6 +1,6 @@
 {
   "name": "@sneat/extension-listus-ui",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "publishConfig": {
     "access": "public"
   },
@@ -12,20 +12,20 @@
     "@ionic/angular": ">=9.0.0 <10.0.0",
     "@ionic/core": ">=9.0.0 <10.0.0",
     "rxjs": "^7.0.0",
-    "@sneat/auth-core": "^0.26.4",
-    "@sneat/auth-models": "^0.26.4",
-    "@sneat/auth-ui": "^0.26.4",
-    "@sneat/core": "^0.26.4",
-    "@sneat/dto": "^0.26.4",
+    "@sneat/auth-core": "^0.27.0",
+    "@sneat/auth-models": "^0.27.0",
+    "@sneat/auth-ui": "^0.27.0",
+    "@sneat/core": "^0.27.0",
+    "@sneat/dto": "^0.27.0",
     "@sneat/random": "^0.0.4",
-    "@sneat/space-components": "^0.26.4",
-    "@sneat/space-models": "^0.26.4",
-    "@sneat/space-services": "^0.26.4",
-    "@sneat/ui": "^0.26.4",
+    "@sneat/space-components": "^0.27.0",
+    "@sneat/space-models": "^0.27.0",
+    "@sneat/space-services": "^0.27.0",
+    "@sneat/ui": "^0.27.0",
     "@sneat/extension-listus-contract": "^0.0.4",
     "vitest": "^4.0.9",
-    "@sneat/extension-contactus": "0.13.9",
-    "@sneat/extension-contactus-ui": "0.13.9"
+    "@sneat/extension-contactus": "^0.14.0",
+    "@sneat/extension-contactus-ui": "^0.14.0"
   },
   "sideEffects": false
 }

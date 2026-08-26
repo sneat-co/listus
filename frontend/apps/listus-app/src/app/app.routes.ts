@@ -1,6 +1,5 @@
 import { Route } from '@angular/router';
-import { AuthGuard } from '@angular/fire/auth-guard';
-import { redirectToLoginIfNotSignedIn } from '@sneat/auth-core';
+import { sneatAuthGuard } from '@sneat/auth-core';
 
 export const appRoutes: Route[] = [
   {
@@ -13,8 +12,7 @@ export const appRoutes: Route[] = [
       import('./home/listus-home-page.component').then(
         (m) => m.ListusHomePageComponent,
       ),
-    canActivate: [AuthGuard],
-    data: { authGuardPipe: () => redirectToLoginIfNotSignedIn },
+    canActivate: [sneatAuthGuard],
   },
   {
     // Space-scoped routes host the listus pages, mirroring sneat-app's
@@ -38,7 +36,7 @@ export const appRoutes: Route[] = [
       import('./my/my-profile-page.component').then(
         (m) => m.MyProfilePageComponent,
       ),
-    canActivate: [AuthGuard],
-    data: { title: 'My profile', authGuardPipe: () => redirectToLoginIfNotSignedIn },
+    canActivate: [sneatAuthGuard],
+    data: { title: 'My profile' },
   },
 ];
