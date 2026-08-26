@@ -6,8 +6,8 @@ toolchain go1.27.0
 
 require (
 	github.com/dal-go/dalgo v0.63.1
-	github.com/sneat-co/ext-listus/backend v0.0.5
 	github.com/sneat-co/sneat-core-modules v0.53.5
+	github.com/sneat-co/sneat-ext-contracts/listus v0.0.6
 	github.com/sneat-co/sneat-go-core v0.60.4
 	github.com/strongo/logus v0.4.1
 	github.com/strongo/random v0.0.1
