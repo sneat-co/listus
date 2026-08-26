@@ -16,10 +16,10 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sneat-co/ext-contactus/backend v0.1.6-0.20260721215756-58026a4fbd40 h1:ZrndPPIT626PSeRUHVnq67On+gTMd/eEALf9/1ypw88=
 github.com/sneat-co/ext-contactus/backend v0.1.6-0.20260721215756-58026a4fbd40/go.mod h1:uVa9kL5JUGWUVeUQCO0+NoUB4E9LgCVAmTXi6T1mKes=
-github.com/sneat-co/ext-listus/backend v0.0.5 h1:+fa+jzLDSANPO0Bjtn0IDoOggRZ0ex6YRvBlBMZUf6Q=
-github.com/sneat-co/ext-listus/backend v0.0.5/go.mod h1:YJA8WtyGX/INQDz95bzp31zol2A42jJw0921f1am3Uk=
 github.com/sneat-co/sneat-core-modules v0.53.5 h1:I7a08hLtGeXehZN51u3kHq60giFybTOzbB3U3KE7ztc=
 github.com/sneat-co/sneat-core-modules v0.53.5/go.mod h1:D1qHZlEGGDAOvHjYa2IqTSZwszmzm15XNan4OirgGd4=
+github.com/sneat-co/sneat-ext-contracts/listus v0.0.6 h1:ZpR6sROe6hoPxQGz3zIP3VDczT2F68Rl4lC3cRJ6+yg=
+github.com/sneat-co/sneat-ext-contracts/listus v0.0.6/go.mod h1:hZKhiGnJnTPgxKY3mJ3qhtSkHbKyXKfRS0rYt0x9Ebk=
 github.com/sneat-co/sneat-go-core v0.60.4 h1:td5D1oFefxVbA5UVU68+fEQSBZ3C39jieecxAdObmH8=
 github.com/sneat-co/sneat-go-core v0.60.4/go.mod h1:iiU41fDzW+E51mhQKp1hH6lvw6eLWZC0Nve9SbmbEJo=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=

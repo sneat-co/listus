@@ -5,7 +5,7 @@
 // facade contexts remain internal to the Listus backend.
 package botapi
 
-import botapp "github.com/sneat-co/ext-listus/backend/botapp"
+import botapp "github.com/sneat-co/sneat-ext-contracts/listus/botapp"
 
 // SpaceRef is the portable host contract used to select a Listus space.
 type SpaceRef = botapp.SpaceRef
