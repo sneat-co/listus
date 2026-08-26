@@ -51,7 +51,7 @@ describe('ListusHomePageComponent', () => {
     // post-test teardown) so ngOnDestroy unsubscribes it before this test
     // returns. Without this, jsdom has no emulator to connect to, the
     // listener's reconnect-retry timer fires after the environment injector
-    // is gone, and @angular/fire's zoneless emission wrapper (which calls
+    // is gone, and the zoneless Firestore emission wrapper (which calls
     // runInInjectionContext per emission) throws an unhandled NG0205.
     await fixture.whenStable();
     fixture.destroy();

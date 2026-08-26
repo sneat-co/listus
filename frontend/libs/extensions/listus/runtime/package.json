@@ -1,18 +1,18 @@
 {
   "name": "@sneat/extension-listus",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "publishConfig": {
     "access": "public"
   },
   "peerDependencies": {
     "@angular/core": ">=22.0.0 <23.0.0",
     "@angular/common": ">=22.0.0 <23.0.0",
-    "@angular/fire": "^20.0.0",
+    "firebase": "*",
     "rxjs": "^7.0.0",
-    "@sneat/api": "^0.26.4",
-    "@sneat/core": "^0.26.4",
-    "@sneat/space-models": "^0.26.4",
-    "@sneat/space-services": "^0.26.4",
+    "@sneat/api": "^0.27.0",
+    "@sneat/core": "^0.27.0",
+    "@sneat/space-models": "^0.27.0",
+    "@sneat/space-services": "^0.27.0",
     "@sneat/extension-listus-contract": "^0.0.4",
     "vitest": "^4.0.9"
   },
