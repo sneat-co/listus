@@ -95,7 +95,12 @@ jobs:
     needs: [architecture, botapi-coverage]
     # Pin the validated reusable workflow. New action dependencies require an
     # explicit review against this repository's selected-action policy.
-    uses: strongo/cicd/.github/workflows/workflow.yml@63952f8f48296bf5cbce9c91be579827b7b9cd06
+    # Bumped to d015321 (strongo/cicd main, 2026-08-26): the previously pinned
+    # commit installs Go 1.26 for lint/build, which cannot compile a go.mod
+    # requiring go >= 1.27.0 (dal-go/dalgo v0.74.0's floor). d015321 pins
+    # Go 1.27.0 + golangci-lint v2.13.1 together, deliberately (see that
+    # repo's workflow.yml comments for the 2026-08-20 incident this resolved).
+    uses: strongo/cicd/.github/workflows/workflow.yml@d015321b71acdf578f853ae65998efcb7f2849bb
     permissions:
       contents: write
     secrets:
