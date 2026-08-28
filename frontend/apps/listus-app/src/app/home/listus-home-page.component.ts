@@ -1,12 +1,10 @@
 import { Component } from '@angular/core';
-import {
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonMenuButton,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/angular';
+import { IonButtons } from '@ionic/angular/ion-buttons';
+import { IonContent } from '@ionic/angular/ion-content';
+import { IonHeader } from '@ionic/angular/ion-header';
+import { IonMenuButton } from '@ionic/angular/ion-menu-button';
+import { IonTitle } from '@ionic/angular/ion-title';
+import { IonToolbar } from '@ionic/angular/ion-toolbar';
 import { UserRequiredFieldsService } from '@sneat/auth-ui';
 import { SpacesCardComponent } from '@sneat/space-components';
 import { SpaceService } from '@sneat/space-services';

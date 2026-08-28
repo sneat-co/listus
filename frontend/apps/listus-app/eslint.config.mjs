@@ -8,6 +8,17 @@ export default [
   {
     files: ['**/*.ts'],
     rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^@ionic/angular$',
+              message: 'Import Ionic components from focused @ionic/angular/ion-* subpaths.',
+            },
+          ],
+        },
+      ],
       '@angular-eslint/directive-selector': [
         'error',
         {

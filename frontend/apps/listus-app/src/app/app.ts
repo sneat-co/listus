@@ -1,16 +1,14 @@
 import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
-import {
-  IonApp,
-  IonContent,
-  IonHeader,
-  IonMenu,
-  IonRouterOutlet,
-  IonSplitPane,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/angular';
+import { IonApp } from '@ionic/angular/ion-app';
+import { IonContent } from '@ionic/angular/ion-content';
+import { IonHeader } from '@ionic/angular/ion-header';
+import { IonMenu } from '@ionic/angular/ion-menu';
+import { IonRouterOutlet } from '@ionic/angular/ion-router-outlet';
+import { IonSplitPane } from '@ionic/angular/ion-split-pane';
+import { IonTitle } from '@ionic/angular/ion-title';
+import { IonToolbar } from '@ionic/angular/ion-toolbar';
 import { BaseAppComponent } from '@sneat/app';
 import { AuthMenuItemComponent } from '@sneat/auth-ui';
 import { filter, map } from 'rxjs';

@@ -1,12 +1,10 @@
 import { Component } from '@angular/core';
-import {
-  IonBackButton,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/angular';
+import { IonBackButton } from '@ionic/angular/ion-back-button';
+import { IonButtons } from '@ionic/angular/ion-buttons';
+import { IonContent } from '@ionic/angular/ion-content';
+import { IonHeader } from '@ionic/angular/ion-header';
+import { IonTitle } from '@ionic/angular/ion-title';
+import { IonToolbar } from '@ionic/angular/ion-toolbar';
 import { UserAuthAccountsComponent } from '@sneat/auth-ui';
 import { UserCountryComponent } from '@sneat/components';
 
