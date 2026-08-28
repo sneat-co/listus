@@ -13,6 +13,7 @@
 # Node (frontend has its own .gitignore too)
 node_modules/
 dist/
+.angular/
 .nx/cache
 .nx/workspace-data
 
