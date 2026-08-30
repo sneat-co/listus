@@ -1,3 +1,13 @@
+## 0.1.1 (2026-08-30)
+
+### 🩹 Fixes
+
+- refine list status display ([35ae970](https://github.com/sneat-co/listus/commit/35ae970))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok
+
 ## 0.1.0 (2026-08-26)
 
 ### 🚀 Features
