@@ -42,6 +42,7 @@ import { RandomIdService } from '@sneat/random';
 import { SpaceServiceModule } from '@sneat/space-services';
 import { ClassName } from '@sneat/ui';
 import { ListusCoreServicesModule } from '../../services';
+import { ConnectionStatusChipComponent } from '../../connection-status-chip.component';
 import { SpaceComponentBaseParams } from '@sneat/space-components';
 import {
   IListContext,
@@ -104,6 +105,7 @@ type ListPagePerforming =
     IonReorder,
     IonSpinner,
     IonFooter,
+    ConnectionStatusChipComponent,
   ],
   styleUrls: ['./list-page.component.scss'],
   providers: [

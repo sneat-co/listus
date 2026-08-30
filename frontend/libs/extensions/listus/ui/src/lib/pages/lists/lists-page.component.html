@@ -13,6 +13,7 @@
         }
       </ion-title>
     }
+    <listus-connection-status-chip slot="end" />
     <ion-buttons slot="end">
       <ion-menu-button menu="mainMenu" />
     </ion-buttons>
@@ -23,8 +24,7 @@
   <ion-card>
     @for (
       listGroup of $listGroups();
-      track listGroup.id || listGroup.type;
-      let listGroupIndex = $index
+      track listGroup.id || listGroup.type
     ) {
       <ion-item-group>
         <ion-item-divider
@@ -87,7 +87,6 @@
                   detail="false"
                   (click)="goList(list)"
                   [lines]="
-                    listGroupIndex + 1 === $listGroups()?.length &&
                     listIndex + 1 === listGroup.lists?.length
                       ? 'none'
                       : undefined

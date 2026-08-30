@@ -41,11 +41,21 @@
     <ion-label>Lists</ion-label>
   </ion-item>
 
-  @for (group of $listGroups(); track group.id) {
-    @for (list of group.lists || []; track list.id) {
+  @for (group of $listGroups(); track group.id; let groupIndex = $index) {
+    @for (
+      list of group.lists || [];
+      track list.id;
+      let listIndex = $index
+    ) {
       <ion-item
         button
         class="ion-padding-start"
+        [lines]="
+          groupIndex + 1 === $listGroups().length &&
+          listIndex + 1 === (group.lists || []).length
+            ? 'none'
+            : undefined
+        "
         [routerLink]="spacePageUrl('list/' + list.type + '/' + list.id)"
         routerDirection="root"
         [disabled]="$disabled()"

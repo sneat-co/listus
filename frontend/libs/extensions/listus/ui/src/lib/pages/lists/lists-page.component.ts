@@ -53,6 +53,7 @@ import {
   IListusAppStateService,
   ListusCoreServicesModule,
 } from '../../services';
+import { ConnectionStatusChipComponent } from '../../connection-status-chip.component';
 import { NewListDialogComponent } from './new-list-dialog.component';
 import { ClassName } from '@sneat/ui';
 
@@ -87,6 +88,7 @@ import { ClassName } from '@sneat/ui';
     IonReorder,
     IonItemOption,
     IonInput,
+    ConnectionStatusChipComponent,
   ],
   providers: [
     { provide: ClassName, useValue: 'ListsPageComponent' },
