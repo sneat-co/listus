@@ -40,7 +40,7 @@ contracts. The composition-root app wires `provideListus()` to bind
 ```bash
 cd frontend
 pnpm install
-pnpm exec nx serve listus-app        # standalone app (Vite dev server)
+pnpm start                           # https://listus-app.dev.localhost:4315
 pnpm exec nx run-many -t lint test build
 pnpm exec nx e2e listus-app-e2e      # Playwright smoke
 ```
@@ -48,7 +48,14 @@ pnpm exec nx e2e listus-app-e2e      # Playwright smoke
 `listus-app` reuses the sneat space framework and Firebase config, so for real
 **auth + list data** it needs the same backing services as `sneat-app`:
 Firebase emulators (`auth :9099`, `firestore :8080`) and `sneat-go-server`
-(`:4300`), all under project `local-sneat-app`. See
+at `https://sneat-api.dev.localhost:4300`, all under project
+`demo-local-sneat-app`. The app uses that API URL automatically when its
+Firebase emulator configuration is enabled. Use a locally trusted development
+certificate whose subject alternative names cover `*.dev.localhost`. Generate
+and trust it once with `scripts/setup-localhost-tls` from the Workbench repo;
+`pnpm start` then reads the generated certificate from the standard Workbench
+location.
+See
 [`sneat-apps/docs/RUN-LOCAL.md`](https://github.com/sneat-co/sneat-apps/blob/main/docs/RUN-LOCAL.md)
 for the full stack. (A dedicated listus backend is scaffolded under
 [`backend/`](backend) but currently only serves `/health`.)

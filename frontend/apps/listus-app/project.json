@@ -58,8 +58,10 @@
       "continuous": true,
       "executor": "@angular/build:dev-server",
       "options": {
+        "host": "listus-app.dev.localhost",
         "port": 4315,
-        "prebundle": false
+        "prebundle": false,
+        "ssl": true
       },
       "configurations": {
         "production": {

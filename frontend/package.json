@@ -2,7 +2,9 @@
   "name": "@sneat/listus-frontend",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start": "nx serve listus-app --ssl-cert \"$HOME/Library/Application Support/workbench/localhost-tls/localhost.pem\" --ssl-key \"$HOME/Library/Application Support/workbench/localhost-tls/localhost-key.pem\""
+  },
   "private": true,
   "dependencies": {
     "@angular-devkit/build-angular": "22.1.5",
@@ -21,6 +23,7 @@
     "@ionic/core": "9.0.0",
     "@sneat/api": "0.27.0",
     "@sneat/app": "0.27.0",
+    "@sneat/app-auth": "0.27.6",
     "@sneat/auth-core": "0.27.0",
     "@sneat/auth-models": "0.27.0",
     "@sneat/auth-ui": "0.27.0",
@@ -31,7 +34,9 @@
     "@sneat/dto": "0.27.0",
     "@sneat/ext-assetus-components": "0.9.0",
     "@sneat/extension-calendarius-contract": "0.27.0",
+    "@sneat/extension-contactus": "0.14.0",
     "@sneat/extension-contactus-contract": "0.12.2",
+    "@sneat/extension-contactus-ui": "0.14.0",
     "@sneat/extension-listus-contract": "^0.0.4",
     "@sneat/grid": "0.27.0",
     "@sneat/logging": "0.27.0",
@@ -48,9 +53,7 @@
     "express": "^4.21.2",
     "firebase": "12.13.0",
     "ionicons": "^8.0.13",
-    "rxjs": "~7.8.0",
-    "@sneat/extension-contactus": "0.14.0",
-    "@sneat/extension-contactus-ui": "0.14.0"
+    "rxjs": "~7.8.0"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "2.7.0",

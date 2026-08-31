@@ -16,11 +16,17 @@ pnpm install
 ## Common tasks
 
 ```bash
-pnpm exec nx serve listus-app          # run the app locally
+pnpm start                              # https://listus-app.dev.localhost:4315
 pnpm exec nx build ext-listus-ui       # build the public UI library
 pnpm exec nx run-many -t lint test build
 pnpm exec nx e2e listus-app-e2e        # end-to-end tests
 ```
+
+The development server uses HTTPS on `listus-app.dev.localhost`. When Firebase
+emulators are enabled, the app calls the shared Sneat platform API directly at
+`https://sneat-api.dev.localhost:4300`. Run
+`scripts/setup-localhost-tls` once from the Workbench repo to create and trust
+the `*.dev.localhost` certificate; `pnpm start` uses its standard location.
 
 ## Layout
 
