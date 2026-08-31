@@ -1,3 +1,13 @@
+## 0.1.3 (2026-08-31)
+
+### 🩹 Fixes
+
+- **listus:** use explicit prerelease peer ranges ([afeff05](https://github.com/sneat-co/listus/commit/afeff05))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok
+
 ## 0.1.2 (2026-08-31)
 
 ### 🚀 Features
