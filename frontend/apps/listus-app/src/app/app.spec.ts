@@ -28,4 +28,12 @@ describe('App', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('ion-app')).toBeTruthy();
   });
+
+  it('shows the shared Spaces menu on the authenticated landing route', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('sneat-spaces-menu')).toBeTruthy();
+  });
 });

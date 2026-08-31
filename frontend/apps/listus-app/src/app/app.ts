@@ -10,7 +10,9 @@ import { IonSplitPane } from '@ionic/angular/ion-split-pane';
 import { IonTitle } from '@ionic/angular/ion-title';
 import { IonToolbar } from '@ionic/angular/ion-toolbar';
 import { BaseAppComponent } from '@sneat/app';
-import { AuthMenuItemComponent } from '@sneat/auth-ui';
+import { AuthMenuItemComponent, UserRequiredFieldsService } from '@sneat/auth-ui';
+import { SpacesMenuComponent } from '@sneat/space-components';
+import { SpaceService } from '@sneat/space-services';
 import { filter, map } from 'rxjs';
 
 // Extends BaseAppComponent for the shared app lifecycle (redirect sign-in
@@ -18,7 +20,8 @@ import { filter, map } from 'rxjs';
 // menu (like sneat-app): on a space route it renders that space's menu via the
 // named "menu" outlet (which the space routes mount SpaceMenuComponent into —
 // without this outlet the space route fails to activate and its pages, e.g.
-// lists, never render); elsewhere it shows the spaces list + signed-in user.
+// lists, never render); elsewhere it shows the same shared SpacesMenuComponent
+// used by the landing card, followed by the signed-in user.
 @Component({
   selector: 'listus-root',
   template: `
@@ -42,6 +45,7 @@ import { filter, map } from 'rxjs';
             @if (showRouteMenu()) {
               <ion-router-outlet name="menu" [animated]="false" />
             } @else {
+              <sneat-spaces-menu />
               <sneat-auth-menu-item />
             }
           </ion-content>
@@ -51,6 +55,9 @@ import { filter, map } from 'rxjs';
     </ion-app>
   `,
   styles: [`.clickable-title { cursor: pointer; }`],
+  // The shared SpacesMenu -> SpacesList chain needs these non-root services,
+  // just as the SpacesCard on the landing page does.
+  providers: [SpaceService, UserRequiredFieldsService],
   imports: [
     IonApp,
     IonSplitPane,
@@ -61,6 +68,7 @@ import { filter, map } from 'rxjs';
     IonContent,
     IonRouterOutlet,
     RouterLink,
+    SpacesMenuComponent,
     AuthMenuItemComponent,
   ],
 })
