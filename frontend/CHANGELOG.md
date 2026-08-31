@@ -1,3 +1,18 @@
+## 0.1.2 (2026-08-31)
+
+### 🚀 Features
+
+- **listus:** refine space navigation and list interactions ([aa34deb](https://github.com/sneat-co/listus/commit/aa34deb))
+- **menu:** show spaces on landing page ([ce59529](https://github.com/sneat-co/listus/commit/ce59529))
+
+### 🩹 Fixes
+
+- **dev:** run Listus with trusted local HTTPS ([5d23cf8](https://github.com/sneat-co/listus/commit/5d23cf8))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok
+
 ## 0.1.1 (2026-08-30)
 
 ### 🩹 Fixes
