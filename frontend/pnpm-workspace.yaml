@@ -13,16 +13,16 @@ overrides:
   '@sneat/api-firebase-auth': 0.27.0
   '@sneat/api-public': 0.27.0
   '@sneat/api': 0.27.0
-  '@sneat/app-auth': 0.27.0
+  '@sneat/app-auth': 0.27.6
   '@sneat/app-ionic': 0.27.0
   '@sneat/app-public': 0.27.0
   '@sneat/app': 0.27.0
   '@sneat/auth-core': 0.27.0
   '@sneat/auth-models': 0.27.0
   '@sneat/auth-ui': 0.27.0
-  '@sneat/components': 0.27.0
+  '@sneat/components': 0.27.7
   '@sneat/core-public': 0.27.0
-  '@sneat/core': 0.27.0
+  '@sneat/core': 0.27.7
   '@sneat/data': 0.27.0
   '@sneat/datagrid': 0.27.0
   '@sneat/dto': 0.27.0
@@ -31,7 +31,7 @@ overrides:
   '@sneat/extension-calendarius-shared': 0.27.0
   '@sneat/grid': 0.27.0
   '@sneat/logging': 0.27.0
-  '@sneat/space-components': 0.27.0
+  '@sneat/space-components': 0.27.7
   '@sneat/space-models': 0.27.0
   '@sneat/space-nav-ionic': 0.27.0
   '@sneat/space-nav-router': 0.27.0

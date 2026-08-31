@@ -4,6 +4,8 @@ import {
   ChangeDetectorRef,
   Component,
   effect,
+  afterNextRender,
+  Injector,
   signal,
   viewChild,
   inject,
@@ -40,6 +42,7 @@ import { ContactusServicesModule } from '@sneat/extension-contactus';
 import { SharedWithComponent } from '@sneat/extension-contactus-ui';
 import { RandomIdService } from '@sneat/random';
 import { SpaceServiceModule } from '@sneat/space-services';
+import { listAddRemoveAnimation } from '@sneat/core';
 import { ClassName } from '@sneat/ui';
 import { ListusCoreServicesModule } from '../../services';
 import { ConnectionStatusChipComponent } from '../../connection-status-chip.component';
@@ -107,6 +110,7 @@ type ListPagePerforming =
     IonFooter,
     ConnectionStatusChipComponent,
   ],
+  animations: listAddRemoveAnimation,
   styleUrls: ['./list-page.component.scss'],
   providers: [
     { provide: ClassName, useValue: 'ListPageComponent' },
@@ -121,10 +125,12 @@ export class ListPageComponent extends BaseListPage {
   private readonly listDialogs = inject(ListDialogsService);
   private readonly listusAppStateService = inject(IListusAppStateService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
+  private readonly injector = inject(Injector);
 
   protected readonly isPersisting = signal(false);
   protected readonly isHideWatched = signal(false);
   protected readonly isReordering = signal(false);
+  protected readonly isChangingDoneFilter = signal(false);
 
   protected readonly listMode = signal<'reorder' | 'swipe'>('swipe');
   protected readonly doneFilter = signal<
@@ -143,6 +149,7 @@ export class ListPageComponent extends BaseListPage {
   protected readonly performing = signal<ListPagePerforming | undefined>(
     undefined,
   );
+  protected readonly isDeletingList = signal(false);
 
   // protected completedListItems?: IListItemWithUiState[];
   // protected activeListItems?: IListItemWithUiState[];
@@ -224,7 +231,15 @@ export class ListPageComponent extends BaseListPage {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public onIsDoneFilterChanged(_event: Event): void {
+    // Tab changes replace a whole result set. Keep them immediate so the
+    // completion-only fade-and-collapse animation is not replayed for every
+    // row filtered out by the new tab.
+    this.isChangingDoneFilter.set(true);
     this.applyFilter();
+    afterNextRender(
+      () => this.isChangingDoneFilter.set(false),
+      { injector: this.injector },
+    );
   }
 
   protected override setList(list: IListContext): void {
@@ -294,6 +309,17 @@ export class ListPageComponent extends BaseListPage {
         const updated = [...allListItems];
         updated[itemIndex] = changedItem.new;
         this.allListItems.set(updated);
+        if (changedItem.new.state.isChangingIsDone) {
+          // Keep an item visible (but disabled) while its completion change is
+          // being saved. Filtering it now would remove it before Angular can
+          // run the shared fade-and-collapse leave animation on success.
+          this.listItems.update((items) =>
+            items?.map((item) =>
+              item === changedItem.old ? changedItem.new : item,
+            ),
+          );
+          return;
+        }
         this.applyFilter();
       }
     }
@@ -311,6 +337,33 @@ export class ListPageComponent extends BaseListPage {
         })
         .catch(this.errorLogger.logError);
     }
+  }
+
+  protected deleteList(): void {
+    const list = this.list;
+    if (!list?.id || !list.brief || !this.space || this.isDeletingList()) {
+      return;
+    }
+    if (!confirm(`Delete “${list.brief.title}” and all its items?`)) {
+      return;
+    }
+    this.isDeletingList.set(true);
+    this.listService
+      .deleteList(this.space, list.id)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: () => {
+          this.spaceNav
+            .navigateBackToSpacePage(this.space, 'lists', { replaceUrl: true })
+            .catch(
+              this.errorLogger.logErrorHandler('Failed to leave deleted list'),
+            );
+        },
+        error: (err) => {
+          this.isDeletingList.set(false);
+          this.errorLogger.logError(err, 'Failed to delete list');
+        },
+      });
   }
 
   protected reorder(e: Event): void {
@@ -550,6 +603,8 @@ export class ListPageComponent extends BaseListPage {
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
+          this.doneFilter.set('active');
+          this.applyFilter();
           this.performing.set(undefined);
         },
         error: (err) => {

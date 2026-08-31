@@ -29,16 +29,36 @@ import { SpaceService } from '@sneat/space-services';
   providers: [SpaceService, UserRequiredFieldsService],
   template: `
     <ion-header>
-      <ion-toolbar>
+      <ion-toolbar color="light">
         <ion-buttons slot="start">
           <ion-menu-button />
         </ion-buttons>
-        <ion-title>Listus.app</ion-title>
+        <ion-title>
+          <span class="app-title">Listus.app</span>
+          <span class="page-title">Home</span>
+        </ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
       <sneat-spaces-card />
     </ion-content>
   `,
+  styles: [
+    `
+      .page-title {
+        display: none;
+      }
+
+      @media (min-width: 992px) {
+        .app-title {
+          display: none;
+        }
+
+        .page-title {
+          display: inline;
+        }
+      }
+    `,
+  ],
 })
 export class ListusHomePageComponent {}

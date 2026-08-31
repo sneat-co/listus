@@ -54,8 +54,25 @@ export abstract class BaseListPage extends SpaceItemPageBaseComponent<
 
   protected setList(list: IListContext): void {
     const current = this.list;
-    if (!list.brief && list.id == current?.id && current.brief) {
-      list = { ...list, brief: current.brief };
+    const isSameList =
+      !!current &&
+      (list.id === current.id ||
+        (!!current.type && list.id === `${current.type}!${current.id}`) ||
+        (!!list.type && current.id === `${list.type}!${list.id}`));
+    if (isSameList && current.brief) {
+      // Route parsing seeds a human-readable title from the list ID. Preserve it
+      // when a later context refresh contains only a partial/empty brief; without
+      // this the detail header regresses from "To buy — Groceries" to a dangling
+      // dash after the data listener starts.
+      const refreshedBrief = list.brief;
+      list = {
+        ...list,
+        brief: {
+          ...current.brief,
+          ...refreshedBrief,
+          title: refreshedBrief?.title || current.brief.title,
+        },
+      };
     }
     this.$list.set(list);
   }

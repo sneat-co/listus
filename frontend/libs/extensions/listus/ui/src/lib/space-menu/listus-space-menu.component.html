@@ -1,32 +1,12 @@
 <ion-list>
   <!-- Space selector: switch between the user's spaces (like sneat-app). -->
-  <ion-item>
-    <ion-select
-      label="Space"
-      [value]="$space().id"
-      interface="popover"
-      (ionChange)="onSpaceSelected($event)"
-      style="font-weight: bold"
-    >
-      @for (userSpace of $spaces(); track userSpace.id) {
-        <ion-select-option [value]="userSpace.id">
-          {{
-            userSpace.brief.title ||
-              (userSpace.brief.type | titlecase) ||
-              userSpace.id
-          }}
-        </ion-select-option>
-      } @empty {
-        @let space = $space();
-        <ion-select-option [value]="space?.id">
-          @if (!space || (!space.id && !space.type)) {
-            Loading...
-          } @else {
-            {{ space.brief?.title || (space.type | titlecase) || space.id }}
-          }
-        </ion-select-option>
-      }
-    </ion-select>
+  <ion-item class="sneat-pane-header">
+    <sneat-space-selector
+      [closeMenuOnSelection]="true"
+      [navigateOnSelection]="false"
+      justify="space-between"
+      (spaceSelected)="switchSpace($event)"
+    />
   </ion-item>
 
   <!-- Lists of the selected space. -->

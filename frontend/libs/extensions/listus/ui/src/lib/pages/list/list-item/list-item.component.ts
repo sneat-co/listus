@@ -205,9 +205,16 @@ export class ListItemComponent {
               ),
             );
         },
-        error: this.errorLogger.logErrorHandler(
-          'failed to mark list item as completed',
-        ),
+        error: (err) => {
+          // Roll back the optimistic state so the item stays usable when the
+          // save fails instead of being left disabled in the active list.
+          this.itemChanged.emit({ old: newItem, new: item });
+          this.$isSettingIsDone.set(false);
+          this.errorLogger.logError(
+            err,
+            'failed to mark list item as completed',
+          );
+        },
         complete: () => {
           this.$isSettingIsDone.set(false);
         },
@@ -254,6 +261,19 @@ export class ListItemComponent {
         }
       },
     });
+  }
+
+  protected confirmDeleteFromList(
+    item: IListItemBrief,
+    event: Event,
+    ionSliding?: IonItemSliding | HTMLElement,
+  ): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!confirm(`Remove "${item.title}" from this list?`)) {
+      return;
+    }
+    this.deleteFromList(item, ionSliding);
   }
 
   protected openCopyListItemDialog(

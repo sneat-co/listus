@@ -56,4 +56,16 @@ describe('ListusHomePageComponent', () => {
     await fixture.whenStable();
     fixture.destroy();
   });
+
+  it('uses the Listus.app title on narrow screens and Home beside the split-pane menu', () => {
+    const fixture = TestBed.createComponent(ListusHomePageComponent);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('.app-title')?.textContent?.trim()).toBe('Listus.app');
+    expect(host.querySelector('.page-title')?.textContent?.trim()).toBe('Home');
+    expect(host.querySelector('ion-toolbar')?.getAttribute('color')).toBe('light');
+
+    fixture.destroy();
+  });
 });

@@ -8,15 +8,15 @@
         @switch (list?.brief?.type) {
           @case ("buy") {
             {{ list?.brief?.emoji || "🛒" }}
-            {{ list?.brief?.title }} to buy
+            To buy &mdash; {{ list?.brief?.title }}
           }
           @case ("cook") {
             {{ list?.brief?.emoji || "🧑‍🍳" }}
-            {{ list?.brief?.title }} to cook
+            To cook &mdash; {{ list?.brief?.title }}
           }
           @case ("watch") {
             {{ list?.brief?.emoji || "📽️" }}
-            {{ list?.brief?.title }} to watch
+            To watch &mdash; {{ list?.brief?.title }}
           }
           @default {
             {{ list?.brief?.emoji || "📋" }}
@@ -32,7 +32,19 @@
     </ion-title>
     <listus-connection-status-chip slot="end" />
     <ion-buttons slot="end">
-      <ion-button (click)="newItem()">
+      <ion-button
+        aria-label="Delete list"
+        color="medium"
+        [disabled]="isDeletingList()"
+        (click)="deleteList()"
+      >
+        @if (isDeletingList()) {
+          <ion-spinner />
+        } @else {
+          <ion-icon name="trash-outline" />
+        }
+      </ion-button>
+      <ion-button [disabled]="isDeletingList()" (click)="newItem()">
         <ion-icon name="add" />
       </ion-button>
     </ion-buttons>
@@ -125,6 +137,7 @@
         below) instead of this generic checklist. -->
       <ion-list>
         <ion-reorder-group
+          [@.disabled]="isChangingDoneFilter()"
           (ionItemReorder)="reorder($event)"
           [disabled]="
             isReordering() ||
@@ -133,7 +146,10 @@
           "
         >
           @for (item of listItems(); track item.brief.id) {
-            <ion-reorder>
+            <ion-reorder
+              class="list-item-row"
+              [@addRemove]="item.state.isAdding ? 'added' : 'present'"
+            >
               <listus-list-item
                 [showDoneCheckbox]="doneFilter() !== 'all'"
                 [$doneFilter]="doneFilter() || 'all'"

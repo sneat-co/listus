@@ -4,7 +4,12 @@
 <!--</ion-item>-->
 @let listItem = $listItem();
 
-<ion-item-sliding #ionSliding @listItem>
+<ion-item-sliding
+  #ionSliding
+  @listItem
+  [disabled]="$isSettingIsDone()"
+  [class.is-transitioning]="$isSettingIsDone()"
+>
   <!--	<ion-item button (click)="goListItem(listItem)">-->
   <ion-item>
     @if (!$isReorderMode()) {
@@ -52,6 +57,16 @@
         <ion-button (click)="deleteFromList(listItem)" color="medium">
           <ion-icon name="close-outline" />
         </ion-button>
+      } @else {
+        <ion-button
+          aria-label="Remove {{ listItem.title }}"
+          class="list-item-remove-button"
+          [disabled]="$isSettingIsDone()"
+          color="medium"
+          (click)="confirmDeleteFromList(listItem, $event)"
+        >
+          <ion-icon name="trash-outline" />
+        </ion-button>
       }
     </ion-buttons>
     <!--		<ion-reorder slot="end"></ion-reorder>-->
@@ -84,12 +99,12 @@
   <!--suppress AngularUndefinedBinding -->
   <ion-item-options
     side="end"
-    (ionSwipe)="deleteFromList(listItem, ionSliding)"
+    (ionSwipe)="confirmDeleteFromList(listItem, $event, ionSliding)"
   >
     <ion-item-option
       expandable="true"
       color="danger"
-      (click)="deleteFromList(listItem, ionSliding)"
+      (click)="confirmDeleteFromList(listItem, $event, ionSliding)"
     >
       <ion-icon name="trash" class="with-label" />
       Remove

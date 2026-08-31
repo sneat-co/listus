@@ -5,7 +5,9 @@ import {
   viewChild,
   inject,
 } from '@angular/core';
+import { TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
   IonInput,
   PopoverController,
@@ -27,7 +29,6 @@ import {
   IonMenuButton,
   IonReorder,
   IonReorderGroup,
-  IonText,
   IonTitle,
   IonToolbar,
 } from '@ionic/angular';
@@ -44,6 +45,7 @@ import { builtInListGroups } from './built-in-lists';
 import {
   SpaceBaseComponent,
   SpaceComponentBaseParams,
+  SpaceSelectorComponent,
 } from '@sneat/space-components';
 import { createShortSpaceInfoFromDbo } from '@sneat/space-models';
 import { Subscription } from 'rxjs';
@@ -60,9 +62,44 @@ import { ClassName } from '@sneat/ui';
 @Component({
   selector: 'listus-lists-page',
   templateUrl: './lists-page.component.html',
-  styles: [`.clickable-divider { cursor: pointer; }`],
+  styles: [
+    `
+      .clickable-divider {
+        cursor: pointer;
+      }
+
+      .space-title-wide {
+        display: none;
+      }
+
+      .lists-card-space-selector {
+        display: block;
+      }
+
+      .space-title-narrow {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      @media (min-width: 992px) {
+        .space-title-wide {
+          display: inline;
+        }
+
+        .space-title-narrow {
+          display: none;
+        }
+
+        .lists-card-space-selector {
+          display: none;
+        }
+      }
+    `,
+  ],
   imports: [
+    TitleCasePipe,
     FormsModule,
+    RouterLink,
     ListusCoreServicesModule,
     ContactusServicesModule,
     SpaceServiceModule,
@@ -84,11 +121,11 @@ import { ClassName } from '@sneat/ui';
     IonItemOptions,
     IonBackButton,
     IonToolbar,
-    IonText,
     IonReorder,
     IonItemOption,
     IonInput,
     ConnectionStatusChipComponent,
+    SpaceSelectorComponent,
   ],
   providers: [
     { provide: ClassName, useValue: 'ListsPageComponent' },
@@ -270,33 +307,6 @@ export class ListsPageComponent extends SpaceBaseComponent {
   // We display groups of lists from all user communes
   // Once a commune DTO loaded we should update combined listGroups[]
   // A good example would be a "to watch movies" group that will have family lists (visible to all family members)
-
-  remove(
-    listGroup: IListGroup,
-    list: IListInfo,
-    ionItemSliding: IonItemSliding,
-  ): void {
-    ionItemSliding.close().catch((err) => {
-      this.errorLogger.logError(err, 'Failed to close sliding item');
-    });
-    this.reordered = true;
-    if (!list.id) {
-      throw new Error('!list.id');
-    }
-    if (!this.space) {
-      throw new Error('!this.team');
-    }
-    this.params.listService.deleteList(this.space, list.id).subscribe({
-      next: () => {
-        listGroup.lists =
-          listGroup.lists?.filter((l) => !eq(l.id, list.id)) || [];
-        this.notifyListGroupsChanged();
-      },
-      error: (err) => {
-        this.errorLogger.logError(err, 'Failed to delete list');
-      },
-    });
-  }
 
   cancelListCreation(): void {
     this.addingToGroup.set(undefined);

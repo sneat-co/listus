@@ -3,8 +3,21 @@
   color: darkgray;
 }
 
+.is-transitioning {
+  pointer-events: none;
+}
+
 ion-item ion-buttons[slot='end'] ion-button {
   // TODO: better way to do it?
   margin-right: -1em;
   //border: 1px solid red !important;
+}
+
+ion-item ion-buttons[slot='end'] ion-button.list-item-remove-button {
+  --background: transparent;
+  --background-activated: transparent;
+  --background-hover: transparent;
+  --box-shadow: none;
+  --color: var(--ion-color-medium);
+  opacity: 0.65;
 }

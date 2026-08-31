@@ -1,7 +1,12 @@
 <ion-header>
   <ion-toolbar color="light" class="with-end-buttons">
     @if (appId === "listus") {
-      <ion-title>📜 Listus.app</ion-title>
+      <ion-title>
+        <span class="space-title-wide">
+          {{ space.type | titlecase }} lists
+        </span>
+        <a class="space-title-narrow" routerLink="/">Listus.app</a>
+      </ion-title>
     } @else {
       <ion-buttons slot="start">
         <ion-back-button [text]="null" [defaultHref]="$defaultBackUrl()" />
@@ -22,6 +27,9 @@
 
 <ion-content>
   <ion-card>
+    <ion-item class="sneat-card-header lists-card-space-selector" lines="full">
+      <sneat-space-selector />
+    </ion-item>
     @for (
       listGroup of $listGroups();
       track listGroup.id || listGroup.type
@@ -101,12 +109,6 @@
                     }
 
                     {{ list.title }}
-
-                    @if (list.space) {
-                      <ion-text color="medium" style="font-size: x-small">
-                        &mdash; <i>{{ list.space.title }}</i>
-                      </ion-text>
-                    }
                   </ion-label>
                   @if (
                     list.restrictions &&
@@ -127,16 +129,6 @@
                   }
                   <ion-reorder slot="end" />
                 </ion-item>
-                <ion-item-options slot="end">
-                  <ion-item-option
-                    color="danger"
-                    expandable="true"
-                    (click)="remove(listGroup, list, ionItemSliding)"
-                  >
-                    <ion-icon name="trash" class="with-label" />
-                    Remove
-                  </ion-item-option>
-                </ion-item-options>
               </ion-item-sliding>
             }
             @if (addingToGroup() === listGroup.type) {

@@ -1,5 +1,6 @@
 // Main entry point for listus.app
 import { bootstrapApplication } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { SneatApiBaseUrl } from '@sneat/api';
 import {
@@ -22,6 +23,7 @@ const listusApiBaseUrl = getListusApiBaseUrl(
 bootstrapApplication(App, {
   providers: [
     ...getStandardSneatProviders(listusAppEnvironmentConfig),
+    provideAnimations(),
     ...(listusApiBaseUrl
       ? [{ provide: SneatApiBaseUrl, useValue: listusApiBaseUrl }]
       : []),

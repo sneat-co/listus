@@ -14,3 +14,8 @@ ion-item.ion-item-no-border {
   //--inner-border-width: 0;
   --border-width: 0;
 }
+
+ion-reorder.list-item-row {
+  display: block;
+  overflow: hidden;
+}
