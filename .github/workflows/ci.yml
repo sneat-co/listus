@@ -114,10 +114,13 @@ jobs:
       min_test_coverage_percent: 78.3
 
   frontend:
-    uses: sneat-co/cicd/.github/workflows/nx-ci.yml@742b19b0d4d7e12fa2068951773bdd01d64532e1
+    uses: sneat-co/cicd/.github/workflows/nx-ci.yml@232ab1cdd5df4db820349fcb1c2ba636217a4328
     with:
       working-directory: frontend
       targets: "lint test build"
+      # Angular's production bundle is resource-intensive on GitHub-hosted
+      # runners; serial execution avoids it competing with Vitest/lint tasks.
+      parallelism: 1
 
   # E2E runs only after both backend and frontend succeed.
   e2e:
