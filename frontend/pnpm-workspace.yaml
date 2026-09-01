@@ -21,7 +21,7 @@ overrides:
   '@sneat/auth-models': 0.27.0
   '@sneat/auth-ui': 0.27.0
   '@sneat/components': 0.27.7
-  '@sneat/core-public': 0.27.0
+  '@sneat/core-public': 0.27.7
   '@sneat/core': 0.27.7
   '@sneat/data': 0.27.0
   '@sneat/datagrid': 0.27.0
