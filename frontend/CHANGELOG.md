@@ -1,3 +1,13 @@
+## 0.1.4 (2026-09-01)
+
+### 🩹 Fixes
+
+- **listus:** align core public package release ([a11e7e4](https://github.com/sneat-co/listus/commit/a11e7e4))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok
+
 ## 0.1.3 (2026-08-31)
 
 ### 🩹 Fixes
