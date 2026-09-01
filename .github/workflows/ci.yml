@@ -114,7 +114,7 @@ jobs:
       min_test_coverage_percent: 78.3
 
   frontend:
-    uses: sneat-co/cicd/.github/workflows/nx-ci.yml@main
+    uses: sneat-co/cicd/.github/workflows/nx-ci.yml@742b19b0d4d7e12fa2068951773bdd01d64532e1
     with:
       working-directory: frontend
       targets: "lint test build"
