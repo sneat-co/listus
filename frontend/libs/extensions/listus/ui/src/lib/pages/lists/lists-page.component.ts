@@ -38,6 +38,8 @@ import {
   IListGroup,
   IListInfo,
   IListusSpaceDbo,
+  IListusListGroupsReader,
+  LISTUS_LIST_GROUPS_READER,
   ListType,
 } from '@sneat/extension-listus-contract';
 import { builtInListGroups } from './built-in-lists';
@@ -137,12 +139,17 @@ export class ListsPageComponent extends SpaceBaseComponent {
   private readonly appService = inject<IAppInfo>(APP_INFO);
   private readonly modalCtrl = inject(PopoverController);
   private readonly listusAppStateService = inject(IListusAppStateService);
+  private readonly listGroupsReader = inject<IListusListGroupsReader>(
+    LISTUS_LIST_GROUPS_READER,
+    { optional: true },
+  );
 
   protected readonly newListTitle = viewChild<IonInput>('newListTitle');
   protected readonly addingToGroup = signal<ListType | undefined>(undefined);
   protected readonly $listGroups = signal<IListGroup[] | undefined>(undefined);
   protected readonly listTitle = signal('');
   private userCommunesSubscriptions: Subscription[] = [];
+  private listGroupsSubscription?: Subscription;
   private readonly collapsedGroups = signal<string[] | undefined>(undefined);
 
   /** Notifies the listGroups signal after in-place mutations of groups/lists. */
@@ -288,6 +295,8 @@ export class ListsPageComponent extends SpaceBaseComponent {
   protected override onSpaceDboChanged(): void {
     try {
       super.onSpaceDboChanged();
+      this.listGroupsSubscription?.unsubscribe();
+      this.listGroupsSubscription = undefined;
       if (this.space) {
         // Reset first so switching spaces doesn't accumulate the previous
         // space's groups. Then show the built-in default lists (family) for
@@ -300,6 +309,27 @@ export class ListsPageComponent extends SpaceBaseComponent {
           | IListusSpaceDbo
           | undefined;
         this.updateListsFromSpace(listusDbo?.listGroups); // persisted lists
+        if (this.listGroupsReader) {
+          this.listGroupsSubscription = this.listGroupsReader
+            .watchListGroups(this.space)
+            .pipe(takeUntil(this.destroyed$))
+            .subscribe({
+              next: (groups) => {
+                // A reader emits a complete snapshot, not an incremental merge.
+                // Reset so deletions do not remain visible after a refresh.
+                this.listGroups = [];
+                this.updateListsFromSpace(undefined);
+                this.updateListsFromSpace([...groups]);
+              },
+              error: (error: unknown) => {
+                this.listGroups = [];
+                this.updateListsFromSpace(undefined);
+                this.errorLogger.logErrorHandler(
+                  'Failed to load storage-backed list overview',
+                )(error);
+              },
+            });
+        }
       } else {
         this.listGroups = [];
       }

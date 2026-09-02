@@ -9,7 +9,7 @@ import {
 import { SneatApiService } from '@sneat/api';
 import { ISpaceContext } from '@sneat/space-models';
 import { ModuleSpaceItemService } from '@sneat/space-services';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   AddMovieToWatchlistRequest,
@@ -17,6 +17,7 @@ import {
   IListBrief,
   IListContext,
   IListDbo,
+  IListGroup,
   ListType,
   ICreateListItemsRequest,
   ICreateListRequest,
@@ -126,6 +127,14 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
       map((listContext) => {
         return this.onListSnapshot(space, listID, listType, listContext.dbo);
       }),
+    );
+  }
+
+  /** Optional overview capability; undefined during a cold Space load is valid. */
+  public watchListGroups(space: ISpaceContext): Observable<readonly IListGroup[]> {
+    return of(
+      (space.dbo as unknown as { listGroups?: IListGroup[] } | undefined)
+        ?.listGroups || [],
     );
   }
 

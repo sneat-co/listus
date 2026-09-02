@@ -27,9 +27,12 @@ import { ISpaceContext } from '@sneat/space-models';
 import { SpaceServiceModule } from '@sneat/space-services';
 import { ClassName } from '@sneat/ui';
 import { filter, takeUntil, take } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import {
   IListGroup,
   IListusSpaceDbo,
+  IListusListGroupsReader,
+  LISTUS_LIST_GROUPS_READER,
   ListType,
 } from '@sneat/extension-listus-contract';
 import { builtInListGroups } from '../pages/lists/built-in-lists';
@@ -66,6 +69,11 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
 
   private readonly menuCtrl = inject(MenuController);
   private readonly router = inject(Router);
+  private readonly listGroupsReader = inject<IListusListGroupsReader>(
+    LISTUS_LIST_GROUPS_READER,
+    { optional: true },
+  );
+  private listGroupsSubscription?: Subscription;
 
   constructor() {
     super();
@@ -86,6 +94,8 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
   // the space DBO, deduped by group type.
   protected override onSpaceDboChanged(): void {
     super.onSpaceDboChanged();
+    this.listGroupsSubscription?.unsubscribe();
+    this.listGroupsSubscription = undefined;
     const groups: IListGroup[] = this.space
       ? [...builtInListGroups(this.space.type)]
       : [];
@@ -96,6 +106,27 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
       }
     });
     this.$listGroups.set(groups);
+    if (!this.space || !this.listGroupsReader) return;
+    this.listGroupsSubscription = this.listGroupsReader
+      .watchListGroups(this.space)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: (storageGroups) => {
+          const merged = [...builtInListGroups(this.space.type)];
+          storageGroups.forEach((group) => {
+            const index = merged.findIndex((current) => current.type === group.type);
+            if (index >= 0) merged[index] = group;
+            else merged.push(group);
+          });
+          this.$listGroups.set(merged);
+        },
+        error: (error: unknown) => {
+          this.$listGroups.set([...builtInListGroups(this.space.type)]);
+          this.errorLogger.logErrorHandler(
+            'Failed to load storage-backed list overview',
+          )(error);
+        },
+      });
   }
 
   protected closeMenu(): void {

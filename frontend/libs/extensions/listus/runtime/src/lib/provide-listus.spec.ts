@@ -1,4 +1,4 @@
-import { LISTUS_SERVICE } from '@sneat/extension-listus-contract';
+import { LISTUS_LIST_GROUPS_READER, LISTUS_SERVICE } from '@sneat/extension-listus-contract';
 import { ListService } from './services';
 import { provideListus } from './provide-listus';
 
@@ -8,6 +8,10 @@ describe('provideListus', () => {
     expect(providers).toContain(ListService);
     expect(providers).toContainEqual({
       provide: LISTUS_SERVICE,
+      useExisting: ListService,
+    });
+    expect(providers).toContainEqual({
+      provide: LISTUS_LIST_GROUPS_READER,
       useExisting: ListService,
     });
   });
