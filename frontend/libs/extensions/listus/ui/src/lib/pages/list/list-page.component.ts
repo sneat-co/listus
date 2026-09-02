@@ -116,13 +116,14 @@ type ListPagePerforming =
     { provide: ClassName, useValue: 'ListPageComponent' },
     SpaceComponentBaseParams,
     ListusComponentBaseParams,
+    // Not injected by this component itself - provided here so the child
+    // ListItemComponent's per-item "copy to list" dialog resolves it via DI.
     ListDialogsService,
     RandomIdService,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListPageComponent extends BaseListPage {
-  private readonly listDialogs = inject(ListDialogsService);
   private readonly listusAppStateService = inject(IListusAppStateService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly injector = inject(Injector);
@@ -524,29 +525,34 @@ export class ListPageComponent extends BaseListPage {
       );
   }
 
-  protected openCopyListItemsDialog(
-    listItem?: IListItemBrief,
-    event?: Event,
-  ): void {
-    if (event) {
-      event.stopPropagation();
-    }
-
-    if (listItem) {
-      this.errorLogger.logError('not implemented yet');
-    } else if (this.list && this.listItems()) {
-      this.errorLogger.logError('not implemented yet');
-    }
-  }
-
   protected deleteCompleted(): void {
-    this.deleteItems(
-      this.allListItems()?.filter((li) => li.brief.status === 'done'),
+    const items = this.allListItems()?.filter(
+      (li) => li.brief.status === 'done',
     );
+    if (!items?.length) {
+      alert('You have no completed items');
+      return;
+    }
+    // Irreversible bulk delete - a short single-button confirm is enough here
+    // (see sneat-specs/standards/frontend-ux/modals.md "Destructive confirmation").
+    if (!confirm(`Delete ${items.length} completed item(s)?`)) {
+      return;
+    }
+    this.deleteItems(items);
   }
 
   protected deleteAll(): void {
-    this.deleteItems(this.allListItems());
+    const items = this.allListItems();
+    if (!items?.length) {
+      alert('Nothing to delete');
+      return;
+    }
+    // Irreversible bulk delete - a short single-button confirm is enough here
+    // (see sneat-specs/standards/frontend-ux/modals.md "Destructive confirmation").
+    if (!confirm(`Delete all ${items.length} item(s)?`)) {
+      return;
+    }
+    this.deleteItems(items);
   }
 
   private deleteItems(items?: IListItemWithUiState[]): void {
@@ -617,16 +623,21 @@ export class ListPageComponent extends BaseListPage {
       });
   }
 
+  // Navigates to the built-in "Groceries" buy-list (see built-in-lists.ts:
+  // type 'buy', id 'groceries' - the same target `ListDialogsService`
+  // defaults recipe items to). Only ever shown from a recipe list's footer.
   protected goGroceries(): void {
-    if (!this.space.id) {
+    if (!this.space?.id) {
       this.errorLogger.logError('no space context');
       return;
     }
-    this.errorLogger.logError('not implemented yet');
-    // this.spaceNav.navigateForwardToSpacePage(this.team,
-    // 	`list/${this.list?.id}`, {
-    // 		state: { list: this.list },
-    // 	});
+    this.spaceNav
+      .navigateForwardToSpacePage(this.space, 'list/buy/groceries')
+      .catch(
+        this.errorLogger.logErrorHandler(
+          'Failed to navigate to Groceries list',
+        ),
+      );
   }
 
   private applyFilter(): void {
