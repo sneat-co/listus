@@ -5,25 +5,25 @@
     </ion-buttons>
     <ion-title>
       @if (list?.brief) {
-        @switch (list?.brief?.type) {
+        @switch (list.brief.type) {
           @case ("buy") {
-            {{ list?.brief?.emoji || "🛒" }}
-            To buy &mdash; {{ list?.brief?.title }}
+            {{ list.brief.emoji || "🛒" }}
+            To buy &mdash; {{ list.brief.title }}
           }
           @case ("cook") {
-            {{ list?.brief?.emoji || "🧑‍🍳" }}
-            To cook &mdash; {{ list?.brief?.title }}
+            {{ list.brief.emoji || "🧑‍🍳" }}
+            To cook &mdash; {{ list.brief.title }}
           }
           @case ("watch") {
-            {{ list?.brief?.emoji || "📽️" }}
-            To watch &mdash; {{ list?.brief?.title }}
+            {{ list.brief.emoji || "📽️" }}
+            To watch &mdash; {{ list.brief.title }}
           }
           @default {
-            {{ list?.brief?.emoji || "📋" }}
+            {{ list.brief.emoji || "📋" }}
             @if ($listGroupTitle()) {
               <span>{{ $listGroupTitle() }}: </span>
             }
-            {{ list?.brief?.title }}
+            {{ list.brief.title }}
           }
         }
       } @else {
@@ -326,9 +326,9 @@
       }
     }
     @case ("cards") {
-      @if (list?.dbo) {
+      @if (list && list.dbo) {
         <div style="padding-top: 0.5em; padding-bottom: 0.5em">
-          @switch (list?.brief?.type) {
+          @switch (list.brief?.type) {
             @case ("watch") {
               @for (item of listItems() || []; track item.brief.id) {
                 <listus-watch-movie-card
