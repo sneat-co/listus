@@ -27,7 +27,6 @@ import {
   IonItemSliding,
   IonLabel,
   IonMenuButton,
-  IonReorder,
   IonReorderGroup,
   IonTitle,
   IonToolbar,
@@ -121,7 +120,6 @@ import { ClassName } from '@sneat/ui';
     IonItemOptions,
     IonBackButton,
     IonToolbar,
-    IonReorder,
     IonItemOption,
     IonInput,
     ConnectionStatusChipComponent,
@@ -143,7 +141,6 @@ export class ListsPageComponent extends SpaceBaseComponent {
   protected readonly newListTitle = viewChild<IonInput>('newListTitle');
   protected readonly addingToGroup = signal<ListType | undefined>(undefined);
   protected readonly $listGroups = signal<IListGroup[] | undefined>(undefined);
-  reordered?: boolean;
   protected readonly listTitle = signal('');
   private userCommunesSubscriptions: Subscription[] = [];
   private readonly collapsedGroups = signal<string[] | undefined>(undefined);
@@ -202,71 +199,6 @@ export class ListsPageComponent extends SpaceBaseComponent {
       group.title,
       !this.isCollapsed(group),
     );
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  reorder(_event: Event, _listGroup: IListGroup): void {
-    this.errorLogger.logError('reorder is not implemented yet');
-    // let dtoListGroup: IListGroup | undefined;
-    // let reordered = false;
-    // if (!this.team) {
-    // 	throw new Error('!this.commune');
-    // }
-    // this.teamService.createTeam().updateRecord(undefined, this.communeRealId, dto => {
-    // 	if (!dto) {
-    // 		if (!this.team?.dto) {
-    // 			throw new Error('!this.commune.dto');
-    // 		}
-    // 		dto = this.team.dto;
-    // 		dto.id = this.communeRealId;
-    // 	} else if (!dto.listGroups ||
-    // 		dto.listGroups.length !== this.listGroups.length ||
-    // 		dto.listGroups.map(lg => lg.type)
-    // 			.join(',') !== this.listGroups.map(lg => lg.type)
-    // 			.join(',')
-    // 	) {
-    // 		return { dto, changed: false }; // TODO: document why, don't remember by now but this code smells and is a potential for silent bugs
-    // 	}
-    // 	// tslint:disable-next-line:no-non-null-assertion
-    // 	dtoListGroup = dto.listGroups && dto.listGroups.find(lg => eq(lg.type, listGroup.type));
-    // 	if (!dtoListGroup) {
-    // 		throw new Error('!dtoListGroup');
-    // 	}
-    // 	// To avoid UI re-paint issue we reorder UI elements and then map change to DTO
-    // 	listGroup.lists = event.detail.complete(listGroup.lists);
-    // 	// tslint:disable-next-line:no-non-null-assertion
-    // 	if (!dtoListGroup) {
-    // 		throw new Error('!dtoListGroup');
-    // 	}
-    // 	// tslint:disable-next-line:no-non-null-assertion
-    // 	dtoListGroup.lists = listGroup.lists!.map(
-    // 		listInfo => {
-    // 			if (!dtoListGroup) {
-    // 				throw new Error('!dtoListGroup');
-    // 			}
-    // 			// tslint:disable-next-line:no-non-null-assertion
-    // 			const list = dtoListGroup.lists!.find(l => !!l.id && l.id === listInfo.id || !!l.shortId && l.shortId === listInfo.shortId);
-    // 			if (!list) {
-    // 				throw new Error('!list');
-    // 			}
-    // 			return list;
-    // 		});
-    // 	this.reordered = reordered = true;
-    // 	return { dto, changed: true };
-    // })
-    // 	.subscribe(
-    // 		() => {
-    // 			if (!reordered) {
-    // 				event.detail.complete();
-    // 				if (dtoListGroup) {
-    // 					listGroup.lists = [...(dtoListGroup.lists || [])];
-    // 				}
-    // 			}
-    // 		},
-    // 		err => {
-    // 			event.detail.complete();
-    // 			this.errorLogger.logError(err, 'Failed to persist items reordering:');
-    // 		});
   }
 
   public goList(list: IListInfo): void {
@@ -357,21 +289,17 @@ export class ListsPageComponent extends SpaceBaseComponent {
     try {
       super.onSpaceDboChanged();
       if (this.space) {
-        if (this.reordered) {
-          this.reordered = false;
-        } else {
-          // Reset first so switching spaces doesn't accumulate the previous
-          // space's groups. Then show the built-in default lists (family) for
-          // instant UX, and merge the lists persisted on the space DBO (the
-          // extraction had stubbed out this second step, so only the built-ins
-          // showed and real lists never loaded).
-          this.listGroups = [];
-          this.updateListsFromSpace(undefined); // built-in defaults (family)
-          const listusDbo = this.space.dbo as unknown as
-            | IListusSpaceDbo
-            | undefined;
-          this.updateListsFromSpace(listusDbo?.listGroups); // persisted lists
-        }
+        // Reset first so switching spaces doesn't accumulate the previous
+        // space's groups. Then show the built-in default lists (family) for
+        // instant UX, and merge the lists persisted on the space DBO (the
+        // extraction had stubbed out this second step, so only the built-ins
+        // showed and real lists never loaded).
+        this.listGroups = [];
+        this.updateListsFromSpace(undefined); // built-in defaults (family)
+        const listusDbo = this.space.dbo as unknown as
+          | IListusSpaceDbo
+          | undefined;
+        this.updateListsFromSpace(listusDbo?.listGroups); // persisted lists
       } else {
         this.listGroups = [];
       }

@@ -80,10 +80,10 @@
           </ion-buttons>
         </ion-item-divider>
         @if (!isCollapsed(listGroup)) {
-          <ion-reorder-group
-            [disabled]="false"
-            (ionItemReorder)="reorder($event, listGroup)"
-          >
+          <!-- Drag-to-reorder is not implemented (no API persists group/list
+               order); disabled rather than offering a drag handle that goes
+               nowhere. -->
+          <ion-reorder-group [disabled]="true">
             @for (
               list of listGroup.lists;
               track trackById($index, list);
@@ -127,7 +127,6 @@
                       list.itemsCount
                     }}</ion-badge>
                   }
-                  <ion-reorder slot="end" />
                 </ion-item>
               </ion-item-sliding>
             }

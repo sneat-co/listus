@@ -315,10 +315,7 @@
         </ion-grid>
         @if (list?.brief?.type === "recipes") {
           <div class="ion-padding">
-            <ion-button expand="block" (click)="openCopyListItemsDialog()">
-              🛒 Add to groceries
-            </ion-button>
-            <ion-button expand="block" fill="clear" (click)="goGroceries()">
+            <ion-button expand="block" (click)="goGroceries()">
               📋 Groceries shopping list
             </ion-button>
           </div>
