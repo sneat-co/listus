@@ -1,3 +1,14 @@
+## 0.1.5 (2026-09-02)
+
+### 🩹 Fixes
+
+- **listus:** confirm before bulk delete, remove 3 dead-end buttons ([4786e4f](https://github.com/sneat-co/listus/commit/4786e4f))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok @trakhimenok
+- Claude Fable 5
+
 ## 0.1.4 (2026-09-01)
 
 ### 🩹 Fixes
