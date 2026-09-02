@@ -15,6 +15,7 @@ node_modules/
 dist/
 .nx/cache
 .nx/workspace-data
+.angular/cache
 
 # Firebase Hosting deploy cache
 .firebase/
