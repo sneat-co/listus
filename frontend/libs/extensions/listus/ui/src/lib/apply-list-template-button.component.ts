@@ -6,7 +6,9 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { IonButton, IonIcon, IonSpinner } from '@ionic/angular';
+import { IonButton } from '@ionic/angular/ion-button';
+import { IonIcon } from '@ionic/angular/ion-icon';
+import { IonSpinner } from '@ionic/angular/ion-spinner';
 import { addIcons } from 'ionicons';
 import { refreshOutline } from 'ionicons/icons';
 import {
@@ -48,6 +50,7 @@ export class ApplyListTemplateButtonComponent {
   readonly applied = output<IApplyListTemplateResult>();
   readonly $applying = signal(false);
   readonly $error = signal('');
+  private pendingRequest?: IApplyListTemplateRequest;
   constructor() {
     addIcons({ refreshOutline });
   }
@@ -59,14 +62,18 @@ export class ApplyListTemplateButtonComponent {
     this.$applying.set(true);
     this.$error.set('');
     const link = this.link();
-    const request: IApplyListTemplateRequest = {
-      spaceID: this.spaceID(),
-      sourceListID: link.sourceListID,
-      destinationListID: link.destinationListID,
-      requestID: crypto.randomUUID(),
-    };
+    const request =
+      this.pendingRequest ??
+      ({
+        spaceID: this.spaceID(),
+        sourceListID: link.sourceListID,
+        destinationListID: link.destinationListID,
+        requestID: crypto.randomUUID(),
+      } satisfies IApplyListTemplateRequest);
+    this.pendingRequest = request;
     this.lists.applyListTemplate(request).subscribe({
       next: (result) => {
+        this.pendingRequest = undefined;
         this.$applying.set(false);
         this.applied.emit(result);
       },

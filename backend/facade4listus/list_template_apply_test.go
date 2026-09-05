@@ -3,6 +3,7 @@ package facade4listus
 import (
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
+	"sync"
 	"testing"
 )
 
@@ -56,6 +57,49 @@ func TestApplyListTemplateAddsRestoresPreservesAndRetriesWithoutMutation(t *test
 func TestTemplateReceiptIDUsesUnambiguousTupleEncoding(t *testing.T) {
 	if templateReceiptID("a", "b\x00c") == templateReceiptID("a\x00b", "c") {
 		t.Fatal("distinct user/request tuples produced the same receipt ID")
+	}
+}
+
+func TestApplyListTemplateConcurrentSameRequestHasOneClassification(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	template, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "Regular groceries"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	createItems(t, ctx, template.ID, "Milk", "Bread")
+	destination, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "To buy"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := dto4listus.ApplyListTemplateRequest{SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: dbo4listus.ListKey(destination.ID), RequestID: "concurrent-click"}
+	results := make([]dto4listus.ApplyListTemplateResult, 2)
+	errs := make([]error, 2)
+	var ready sync.WaitGroup
+	ready.Add(2)
+	start := make(chan struct{})
+	var done sync.WaitGroup
+	done.Add(2)
+	for i := range results {
+		go func(i int) {
+			defer done.Done()
+			ready.Done()
+			<-start
+			results[i], errs[i] = ApplyListTemplate(userCtx(ctx, testUserID), request)
+		}(i)
+	}
+	ready.Wait()
+	close(start)
+	done.Wait()
+	for i := range results {
+		if errs[i] != nil {
+			t.Fatalf("apply %d: %v", i, errs[i])
+		}
+		if len(results[i].Added) != 2 {
+			t.Fatalf("apply %d classified %d added items, want receipt snapshot of 2: %+v", i, len(results[i].Added), results[i])
+		}
+	}
+	if got := len(getListData(t, ctx, destination.ID).Items); got != 2 {
+		t.Fatalf("destination has %d items after concurrent retry, want 2", got)
 	}
 }
 

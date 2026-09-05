@@ -47,7 +47,7 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
 
   public createList(request: ICreateListRequest): Observable<IListContext> {
     return this.sneatApiService
-      .post<IListContext>('lists/create_list', request)
+      .post<IListContext>('listus/create_list', request)
       .pipe(
         map((list) => {
           if (!list.brief) {

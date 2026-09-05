@@ -22,6 +22,9 @@ func ApplyListTemplate(ctx facade.ContextWithUser, request dto4listus.ApplyListT
 	}
 	destinationRequest := dto4listus.ListRequest{SpaceRequest: dto4spaceus.NewSpaceRequest(request.SpaceID), ListID: request.DestinationListID}
 	err = dal4listus.RunListWorker(ctx, destinationRequest, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *dal4listus.ListWorkerParams) error {
+		// DAL transactions may invoke this callback again after a conflict. Never
+		// carry classifications from an abandoned attempt into the next receipt.
+		result = dto4listus.ApplyListTemplateResult{}
 		if err := params.GetRecords(ctx, tx); err != nil {
 			return err
 		}
