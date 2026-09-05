@@ -13,6 +13,7 @@ import (
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dto4spaceus"
+	"github.com/sneat-co/sneat-go-core/coretypes"
 	"github.com/sneat-co/sneat-go-core/facade"
 )
 
@@ -28,8 +29,21 @@ func ApplyListTemplate(ctx facade.ContextWithUser, request dto4listus.ApplyListT
 		if err := params.GetRecords(ctx, tx); err != nil {
 			return err
 		}
-		if !params.List.Record.Exists() {
+		destinationExists := params.List.Record.Exists()
+		if !destinationExists && !dbo4listus.IsStandardList(request.DestinationListID) {
 			return fmt.Errorf("destination list not found")
+		}
+		if !destinationExists {
+			params.List.Data.Type = request.DestinationListID.ListType()
+			params.List.Data.Title = string(request.DestinationListID)
+			params.List.Data.SpaceIDs = []coretypes.SpaceID{request.SpaceID}
+			params.List.Data.UserIDs = append([]string(nil), params.Space.Data.UserIDs...)
+			switch params.List.Data.Type {
+			case dbo4listus.ListTypeToBuy:
+				params.List.Data.Emoji = "🛒"
+			case dbo4listus.ListTypeToDo:
+				params.List.Data.Emoji = "✅"
+			}
 		}
 		receiptID := templateReceiptID(params.UserID(), request.RequestID)
 		receipt := new(dbo4listus.ListTemplateApplyReceiptDbo)
@@ -74,8 +88,12 @@ func ApplyListTemplate(ctx facade.ContextWithUser, request dto4listus.ApplyListT
 		if validateErr := params.List.Data.Validate(); validateErr != nil {
 			return fmt.Errorf("resulting destination list: %w", validateErr)
 		}
-		params.List.Record.MarkAsChanged()
-		params.ListUpdates = append(params.ListUpdates, update.ByFieldName("items", params.List.Data.Items), update.ByFieldName("count", params.List.Data.Count))
+		if destinationExists {
+			params.List.Record.MarkAsChanged()
+			params.ListUpdates = append(params.ListUpdates, update.ByFieldName("items", params.List.Data.Items), update.ByFieldName("count", params.List.Data.Count))
+		} else if insertErr := tx.Insert(ctx, params.List.Record); insertErr != nil {
+			return insertErr
+		}
 		result.SourceListID, result.DestinationListID, result.ListType, result.Disposition = string(request.SourceListID), string(request.DestinationListID), request.SourceListID.ListType(), "applied"
 		receipt = &dbo4listus.ListTemplateApplyReceiptDbo{UserID: params.UserID(), RequestID: request.RequestID, SourceListID: result.SourceListID, DestinationListID: result.DestinationListID, Added: result.Added, Restored: result.Restored, Unchanged: result.Unchanged, CreatedAt: params.Started}
 		return tx.Insert(ctx, dalrecord.NewRecordWithData(dbo4listus.NewListTemplateApplyReceiptKey(request.SpaceID, receiptID), receipt))

@@ -119,3 +119,21 @@ func TestApplyListTemplateSupportsDoListsAndRefusesNonMember(t *testing.T) {
 		t.Fatalf("do apply=(%+v,%v)", result, applyErr)
 	}
 }
+
+func TestApplyListTemplateCreatesEmptyStandardDestinationOnFirstUse(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	template, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToDo, Title: "Saturday cleaning"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	createItems(t, ctx, template.ID, "Kitchen sink", "Toilet")
+	request := dto4listus.ApplyListTemplateRequest{SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: dbo4listus.DoTasksListID, RequestID: "first-standard-click"}
+	result, err := ApplyListTemplate(userCtx(ctx, testUserID), request)
+	if err != nil || len(result.Added) != 2 {
+		t.Fatalf("first apply=(%+v,%v)", result, err)
+	}
+	destination := getListData(t, ctx, dbo4listus.DoTasksListID)
+	if destination.Type != dbo4listus.ListTypeToDo || len(destination.Items) != 2 {
+		t.Fatalf("standard destination=%+v", destination)
+	}
+}
