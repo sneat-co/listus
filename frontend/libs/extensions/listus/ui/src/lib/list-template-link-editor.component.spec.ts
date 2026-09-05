@@ -17,6 +17,12 @@ describe('ListTemplateLinkEditorComponent', () => {
       sourceListID: 'buy!regular',
       destinationListID: 'buy!groceries',
     });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Create a saved list');
+    expect(text).toContain('Keep regular items in a saved list.');
+    expect(text).not.toContain('Listus');
 
     expect(
       fixture.componentInstance.$templates().map((list) => list.id),

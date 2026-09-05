@@ -70,11 +70,11 @@ import {
       size="small"
       (click)="createTemplate.emit(listType())"
     >
-      Create a regular-items list
+      Create a saved list
     </ion-button>
     <p class="ion-padding-horizontal ion-no-margin">
-      Maintain regular items in an ordinary Listus list. Applying it adds
-      missing items and restores completed ones.
+      Keep regular items in a saved list. Applying it adds missing items and
+      restores completed ones.
     </p>
   `,
 })
