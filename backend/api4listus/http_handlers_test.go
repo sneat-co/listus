@@ -84,6 +84,7 @@ func TestRegisterHttpRoutes(t *testing.T) {
 		{http.MethodDelete, "/v0/listus/list_items_delete"},
 		{http.MethodPost, "/v0/listus/list_items_reorder"},
 		{http.MethodPost, "/v0/listus/list_items_set_watch_with"},
+		{http.MethodPost, "/v0/listus/list_templates_apply"},
 		{http.MethodPost, "/v0/listus/movies/search"},
 		{http.MethodPost, "/v0/listus/movies/resolve"},
 		{http.MethodPost, "/v0/listus/movies/identify"},
