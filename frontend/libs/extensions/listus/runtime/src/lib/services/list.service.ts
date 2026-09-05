@@ -78,7 +78,7 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
   }
 
   private getFullListID(type: ListType, shortID: string): string {
-    return `${type}:${shortID}`;
+    return `${type}!${shortID}`;
   }
 
   public createListItems(
