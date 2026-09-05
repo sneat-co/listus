@@ -140,8 +140,8 @@ importers:
         specifier: 0.14.0
         version: 0.14.0(32e1e90f4fc5655368c01d765e4e18c1)
       '@sneat/extension-listus-contract':
-        specifier: ^0.0.4
-        version: 0.0.4(4b960b5f4c9cb8dbe7d56037259cd4e7)
+        specifier: ^0.0.9
+        version: 0.0.9(201e05bfaaf463d6e059696df982898f)
       '@sneat/grid':
         specifier: 0.27.0
         version: 0.27.0(@angular/common@22.1.3(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))
@@ -4707,8 +4707,8 @@ packages:
       firebase: '*'
       rxjs: ^7.0.0
 
-  '@sneat/extension-listus-contract@0.0.4':
-    resolution: {integrity: sha512-tB1MAC1BRNxuEms2C1Mv3ACvE3crzteNlqH9DoDMD/QNfFRTrXHsX6Z81l6gXPwULkPkz0xh+1Qykz8O/95bdg==}
+  '@sneat/extension-listus-contract@0.0.9':
+    resolution: {integrity: sha512-NIq4SH37J6MiOo30ZqQBxSNIyIsMBvm0JpVmfkPG0ZYOMqS2VbNzm1vgei17qYy6TgmwoWbNntDanI1LmyIAFg==}
     peerDependencies:
       '@angular/core': 22.1.3
       '@sneat/core': 0.27.7
@@ -4716,7 +4716,6 @@ packages:
       '@sneat/dto': 0.27.0
       '@sneat/space-models': 0.27.0
       rxjs: ^7.0.0
-      vitest: ^4.0.9
 
   '@sneat/grid@0.27.0':
     resolution: {integrity: sha512-6Y1HD3hehaVv0Rvj7sCrW2dOiESmmzdcxEao9s6rsPtUaACjWFkD9aQlbnDASNlt03IYV1aCuN4381tOr9qZDA==}
@@ -15167,7 +15166,7 @@ snapshots:
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@sneat/extension-listus-contract@0.0.4(4b960b5f4c9cb8dbe7d56037259cd4e7)':
+  '@sneat/extension-listus-contract@0.0.9(201e05bfaaf463d6e059696df982898f)':
     dependencies:
       '@angular/core': 22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2)
       '@sneat/core': 0.27.7(@angular/animations@22.1.3(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2)))(@angular/common@22.1.3(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))(@angular/router@22.1.3(@angular/common@22.1.3(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))(@angular/platform-browser@22.1.3(@angular/animations@22.1.3(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2)))(@angular/common@22.1.3(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2)))(rxjs@7.8.2))(@ionic/angular@9.0.0(6ff9fc4b486d8c68e67889d2ebc5db9b))(@sneat/core-public@0.27.7(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2)))(firebase@12.13.0)(rxjs@7.8.2)
@@ -15176,7 +15175,6 @@ snapshots:
       '@sneat/space-models': 0.27.0(@angular/common@22.1.3(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))
       rxjs: 7.8.2
       tslib: 2.8.1
-      vitest: 4.0.9(@types/node@20.19.9)(@vitest/ui@4.0.9)(jiti@2.4.2)(jsdom@22.1.0(supports-color@7.2.0))(less@4.9.0(supports-color@7.2.0))(lightningcss@1.33.0)(sass-embedded@1.103.1)(sass@1.101.0)(supports-color@7.2.0)(terser@5.50.0)(yaml@2.9.0)
 
   '@sneat/grid@0.27.0(@angular/common@22.1.3(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.1.3(@angular/compiler@22.1.3)(rxjs@7.8.2))':
     dependencies:
