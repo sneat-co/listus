@@ -1,11 +1,36 @@
 package facade4listus
 
 import (
+	"github.com/dal-go/record"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
+	"github.com/sneat-co/sneat-core-modules/spaceus/dbo4spaceus"
 	"sync"
 	"testing"
 )
+
+func TestCreateListPersistsRequestedTitleInSpaceModuleBrief(t *testing.T) {
+	ctx, db := newTestDBWithSpace(t, testSpaceID, testUserID)
+	created, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "Saturday cleaning",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	module := new(dbo4listus.ListusSpaceDbo)
+	moduleRecord := record.NewRecordWithData(
+		dbo4spaceus.NewSpaceModuleKey(testSpaceID, "listus"), module,
+	)
+	if err = db.Get(ctx, moduleRecord); err != nil {
+		t.Fatal(err)
+	}
+	brief := module.Lists[created.ID]
+	if brief == nil || brief.Title != "Saturday cleaning" || brief.Type != dbo4listus.ListTypeToDo {
+		t.Fatalf("persisted list brief = %+v", brief)
+	}
+}
 
 func TestApplyListTemplateAddsRestoresPreservesAndRetriesWithoutMutation(t *testing.T) {
 	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)

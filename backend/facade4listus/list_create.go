@@ -102,7 +102,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			listBrief := &dbo4listus.ListBrief{
 				ListBase: dbo4listus.ListBase{
 					Type:  request.Type,
-					Title: request.Type,
+					Title: request.Title,
 				},
 			}
 			params.SpaceModuleEntry.Data.Lists[string(listID)] = listBrief
