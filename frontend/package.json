@@ -37,7 +37,7 @@
     "@sneat/extension-contactus": "0.14.0",
     "@sneat/extension-contactus-contract": "0.12.2",
     "@sneat/extension-contactus-ui": "0.14.0",
-    "@sneat/extension-listus-contract": "^0.0.4",
+    "@sneat/extension-listus-contract": "^0.0.9",
     "@sneat/grid": "0.27.0",
     "@sneat/logging": "0.27.0",
     "@sneat/mod-assetus-core": "0.9.0",

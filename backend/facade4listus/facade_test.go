@@ -303,6 +303,11 @@ func TestGenerateRandomListItemID(t *testing.T) {
 	if id == "a" || id == "b" {
 		t.Errorf("generated duplicate id %q", id)
 	}
+
+	id, err = generateRandomListItemID(items, "")
+	if err != nil || id == "" || id == "a" || id == "b" {
+		t.Errorf("blank initial ID did not produce a fresh ID: id=%q err=%v", id, err)
+	}
 }
 
 func TestDeductListItemEmoji(t *testing.T) {

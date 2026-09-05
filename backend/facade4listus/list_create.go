@@ -55,6 +55,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			}
 
 			listID := dbo4listus.NewListKey(listType, listSubID)
+			response.ID = string(listID)
 
 			userCtx := ctx.User()
 			modified := dbmodels.Modified{
@@ -101,7 +102,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			listBrief := &dbo4listus.ListBrief{
 				ListBase: dbo4listus.ListBase{
 					Type:  request.Type,
-					Title: request.Type,
+					Title: request.Title,
 				},
 			}
 			params.SpaceModuleEntry.Data.Lists[string(listID)] = listBrief
