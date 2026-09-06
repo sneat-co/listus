@@ -1,6 +1,7 @@
 package facade4listus
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/dal-go/dalgo/dal"
@@ -20,6 +21,12 @@ func DeleteListItems(ctx facade.ContextWithUser, request dto4listus.ListItemIDsR
 	err = dal4listus.RunListWorker(ctx, request.ListRequest,
 		func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *dal4listus.ListWorkerParams) (err error) {
 			list = params.List
+			removeAll := len(request.ItemIDs) == 1 && request.ItemIDs[0] == "*"
+			for _, item := range params.List.Data.Items {
+				if (removeAll || slices.Contains(request.ItemIDs, item.ID)) && item.SourceManagement != nil {
+					return fmt.Errorf("list item %q is source managed and cannot be deleted directly", item.ID)
+				}
+			}
 			isInRecentItems := func(item *dbo4listus.ListItemBrief) bool {
 				for _, recentItem := range list.Data.RecentItems {
 					if recentItem.ID == item.ID || recentItem.Title == item.Title && recentItem.Emoji == item.Emoji {
@@ -28,7 +35,6 @@ func DeleteListItems(ctx facade.ContextWithUser, request dto4listus.ListItemIDsR
 				}
 				return false
 			}
-			removeAll := len(request.ItemIDs) == 1 && request.ItemIDs[0] == "*"
 			var recentItems []*dbo4listus.ListItemBrief
 			items, removedCount := slice.RemoveInPlace(params.List.Data.Items, func(item *dbo4listus.ListItemBrief) (remove bool) {
 				if remove = removeAll || slices.Contains(request.ItemIDs, item.ID); remove {

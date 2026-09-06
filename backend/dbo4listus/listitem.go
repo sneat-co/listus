@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/sneat-co/listus/backend/const4listus"
+	"github.com/sneat-co/sneat-core-modules/linkage/dbo4linkage"
 	"github.com/strongo/strongoapp/with"
 	"github.com/strongo/validation"
 )
@@ -47,6 +48,19 @@ type ListItemBase struct {
 	Emoji string `json:"emoji,omitempty" firestore:"emoji,omitempty"`
 
 	Status const4listus.ListItemStatus `json:"status,omitempty" firestore:"status,omitempty"`
+
+	// Linkage stores reciprocal standard Sneat relationships for this logical
+	// embedded item. Nil keeps legacy items compact. Listus resolves the logical
+	// list-item ItemRef to the owning list document; no duplicate item document
+	// is created merely to participate in Linkage.
+	Linkage *dbo4linkage.WithRelatedAndIDs `json:"linkage,omitempty" firestore:"linkage,omitempty"`
+
+	// SourceManagement is present only for an item placed by another extension
+	// through the trusted SourceTodo port. Public Listus item commands must not
+	// accept it from a client. The standard Linkage graph remains the navigation
+	// authority; this metadata controls how completion is delegated to the owner.
+	SourceManagement *SourceManagement `json:"sourceManagement,omitempty" firestore:"sourceManagement,omitempty"`
+	DateTask         *DateTaskLink     `json:"dateTask,omitempty" firestore:"dateTask,omitempty"`
 
 	// The following fields are optional and let a "buy"-typed list item (a
 	// shopping list) express a structured amount without changing what the
@@ -105,6 +119,21 @@ func (v ListItemBase) Validate() error {
 	if v.WatchWith != nil {
 		if err := v.WatchWith.Validate(); err != nil {
 			return validation.NewErrBadRecordFieldValue("watchWith", err.Error())
+		}
+	}
+	if v.Linkage != nil {
+		if err := v.Linkage.Validate(); err != nil {
+			return validation.NewErrBadRecordFieldValue("linkage", err.Error())
+		}
+	}
+	if v.SourceManagement != nil {
+		if err := v.SourceManagement.Validate(); err != nil {
+			return validation.NewErrBadRecordFieldValue("sourceManagement", err.Error())
+		}
+	}
+	if v.DateTask != nil {
+		if err := v.DateTask.Validate(); err != nil {
+			return validation.NewErrBadRecordFieldValue("dateTask", err.Error())
 		}
 	}
 	return nil
