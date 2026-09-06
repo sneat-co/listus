@@ -31,7 +31,11 @@ import {
   IListItemIDsRequest,
   IListusService,
   ISetListItemsIsComplete,
+  ISaveListItemDateTaskRequest,
+  IListItemSourceActionNavigator,
+  LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
 } from '@sneat/extension-listus-contract';
+import { RandomIdService } from '@sneat/random';
 import { ListusComponentBaseParams } from '../../../listus-component-base-params';
 import { ListDialogsService } from '../../dialogs/ListDialogs.service';
 import { IListItemWithUiState } from '../list-item-with-ui-state';
@@ -62,6 +66,11 @@ export class ListItemComponent {
   private readonly params = inject(ListusComponentBaseParams);
   private readonly listDialogs = inject(ListDialogsService);
   private readonly toastCtrl = inject(ToastController);
+  private readonly randomID = inject(RandomIdService);
+  private readonly sourceActionNavigator = inject<IListItemSourceActionNavigator>(
+    LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
+    { optional: true },
+  );
 
   public readonly showDoneCheckbox = input(false);
 
@@ -78,6 +87,7 @@ export class ListItemComponent {
   public readonly $list = input.required<IListContext | undefined>();
 
   protected readonly $isSettingIsDone = signal(false);
+  private failedDateTaskRequest?: ISaveListItemDateTaskRequest;
 
   public readonly itemClicked = output<IListItemBrief>();
 
@@ -144,6 +154,14 @@ export class ListItemComponent {
     const item = this.$listItemWithUiState();
     if (isDone === undefined) {
       isDone = !this.$isDone();
+    }
+    if (item.brief.sourceManagement) {
+      this.openSourceAction();
+      return;
+    }
+    if (item.brief.dateTask) {
+      this.saveDateTaskState(isDone ? 'completed' : 'active', item);
+      return;
     }
     const newItem: IListItemWithUiState = {
       brief: { ...item.brief, status: isDone ? 'done' : undefined },
@@ -231,6 +249,84 @@ export class ListItemComponent {
     }
   }
 
+  protected openSourceAction(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const list = this.$list();
+    const item = this.$listItem();
+    if (!list || !this.sourceActionNavigator) {
+      this.showError('This item must be updated from its source.');
+      return;
+    }
+    this.$isSettingIsDone.set(true);
+    this.sourceActionNavigator
+      .navigateToListItemSource(list.space, item)
+      .then((handled) => {
+        if (!handled) {
+          this.showError('The source for this item is unavailable.');
+        }
+      })
+      .catch((err) => this.errorLogger.logError(err, 'Failed to open source'))
+      .finally(() => this.$isSettingIsDone.set(false));
+  }
+
+  private saveDateTaskState(
+    state: 'active' | 'completed',
+    item: IListItemWithUiState,
+  ): void {
+    const list = this.$list();
+    const dateTask = item.brief.dateTask;
+    if (!list || !dateTask) {
+      return;
+    }
+    const currentKey = `${list.space.id}|${list.id}|${item.brief.id}|${dateTask.revision}|${state}`;
+    let request = this.failedDateTaskRequest;
+    if (!request || this.dateTaskRequestKey(request) !== currentKey) {
+      request = {
+        spaceID: list.space.id,
+        listID: list.id,
+        itemID: item.brief.id,
+        operationID: this.randomID.newRandomId({ len: 20 }),
+        expectedTaskRevision: dateTask.revision,
+        state,
+      };
+    }
+    this.$isSettingIsDone.set(true);
+    this.failedDateTaskRequest = request;
+    this.listService.saveListItemDateTask(request).subscribe({
+      next: (response) => {
+        this.failedDateTaskRequest = undefined;
+        this.itemChanged.emit({
+          old: item,
+          new: {
+            brief: {
+              ...item.brief,
+              status: state === 'completed' ? 'done' : 'active',
+              dateTask: response.dateTask,
+            },
+            state: { ...item.state, isChangingIsDone: false },
+          },
+        });
+      },
+      error: (err) => {
+        this.errorLogger.logError(err, 'Failed to update the linked due task');
+        this.$isSettingIsDone.set(false);
+      },
+      complete: () => this.$isSettingIsDone.set(false),
+    });
+  }
+
+  private dateTaskRequestKey(request: ISaveListItemDateTaskRequest): string {
+    return `${request.spaceID}|${request.listID}|${request.itemID}|${request.expectedTaskRevision}|${request.state}`;
+  }
+
+  private showError(message: string): void {
+    this.toastCtrl
+      .create({ message, duration: 2500, color: 'warning' })
+      .then((toast) => toast.present())
+      .catch(this.errorLogger.logError);
+  }
+
   protected deleteFromList(
     item: IListItemBrief,
     ionSliding?: IonItemSliding | HTMLElement,
@@ -270,6 +366,14 @@ export class ListItemComponent {
   ): void {
     event.preventDefault();
     event.stopPropagation();
+    if (item.sourceManagement) {
+      this.openSourceAction(event);
+      return;
+    }
+    if (item.dateTask) {
+      this.showError('Remove the due date before deleting this item.');
+      return;
+    }
     if (!confirm(`Remove "${item.title}" from this list?`)) {
       return;
     }

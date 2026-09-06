@@ -27,6 +27,8 @@ import {
   IListItemsCommandParams,
   IReorderListItemsRequest,
   ISetListItemsIsComplete,
+  ISaveListItemDateTaskRequest,
+  ISaveListItemDateTaskResponse,
   ResolveMovieRequest,
   ResolveMovieResponse,
   SearchMoviesRequest,
@@ -99,6 +101,15 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
   ): Observable<void> {
     const url = 'listus/list_items_set_is_done';
     return this.sneatApiService.post(url, request);
+  }
+
+  public saveListItemDateTask(
+    request: ISaveListItemDateTaskRequest,
+  ): Observable<ISaveListItemDateTaskResponse> {
+    return this.sneatApiService.post(
+      'listus/item_date_task_save',
+      request,
+    );
   }
 
   public deleteListItems(request: IDeleteListItemsRequest): Observable<void> {

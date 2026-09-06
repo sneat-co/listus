@@ -11,6 +11,7 @@ import {
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import {
   IonBackButton,
   IonButton,
@@ -127,6 +128,7 @@ export class ListPageComponent extends BaseListPage {
   private readonly listusAppStateService = inject(IListusAppStateService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly injector = inject(Injector);
+  private readonly focusItemID = inject(ActivatedRoute).snapshot.queryParamMap.get('itemID');
 
   protected readonly isPersisting = signal(false);
   protected readonly isHideWatched = signal(false);
@@ -670,6 +672,13 @@ export class ListPageComponent extends BaseListPage {
           !(hideWatched && li.brief.status === 'done'),
       ) || [];
     this.listItems.set([...filtered, ...this.addingItems]);
+    if (this.focusItemID && filtered.some((item) => item.brief.id === this.focusItemID)) {
+      afterNextRender(() => {
+        const element = document.getElementById(`list-item-${this.focusItemID}`);
+        element?.scrollIntoView({ block: 'center' });
+        element?.focus();
+      }, { injector: this.injector });
+    }
   }
 
   // protected onListInfoChanged(): void {
