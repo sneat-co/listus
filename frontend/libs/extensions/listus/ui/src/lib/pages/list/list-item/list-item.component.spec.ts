@@ -1,10 +1,15 @@
 import { TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ToastController } from '@ionic/angular';
 import { RandomIdService } from '@sneat/random';
 import {
   IListItemSourceActionNavigator,
   LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
 } from '@sneat/extension-listus-contract';
+import {
+  ISourceLinkedDateTaskReader,
+  SOURCE_LINKED_DATE_TASK_READER,
+} from '@sneat/extension-calendarius-contract';
 import { of, throwError } from 'rxjs';
 import { ListusComponentBaseParams } from '../../../listus-component-base-params';
 import { ListDialogsService } from '../../dialogs/ListDialogs.service';
@@ -20,11 +25,29 @@ describe('ListItemComponent linked task authority', () => {
   const sourceNavigator: IListItemSourceActionNavigator = {
     navigateToListItemSource: vi.fn(),
   };
+  const dateTaskReader: ISourceLinkedDateTaskReader = {
+    observeSourceLinkedDateTask: vi.fn(() =>
+      of({
+        happeningID: 'due-1',
+        title: 'Pay electricity',
+        dueDate: '2026-09-30',
+        revision: 1,
+        source: {
+          namespace: 'listus',
+          ownerSpaceID: 'space-1',
+          recordID: 'do!tasks',
+          lineID: 'item-1',
+        },
+        state: 'active' as const,
+      }),
+    ),
+  };
 
   function create(item: Record<string, unknown>) {
     TestBed.configureTestingModule({
       imports: [ListItemComponent],
       providers: [
+        provideNoopAnimations(),
         {
           provide: ListusComponentBaseParams,
           useValue: { listService, spaceParams: { errorLogger } },
@@ -42,6 +65,7 @@ describe('ListItemComponent linked task authority', () => {
           provide: LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
           useValue: sourceNavigator,
         },
+        { provide: SOURCE_LINKED_DATE_TASK_READER, useValue: dateTaskReader },
       ],
     });
     const fixture = TestBed.createComponent(ListItemComponent);
@@ -56,6 +80,7 @@ describe('ListItemComponent linked task authority', () => {
       space: { id: 'space-1', type: 'family' },
       brief: { id: 'do!tasks', type: 'do', title: 'To do' },
     });
+    fixture.detectChanges();
     return fixture.componentInstance as unknown as {
       setIsDone(value: boolean): void;
       onDueDateChanged(event: Event): void;
@@ -138,6 +163,29 @@ describe('ListItemComponent linked task authority', () => {
       dueDate: '2026-09-30',
       state: 'active',
     });
+    expect(listService.setListItemsIsCompleted).not.toHaveBeenCalled();
+  });
+
+  it('reopens with the Calendar-owned due date loaded after a cold read', () => {
+    const component = create({
+      status: 'done',
+      dateTask: {
+        happening: { module: 'calendarius', collection: 'happenings', itemID: 'due-1' },
+        source: { module: 'listus', collection: 'lists', itemID: 'do!tasks' },
+        purpose: 'due-date',
+        revision: 1,
+      },
+    });
+
+    component.setIsDone(false);
+
+    expect(listService.saveListItemDateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        expectedTaskRevision: 1,
+        dueDate: '2026-09-30',
+        state: 'active',
+      }),
+    );
     expect(listService.setListItemsIsCompleted).not.toHaveBeenCalled();
   });
 });

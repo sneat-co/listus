@@ -89,7 +89,10 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
     type: 'do',
     title: `Payments ${suffix}`,
   });
-  const listURL = `/space/family/${spaceID}/list/do/${createdList.id}`;
+  const listSubID = createdList.id.startsWith('do!')
+    ? createdList.id.slice('do!'.length)
+    : createdList.id;
+  const listURL = `/space/family/${spaceID}/list/do/${listSubID}`;
   const title = `Renew insurance ${suffix}`;
 
   await signIn(page, actor);

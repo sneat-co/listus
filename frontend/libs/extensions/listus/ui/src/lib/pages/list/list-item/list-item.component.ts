@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   input,
   output,
   signal,
@@ -35,6 +36,11 @@ import {
   IListItemSourceActionNavigator,
   LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
 } from '@sneat/extension-listus-contract';
+import {
+  ISourceLinkedDateTask,
+  ISourceLinkedDateTaskReader,
+  SOURCE_LINKED_DATE_TASK_READER,
+} from '@sneat/extension-calendarius-contract';
 import { RandomIdService } from '@sneat/random';
 import { ListusComponentBaseParams } from '../../../listus-component-base-params';
 import { ListDialogsService } from '../../dialogs/ListDialogs.service';
@@ -71,6 +77,10 @@ export class ListItemComponent {
     LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
     { optional: true },
   );
+  private readonly dateTaskReader = inject<ISourceLinkedDateTaskReader>(
+    SOURCE_LINKED_DATE_TASK_READER,
+    { optional: true },
+  );
 
   public readonly showDoneCheckbox = input(false);
 
@@ -90,6 +100,10 @@ export class ListItemComponent {
   );
 
   protected readonly $isSettingIsDone = signal(false);
+  protected readonly $dateTask = signal<ISourceLinkedDateTask | undefined>(
+    undefined,
+  );
+  protected readonly $dateTaskUnavailable = signal(false);
   private failedDateTaskRequest?: ISaveListItemDateTaskRequest;
 
   public readonly itemClicked = output<IListItemBrief>();
@@ -104,6 +118,42 @@ export class ListItemComponent {
   protected readonly $listItem = computed(
     () => this.$listItemWithUiState().brief,
   );
+
+  private readonly observeDateTask = effect((onCleanup) => {
+    const list = this.$list();
+    const item = this.$listItemWithUiState().brief;
+    const listID = list ? canonicalListID(list) : undefined;
+    const happeningID = item.dateTask?.happening.itemID;
+    this.$dateTask.set(undefined);
+    this.$dateTaskUnavailable.set(false);
+    if (!list || !happeningID) {
+      return;
+    }
+    if (!this.dateTaskReader) {
+      this.$dateTaskUnavailable.set(true);
+      return;
+    }
+    const subscription = this.dateTaskReader
+      .observeSourceLinkedDateTask(list.space.id, happeningID)
+      .subscribe({
+        next: (task) => {
+          const isExpectedTask =
+            task?.happeningID === happeningID &&
+            task.source.namespace === 'listus' &&
+            task.source.ownerSpaceID === list.space.id &&
+            task.source.recordID === listID &&
+            task.source.lineID === item.id;
+          this.$dateTask.set(isExpectedTask ? task : undefined);
+          this.$dateTaskUnavailable.set(!isExpectedTask);
+        },
+        error: (err) => {
+          this.$dateTask.set(undefined);
+          this.$dateTaskUnavailable.set(true);
+          this.errorLogger.logError(err, 'Failed to load the linked due task');
+        },
+      });
+    onCleanup(() => subscription.unsubscribe());
+  });
 
   private get listService(): IListusService {
     return this.params.listService;
@@ -164,10 +214,15 @@ export class ListItemComponent {
     }
     if (item.brief.dateTask) {
       if (!isDone) {
-        this.showError('Choose the due date again to reopen this task.');
-        return;
+        const dueDate = this.$dateTask()?.dueDate;
+        if (!dueDate) {
+          this.showError('The due date could not be loaded. Try again.');
+          return;
+        }
+        this.saveDateTask(item, 'active', dueDate);
+      } else {
+        this.saveDateTask(item, 'completed');
       }
-      this.saveDateTask(item, 'completed');
       return;
     }
     const newItem: IListItemWithUiState = {
@@ -189,7 +244,7 @@ export class ListItemComponent {
 
       const request: ISetListItemsIsComplete = {
         spaceID: list.space.id,
-        listID: list.id,
+        listID: canonicalListID(list),
         itemIDs: [item.brief.id],
         isDone: isDone,
       };
@@ -425,4 +480,8 @@ export class ListItemComponent {
       })
       .catch(this.errorLogger.logError);
   }
+}
+
+function canonicalListID(list: IListContext): string {
+  return list.id.includes('!') ? list.id : `${list.brief?.type}!${list.id}`;
 }

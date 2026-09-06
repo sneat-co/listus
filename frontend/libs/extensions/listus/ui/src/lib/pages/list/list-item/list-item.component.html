@@ -61,11 +61,18 @@
           Open source
         </ion-button>
       } @else if (listItem.dateTask) {
-        <ion-badge color="light">Due task</ion-badge>
+        @if ($dateTask()?.dueDate; as dueDate) {
+          <ion-badge color="light">Due {{ dueDate }}</ion-badge>
+        } @else if ($dateTaskUnavailable()) {
+          <ion-badge color="warning">Due date unavailable</ion-badge>
+        } @else {
+          <ion-badge color="light">Loading due date…</ion-badge>
+        }
       }
       @if (!listItem.sourceManagement && $supportsDateTask()) {
         <input
           type="date"
+          [value]="$dateTask()?.dueDate || ''"
           [attr.aria-label]="(listItem.dateTask ? 'Change due date for ' : 'Add due date for ') + listItem.title"
           [disabled]="$isSettingIsDone()"
           (change)="onDueDateChanged($event)"
