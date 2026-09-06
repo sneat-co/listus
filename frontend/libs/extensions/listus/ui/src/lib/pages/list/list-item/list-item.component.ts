@@ -85,6 +85,9 @@ export class ListItemComponent {
 
   readonly $listItemWithUiState = input.required<IListItemWithUiState>();
   public readonly $list = input.required<IListContext | undefined>();
+  protected readonly $supportsDateTask = computed(
+    () => this.$list()?.brief?.type === 'do',
+  );
 
   protected readonly $isSettingIsDone = signal(false);
   private failedDateTaskRequest?: ISaveListItemDateTaskRequest;
