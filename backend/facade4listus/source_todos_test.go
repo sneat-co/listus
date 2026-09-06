@@ -2,6 +2,7 @@ package facade4listus
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/dal-go/dalgo/dal"
@@ -92,6 +93,60 @@ func TestSourceTodoPortRejectsNonMemberAndForeignPreparedPlan(t *testing.T) {
 		return err
 	}); err == nil {
 		t.Fatal("expected foreign prepared plan to fail")
+	}
+}
+
+func TestSourceTodoPortPlanIsTransactionBoundAndOneShot(t *testing.T) {
+	ctx, db := newTestDBWithSpace(t, testSpaceID, testUserID)
+	createItems(t, ctx, dbo4listus.DoTasksListID, "Existing task")
+	port := NewSourceTodoPort()
+	var prepared listuscontract.PreparedSourceTodo
+	if err := db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		var err error
+		prepared, err = port.PlanSourceTodo(ctx, tx, testUserID, sourceTodoSpec())
+		if err != nil {
+			return err
+		}
+		if _, err = port.ApplySourceTodo(ctx, tx, prepared); err != nil {
+			return err
+		}
+		_, err = port.ApplySourceTodo(ctx, tx, prepared)
+		if err == nil {
+			return errors.New("second apply unexpectedly succeeded")
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		_, err := port.ApplySourceTodo(ctx, tx, prepared)
+		return err
+	}); err == nil {
+		t.Fatal("expected applying prepared plan in another transaction to fail")
+	}
+}
+
+func TestSourceTodoPortRejectsForeignOrNonCalendarRefs(t *testing.T) {
+	ctx, db := newTestDBWithSpace(t, testSpaceID, testUserID)
+	createItems(t, ctx, dbo4listus.DoTasksListID, "Existing task")
+	port := NewSourceTodoPort()
+	for name, mutate := range map[string]func(*listusmodels.SourceTodoSpec){
+		"foreign source":    func(v *listusmodels.SourceTodoSpec) { v.Source.ItemID += "@other-space" },
+		"foreign happening": func(v *listusmodels.SourceTodoSpec) { v.DueHappening.ItemID += "@other-space" },
+		"wrong due owner":   func(v *listusmodels.SourceTodoSpec) { v.DueHappening.ExtID = "debtus" },
+		"nested happening":  func(v *listusmodels.SourceTodoSpec) { v.DueHappening.SubPath = "/items/@id=x" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			spec := sourceTodoSpec()
+			mutate(&spec)
+			err := db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+				_, err := port.PlanSourceTodo(ctx, tx, testUserID, spec)
+				return err
+			})
+			if err == nil {
+				t.Fatal("expected invalid owner reference to fail")
+			}
+		})
 	}
 }
 
