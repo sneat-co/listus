@@ -160,7 +160,11 @@ export class ListItemComponent {
       return;
     }
     if (item.brief.dateTask) {
-      this.saveDateTaskState(isDone ? 'completed' : 'active', item);
+      if (!isDone) {
+        this.showError('Choose the due date again to reopen this task.');
+        return;
+      }
+      this.saveDateTask(item, 'completed');
       return;
     }
     const newItem: IListItemWithUiState = {
@@ -270,16 +274,34 @@ export class ListItemComponent {
       .finally(() => this.$isSettingIsDone.set(false));
   }
 
-  private saveDateTaskState(
-    state: 'active' | 'completed',
+  protected onDueDateChanged(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const dueDate = (event.target as HTMLInputElement).value;
+    if (!dueDate) {
+      return;
+    }
+    this.saveDateTask(this.$listItemWithUiState(), 'active', dueDate);
+  }
+
+  protected removeDueDate(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.saveDateTask(this.$listItemWithUiState(), 'canceled');
+  }
+
+  private saveDateTask(
     item: IListItemWithUiState,
+    state: 'active' | 'completed' | 'canceled',
+    dueDate?: string,
   ): void {
     const list = this.$list();
     const dateTask = item.brief.dateTask;
-    if (!list || !dateTask) {
+    if (!list) {
       return;
     }
-    const currentKey = `${list.space.id}|${list.id}|${item.brief.id}|${dateTask.revision}|${state}`;
+    const revision = dateTask?.revision ?? 0;
+    const currentKey = `${list.space.id}|${list.id}|${item.brief.id}|${revision}|${state}|${dueDate ?? ''}`;
     let request = this.failedDateTaskRequest;
     if (!request || this.dateTaskRequestKey(request) !== currentKey) {
       request = {
@@ -287,7 +309,8 @@ export class ListItemComponent {
         listID: list.id,
         itemID: item.brief.id,
         operationID: this.randomID.newRandomId({ len: 20 }),
-        expectedTaskRevision: dateTask.revision,
+        expectedTaskRevision: revision,
+        dueDate,
         state,
       };
     }
@@ -301,7 +324,12 @@ export class ListItemComponent {
           new: {
             brief: {
               ...item.brief,
-              status: state === 'completed' ? 'done' : 'active',
+              status:
+                state === 'completed'
+                  ? 'done'
+                  : state === 'active'
+                    ? 'active'
+                    : item.brief.status,
               dateTask: response.dateTask,
             },
             state: { ...item.state, isChangingIsDone: false },
@@ -317,7 +345,7 @@ export class ListItemComponent {
   }
 
   private dateTaskRequestKey(request: ISaveListItemDateTaskRequest): string {
-    return `${request.spaceID}|${request.listID}|${request.itemID}|${request.expectedTaskRevision}|${request.state}`;
+    return `${request.spaceID}|${request.listID}|${request.itemID}|${request.expectedTaskRevision}|${request.state}|${request.dueDate ?? ''}`;
   }
 
   private showError(message: string): void {

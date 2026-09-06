@@ -58,6 +58,7 @@ describe('ListItemComponent linked task authority', () => {
     });
     return fixture.componentInstance as unknown as {
       setIsDone(value: boolean): void;
+      onDueDateChanged(event: Event): void;
     };
   }
 
@@ -114,6 +115,29 @@ describe('ListItemComponent linked task authority', () => {
     const [first, second] = listService.saveListItemDateTask.mock.calls;
     expect(first[0].operationID).toBe('operation-1');
     expect(second[0]).toEqual(first[0]);
+    expect(listService.setListItemsIsCompleted).not.toHaveBeenCalled();
+  });
+
+  it('adds a due date through the Calendar-coordinated endpoint', () => {
+    const component = create({});
+    const input = document.createElement('input');
+    input.value = '2026-09-30';
+
+    component.onDueDateChanged({
+      target: input,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as unknown as Event);
+
+    expect(listService.saveListItemDateTask).toHaveBeenCalledWith({
+      spaceID: 'space-1',
+      listID: 'do!tasks',
+      itemID: 'item-1',
+      operationID: 'operation-1',
+      expectedTaskRevision: 0,
+      dueDate: '2026-09-30',
+      state: 'active',
+    });
     expect(listService.setListItemsIsCompleted).not.toHaveBeenCalled();
   });
 });

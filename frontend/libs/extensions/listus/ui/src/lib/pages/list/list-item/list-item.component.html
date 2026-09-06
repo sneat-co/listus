@@ -63,6 +63,25 @@
       } @else if (listItem.dateTask) {
         <ion-badge color="light">Due task</ion-badge>
       }
+      @if (!listItem.sourceManagement) {
+        <input
+          type="date"
+          [attr.aria-label]="(listItem.dateTask ? 'Change due date for ' : 'Add due date for ') + listItem.title"
+          [disabled]="$isSettingIsDone()"
+          (change)="onDueDateChanged($event)"
+        />
+        @if (listItem.dateTask) {
+          <ion-button
+            fill="clear"
+            color="medium"
+            aria-label="Remove due date for {{ listItem.title }}"
+            [disabled]="$isSettingIsDone()"
+            (click)="removeDueDate($event)"
+          >
+            Remove due date
+          </ion-button>
+        }
+      }
       <!--					<ion-button *ngIf="listType === 'to-cook'" (click)="openCopyListItemDialog(listItem, $event)">🛒</ion-button>-->
       @if ($isReorderMode()) {
         <ion-button (click)="deleteFromList(listItem)" color="medium">
