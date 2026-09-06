@@ -7,6 +7,7 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/sneat-co/listus/backend/dbo4listus"
+	"github.com/sneat-co/listus/backend/dto4listus"
 	listuscontract "github.com/sneat-co/sneat-ext-contracts/listus/facade4listus"
 	"github.com/sneat-co/sneat-ext-contracts/listus/listusmodels"
 	"github.com/sneat-co/sneat-go-core/coretypes"
@@ -148,6 +149,30 @@ func TestSourceTodoPortRejectsForeignOrNonCalendarRefs(t *testing.T) {
 				t.Fatal("expected invalid owner reference to fail")
 			}
 		})
+	}
+}
+
+func TestSourceTodoCanceledRejectsStableIDOwnedByOrdinaryItem(t *testing.T) {
+	ctx, db := newTestDBWithSpace(t, testSpaceID, testUserID)
+	spec := sourceTodoSpec()
+	stableID := stableSourceTodoItemID(spec.Source, spec.Purpose)
+	_, _, err := CreateListItems(userCtx(ctx, testUserID), dto4listus.CreateListItemsRequest{
+		ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID),
+		Items:       []dto4listus.CreateListItemRequest{{ID: stableID, ListItemBase: dbo4listus.ListItemBase{Title: "Unrelated ordinary item"}}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec.State = listusmodels.SourceTodoCanceled
+	err = db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		_, err := NewSourceTodoPort().PlanSourceTodo(ctx, tx, testUserID, spec)
+		return err
+	})
+	if err == nil {
+		t.Fatal("expected stable ID ownership collision")
+	}
+	if got := getListData(t, ctx, dbo4listus.DoTasksListID).Items; len(got) != 1 || got[0].Title != "Unrelated ordinary item" {
+		t.Fatalf("collision changed ordinary item: %+v", got)
 	}
 }
 

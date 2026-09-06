@@ -23,8 +23,13 @@ func DeleteListItems(ctx facade.ContextWithUser, request dto4listus.ListItemIDsR
 			list = params.List
 			removeAll := len(request.ItemIDs) == 1 && request.ItemIDs[0] == "*"
 			for _, item := range params.List.Data.Items {
-				if (removeAll || slices.Contains(request.ItemIDs, item.ID)) && item.SourceManagement != nil {
-					return fmt.Errorf("list item %q is source managed and cannot be deleted directly", item.ID)
+				if removeAll || slices.Contains(request.ItemIDs, item.ID) {
+					if item.SourceManagement != nil {
+						return fmt.Errorf("list item %q is source managed and cannot be deleted directly", item.ID)
+					}
+					if item.DateTask != nil {
+						return fmt.Errorf("list item %q has a linked date task and cannot be deleted directly", item.ID)
+					}
 				}
 			}
 			isInRecentItems := func(item *dbo4listus.ListItemBrief) bool {

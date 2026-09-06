@@ -8,14 +8,23 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dal-go/dalgo/dal"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/listus/backend/movius/tmdbclient"
+	"github.com/sneat-co/sneat-ext-contracts/calendarius/calendariusmodels"
+	calendarfacade "github.com/sneat-co/sneat-ext-contracts/calendarius/facade4calendarius"
 	"github.com/sneat-co/sneat-go-core/apicore"
 	"github.com/sneat-co/sneat-go-core/apicore/verify"
 	"github.com/sneat-co/sneat-go-core/facade"
 )
+
+type routeDateTaskProvider struct{}
+
+func (*routeDateTaskProvider) PlanSourceLinkedDateTask(context.Context, dal.ReadwriteTransaction, string, calendariusmodels.MutateSourceLinkedDateTaskRequest) (calendarfacade.PreparedSourceLinkedDateTaskMutation, error) {
+	panic("route registration must not invoke the provider")
+}
 
 // --- Auth bypass scaffolding (mirrors assetus api handler tests) -------------
 
@@ -96,6 +105,18 @@ func TestRegisterHttpRoutes(t *testing.T) {
 		if got[i] != w {
 			t.Errorf("route %d = %+v, want %+v", i, got[i], w)
 		}
+	}
+}
+
+func TestRegisterHttpRoutesIncludesDateTaskWhenProviderBound(t *testing.T) {
+	type reg struct{ method, path string }
+	var got []reg
+	handle := func(method, path string, _ http.HandlerFunc) {
+		got = append(got, reg{method, path})
+	}
+	RegisterHttpRoutes(handle, Dependencies{SourceLinkedDateTasks: new(routeDateTaskProvider)})
+	if got[len(got)-1] != (reg{http.MethodPost, "/v0/listus/item_date_task_save"}) {
+		t.Fatalf("last route = %+v, want date-task save route", got[len(got)-1])
 	}
 }
 

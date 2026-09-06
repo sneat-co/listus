@@ -28,6 +28,9 @@ func SetListItemsIsDone(ctx facade.ContextWithUser, request dto4listus.ListItems
 					if item.ID == id && item.SourceManagement != nil {
 						return fmt.Errorf("list item %q is source managed; use action %q", item.ID, item.SourceManagement.ActionID)
 					}
+					if item.ID == id && item.DateTask != nil {
+						return fmt.Errorf("list item %q has a linked date task; use the date-task endpoint", item.ID)
+					}
 				}
 			}
 			list = params.List

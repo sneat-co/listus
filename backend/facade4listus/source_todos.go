@@ -111,6 +111,9 @@ func (sourceTodoPort) PlanSourceTodo(
 		return nil, fmt.Errorf("selected list contains duplicate stable item ID %q", itemID)
 	}
 	insert := item == nil
+	if !insert && (item.SourceManagement == nil || item.SourceManagement.Source != spec.Source || item.SourceManagement.Purpose != spec.Purpose) {
+		return nil, errors.New("stable source todo ID belongs to a different owner")
+	}
 	if spec.State == listusmodels.SourceTodoCanceled {
 		if !insert {
 			for i, candidate := range items {
@@ -128,8 +131,6 @@ func (sourceTodoPort) PlanSourceTodo(
 		item.CreatedAt = time.Now()
 		item.CreatedBy = actorUserID
 		items = append(items, item)
-	} else if item.SourceManagement == nil || item.SourceManagement.Source != spec.Source || item.SourceManagement.Purpose != spec.Purpose {
-		return nil, errors.New("stable source todo ID belongs to a different owner")
 	}
 
 	item.Title = spec.Title

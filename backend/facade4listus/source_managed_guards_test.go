@@ -42,6 +42,29 @@ func markItemSourceManaged(t *testing.T, ctx context.Context, db dal.DB, itemID 
 	}
 }
 
+func markItemDateTask(t *testing.T, ctx context.Context, db dal.DB, itemID string) {
+	t.Helper()
+	entry := dal4listus.NewListEntry(testSpaceID, dbo4listus.DoTasksListID)
+	if err := db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		if err := tx.Get(ctx, entry.Record); err != nil {
+			return err
+		}
+		for _, item := range entry.Data.Items {
+			if item.ID == itemID {
+				item.DateTask = &dbo4listus.DateTaskLink{
+					Happening: dbo4listusItemRef("calendarius", "happenings", "due-item"),
+					Source:    dbo4listusItemRef("listus", "lists", string(dbo4listus.DoTasksListID)),
+					Purpose:   "due-date",
+					Revision:  1,
+				}
+			}
+		}
+		return tx.Update(ctx, entry.Key, []update.Update{update.ByFieldName("items", entry.Data.Items)})
+	}); err != nil {
+		t.Fatalf("mark item with date task: %v", err)
+	}
+}
+
 func TestSourceManagedItemRejectsDirectCompletionAndDeletion(t *testing.T) {
 	ctx, db := newTestDBWithSpace(t, testSpaceID, testUserID)
 	created := createItems(t, ctx, dbo4listus.DoTasksListID, "Pay invoice")
@@ -65,6 +88,32 @@ func TestSourceManagedItemRejectsDirectCompletionAndDeletion(t *testing.T) {
 	item := getListData(t, ctx, dbo4listus.DoTasksListID).Items[0]
 	if item.IsDone() || item.SourceManagement == nil {
 		t.Fatalf("rejected commands changed protected item: %+v", item)
+	}
+}
+
+func TestDateTaskItemRejectsDirectCompletionAndDeletion(t *testing.T) {
+	ctx, db := newTestDBWithSpace(t, testSpaceID, testUserID)
+	created := createItems(t, ctx, dbo4listus.DoTasksListID, "Pay electricity")
+	itemID := created.CreatedItems[0].ID
+	markItemDateTask(t, ctx, db, itemID)
+
+	_, _, err := SetListItemsIsDone(userCtx(ctx, testUserID), dto4listus.ListItemsSetIsDoneRequest{
+		ListItemIDsRequest: dto4listus.ListItemIDsRequest{ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID), ItemIDs: []string{itemID}},
+		IsDone:             true,
+	})
+	if err == nil {
+		t.Fatal("expected linked date task completion to be rejected")
+	}
+	_, _, err = DeleteListItems(userCtx(ctx, testUserID), dto4listus.ListItemIDsRequest{
+		ListRequest: listRequest(testSpaceID, dbo4listus.DoTasksListID), ItemIDs: []string{itemID},
+	})
+	if err == nil {
+		t.Fatal("expected linked date task deletion to be rejected")
+	}
+
+	item := getListData(t, ctx, dbo4listus.DoTasksListID).Items[0]
+	if item.IsDone() || item.DateTask == nil {
+		t.Fatalf("rejected commands changed dated item: %+v", item)
 	}
 }
 
