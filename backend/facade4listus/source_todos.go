@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/dal-go/record/update"
 	"github.com/sneat-co/listus/backend/const4listus"
 	"github.com/sneat-co/listus/backend/dal4listus"
@@ -31,6 +32,7 @@ func NewSourceTodoPort() listuscontract.SourceTodoPort { return sourceTodoPort{}
 type preparedSourceTodo struct {
 	view    listusmodels.SourceTodoPlanView
 	entry   dal4listus.ListEntry
+	module  record.DataWithID[coretypes.ExtID, *dbo4listus.ListusSpaceDbo]
 	items   []*dbo4listus.ListItemBrief
 	tx      dal.ReadwriteTransaction
 	mu      sync.Mutex
@@ -60,14 +62,21 @@ func (sourceTodoPort) PlanSourceTodo(
 	}
 
 	entry := dal4listus.NewListEntry(spec.SpaceID, dbo4listus.ListKey(spec.ListID))
+	module := dbo4spaceus.NewSpaceModuleEntry(spec.SpaceID, const4listus.ExtensionID, new(dbo4listus.ListusSpaceDbo))
 	if err := tx.Get(ctx, entry.Record); err != nil {
 		return nil, fmt.Errorf("read selected list: %w", err)
+	}
+	if err := tx.Get(ctx, module.Record); err != nil {
+		return nil, fmt.Errorf("read Listus Space summary: %w", err)
 	}
 	if !entry.Data.HasUserID(actorUserID) {
 		return nil, fmt.Errorf("actor has no access to selected list %q", spec.ListID)
 	}
 	if entry.Data.Type != dbo4listus.ListTypeToDo {
 		return nil, fmt.Errorf("source todos require a do list, got %q", entry.Data.Type)
+	}
+	if module.Data.Lists[spec.ListID] == nil {
+		return nil, fmt.Errorf("selected list %q is missing from the Listus Space summary", spec.ListID)
 	}
 
 	itemID := stableSourceTodoItemID(spec.Source, spec.Purpose)
@@ -111,8 +120,8 @@ func (sourceTodoPort) PlanSourceTodo(
 				}
 			}
 		}
-		view := listusmodels.SourceTodoPlanView{ListID: spec.ListID, ItemID: itemID, Item: itemRef, DueHappening: spec.DueHappening, ExpectedListRevision: 0, State: spec.State}
-		return &preparedSourceTodo{view: view, entry: entry, items: items, tx: tx}, nil
+		view := listusmodels.SourceTodoPlanView{ListID: spec.ListID, ItemID: itemID, Item: itemRef, DueHappening: spec.DueHappening, State: spec.State}
+		return &preparedSourceTodo{view: view, entry: entry, module: module, items: items, tx: tx}, nil
 	}
 	if insert {
 		item = &dbo4listus.ListItemBrief{ID: itemID}
@@ -128,7 +137,7 @@ func (sourceTodoPort) PlanSourceTodo(
 		Source: spec.Source, Purpose: spec.Purpose, ActionID: spec.CompletionActionID,
 		Disposition: dbo4listus.SourceCompletionDisposition(spec.CompletionDisposition),
 	}
-	item.DateTask = &dbo4listus.DateTaskLink{Happening: spec.DueHappening, Source: spec.Source, Purpose: spec.Purpose}
+	item.DateTask = &dbo4listus.DateTaskLink{Happening: spec.DueHappening, Source: spec.Source, Purpose: spec.Purpose, Revision: spec.DueTaskRevision}
 	if item.Linkage == nil {
 		item.Linkage = new(dbo4linkage.WithRelatedAndIDs)
 	}
@@ -157,9 +166,9 @@ func (sourceTodoPort) PlanSourceTodo(
 
 	view := listusmodels.SourceTodoPlanView{
 		ListID: spec.ListID, ItemID: itemID, Item: itemRef, DueHappening: spec.DueHappening,
-		ExpectedListRevision: 0, State: spec.State,
+		State: spec.State,
 	}
-	return &preparedSourceTodo{view: view, entry: entry, items: items, tx: tx}, nil
+	return &preparedSourceTodo{view: view, entry: entry, module: module, items: items, tx: tx}, nil
 }
 
 func (sourceTodoPort) ApplySourceTodo(
@@ -186,6 +195,11 @@ func (sourceTodoPort) ApplySourceTodo(
 	}
 	if err := tx.Update(ctx, plan.entry.Key, updates); err != nil {
 		return listusmodels.SourceTodoPlanView{}, fmt.Errorf("apply source todo: %w", err)
+	}
+	if err := tx.Update(ctx, plan.module.Key, []update.Update{
+		update.ByFieldPath([]string{"lists", plan.view.ListID, "itemsCount"}, len(plan.items)),
+	}); err != nil {
+		return listusmodels.SourceTodoPlanView{}, fmt.Errorf("update Listus Space summary: %w", err)
 	}
 	return plan.view, nil
 }

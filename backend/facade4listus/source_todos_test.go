@@ -18,6 +18,7 @@ func sourceTodoSpec() listusmodels.SourceTodoSpec {
 		Source:  coretypes.NewItemRefSameSpace("debtus", "sourceObligations", "invoice-1"),
 		Purpose: "payment-due", Title: "Pay Electricity Co.", State: listusmodels.SourceTodoActive,
 		DueHappening:       coretypes.NewItemRefSameSpace("calendarius", "happenings", "due-invoice-1"),
+		DueTaskRevision:    1,
 		CompletionActionID: "record-payment", CompletionDisposition: listusmodels.SourceTodoRequiresInput,
 	}
 }

@@ -27,6 +27,7 @@ type DateTaskLink struct {
 	Happening dbo4linkage.ItemRef `json:"happening" firestore:"happening"`
 	Source    dbo4linkage.ItemRef `json:"source" firestore:"source"`
 	Purpose   string              `json:"purpose" firestore:"purpose"`
+	Revision  int64               `json:"revision" firestore:"revision"`
 }
 
 func (v DateTaskLink) Validate() error {
@@ -38,6 +39,9 @@ func (v DateTaskLink) Validate() error {
 	}
 	if strings.TrimSpace(v.Purpose) == "" || strings.TrimSpace(v.Purpose) != v.Purpose {
 		return validation.NewErrBadRecordFieldValue("purpose", "must be non-empty and trimmed")
+	}
+	if v.Revision < 1 || v.Revision > 9_007_199_254_740_991 {
+		return validation.NewErrBadRecordFieldValue("revision", "must be a positive safe integer")
 	}
 	return nil
 }
