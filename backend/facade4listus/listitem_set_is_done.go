@@ -1,6 +1,8 @@
 package facade4listus
 
 import (
+	"fmt"
+
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/record/update"
 	"github.com/sneat-co/listus/backend/const4listus"
@@ -20,6 +22,16 @@ func SetListItemsIsDone(ctx facade.ContextWithUser, request dto4listus.ListItems
 		func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *dal4listus.ListWorkerParams) (err error) {
 			if err = params.GetRecords(ctx, tx); err != nil {
 				return
+			}
+			for _, item := range params.List.Data.Items {
+				for _, id := range request.ItemIDs {
+					if item.ID == id && item.SourceManagement != nil {
+						return fmt.Errorf("list item %q is source managed; use action %q", item.ID, item.SourceManagement.ActionID)
+					}
+					if item.ID == id && item.DateTask != nil {
+						return fmt.Errorf("list item %q has a linked date task; use the date-task endpoint", item.ID)
+					}
+				}
 			}
 			list = params.List
 			changed := 0

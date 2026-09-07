@@ -37,18 +37,17 @@ import { SpaceServiceModule } from '@sneat/space-services';
 import {
   IListGroup,
   IListInfo,
-  IListusSpaceDbo,
   ListType,
 } from '@sneat/extension-listus-contract';
-import { builtInListGroups } from './built-in-lists';
+import { builtInListGroups, listGroupsFromBriefs } from './built-in-lists';
 import {
   SpaceBaseComponent,
   SpaceComponentBaseParams,
   SpaceSelectorComponent,
 } from '@sneat/space-components';
 import { createShortSpaceInfoFromDbo } from '@sneat/space-models';
-import { Subscription } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { of, Subscription } from 'rxjs';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ListusComponentBaseParams } from '../../listus-component-base-params';
 import {
   IListusAppStateService,
@@ -176,6 +175,25 @@ export class ListsPageComponent extends SpaceBaseComponent {
           this.updateListsFromSpace(undefined);
         }
       });
+    this.spaceIDChanged$
+      .pipe(
+        tap(() => {
+          this.listGroups = [];
+          this.updateListsFromSpace(undefined);
+        }),
+        switchMap((spaceID) =>
+          spaceID ? this.params.listService.observeSpaceLists(spaceID) : of({}),
+        ),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe({
+        next: (briefs) => {
+          this.listGroups = [];
+          this.updateListsFromSpace(undefined);
+          this.updateListsFromSpace(listGroupsFromBriefs(briefs));
+        },
+        error: this.errorLogger.logErrorHandler('Failed to load lists'),
+      });
   }
 
   // defaultShortCommuneId: 'family';
@@ -291,15 +309,11 @@ export class ListsPageComponent extends SpaceBaseComponent {
       if (this.space) {
         // Reset first so switching spaces doesn't accumulate the previous
         // space's groups. Then show the built-in default lists (family) for
-        // instant UX, and merge the lists persisted on the space DBO (the
-        // extraction had stubbed out this second step, so only the built-ins
-        // showed and real lists never loaded).
-        this.listGroups = [];
-        this.updateListsFromSpace(undefined); // built-in defaults (family)
-        const listusDbo = this.space.dbo as unknown as
-          | IListusSpaceDbo
-          | undefined;
-        this.updateListsFromSpace(listusDbo?.listGroups); // persisted lists
+        // instant UX. The extension-owned list summary is observed separately
+        // in the constructor and merged when it arrives.
+        if (!this.listGroups?.length) {
+          this.updateListsFromSpace(undefined); // built-in defaults (family)
+        }
       } else {
         this.listGroups = [];
       }

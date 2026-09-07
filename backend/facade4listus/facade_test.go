@@ -2,11 +2,14 @@ package facade4listus
 
 import (
 	"context"
+	"strings"
 	"testing"
 
+	"github.com/sneat-co/listus/backend/const4listus"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
+	"github.com/sneat-co/sneat-core-modules/spaceus/dbo4spaceus"
 	"github.com/sneat-co/sneat-go-core/coretypes"
 	"github.com/sneat-co/sneat-go-core/facade"
 )
@@ -36,18 +39,36 @@ func createItems(t *testing.T, ctx context.Context, listID string, titles ...str
 }
 
 func TestCreateList_Succeeds(t *testing.T) {
-	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	ctx, db := newTestDBWithSpace(t, testSpaceID, testUserID)
 
 	// CreateList builds a ListDbo from the request. It must populate UserIDs
 	// (from the requesting user) as well as SpaceIDs, otherwise the formed DTO
 	// fails its own Validate(). A valid request must succeed.
-	_, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{
+	response, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		Type:         dbo4listus.ListTypeToDo,
 		Title:        "Groceries",
 	})
 	if err != nil {
 		t.Fatalf("CreateList failed: %v", err)
+	}
+	if response.ID == "" {
+		t.Fatal("CreateList returned an empty list ID")
+	}
+	if !strings.HasPrefix(response.ID, string(dbo4listus.ListTypeToDo)+"!") {
+		t.Fatalf("CreateList returned ID %q without the requested list type", response.ID)
+	}
+	module := dbo4spaceus.NewSpaceModuleEntry(
+		testSpaceID,
+		const4listus.ExtensionID,
+		new(dbo4listus.ListusSpaceDbo),
+	)
+	if err := db.Get(ctx, module.Record); err != nil {
+		t.Fatalf("failed to read Listus Space summary: %v", err)
+	}
+	brief := module.Data.Lists[response.ID]
+	if brief == nil || brief.Title != "Groceries" {
+		t.Fatalf("created list brief = %#v, want title Groceries", brief)
 	}
 }
 

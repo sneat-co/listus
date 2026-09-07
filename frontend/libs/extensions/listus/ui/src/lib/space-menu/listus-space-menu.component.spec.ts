@@ -1,6 +1,5 @@
 import { IUserSpaceBrief } from '@sneat/auth-models';
 import { IIdAndBrief } from '@sneat/core';
-import { ISpaceContext } from '@sneat/space-models';
 import { Observable, of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { ListusSpaceMenuComponent } from './listus-space-menu.component';
@@ -16,14 +15,14 @@ describe('ListusSpaceMenuComponent', () => {
         };
       };
       errorLogger: { logErrorHandler: () => (error: unknown) => void };
-      spaceService: { watchSpace: () => Observable<ISpaceContext> };
+      listService: { observeSpaceLists: () => Observable<Record<string, never>> };
       destroyed$: Subject<void>;
       switchSpace(space: IIdAndBrief<IUserSpaceBrief>): void;
     };
     menu.router = { url: '/space/personal/current/list/buy/groceries' };
     menu.spaceParams = { spaceNavService: { navigateForwardToSpacePage } };
     menu.errorLogger = { logErrorHandler: () => () => undefined };
-    menu.spaceService = { watchSpace: () => of({} as ISpaceContext) };
+    menu.listService = { observeSpaceLists: () => of({}) };
     menu.destroyed$ = new Subject<void>();
 
     menu.switchSpace({
@@ -48,17 +47,14 @@ describe('ListusSpaceMenuComponent', () => {
         };
       };
       errorLogger: { logErrorHandler: () => (error: unknown) => void };
-      spaceService: { watchSpace: () => Observable<ISpaceContext> };
+      listService: { observeSpaceLists: () => Observable<Record<string, never>> };
       destroyed$: Subject<void>;
       switchSpace(space: IIdAndBrief<IUserSpaceBrief>): void;
     };
     menu.router = { url: '/space/personal/current/list/buy/custom-list' };
     menu.spaceParams = { spaceNavService: { navigateForwardToSpacePage } };
     menu.errorLogger = { logErrorHandler: () => () => undefined };
-    menu.spaceService = {
-      watchSpace: () =>
-        of({ id: 'family', type: 'family', dbo: null } as ISpaceContext),
-    };
+    menu.listService = { observeSpaceLists: () => of({}) };
     menu.destroyed$ = new Subject<void>();
 
     menu.switchSpace({

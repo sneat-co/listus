@@ -26,6 +26,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 	if err = request.Validate(); err != nil {
 		return
 	}
+	var createdListID dbo4listus.ListKey
 	err = dal4spaceus2.CreateSpaceItem(ctx, request.SpaceRequest, const4listus.ExtensionID, new(dbo4listus.ListusSpaceDbo),
 		func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *dal4spaceus2.ModuleSpaceWorkerParams[*dbo4listus.ListusSpaceDbo]) (err error) {
 			if err = params.GetRecords(ctx, tx); err != nil {
@@ -55,6 +56,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			}
 
 			listID := dbo4listus.NewListKey(listType, listSubID)
+			createdListID = listID
 
 			userCtx := ctx.User()
 			modified := dbmodels.Modified{
@@ -101,7 +103,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			listBrief := &dbo4listus.ListBrief{
 				ListBase: dbo4listus.ListBase{
 					Type:  request.Type,
-					Title: request.Type,
+					Title: request.Title,
 				},
 			}
 			params.SpaceModuleEntry.Data.Lists[string(listID)] = listBrief
@@ -119,5 +121,8 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			return err
 		},
 	)
+	if err == nil {
+		response.ID = string(createdListID)
+	}
 	return
 }

@@ -148,6 +148,8 @@
           @for (item of listItems(); track item.brief.id) {
             <ion-reorder
               class="list-item-row"
+              [attr.id]="'list-item-' + item.brief.id"
+              tabindex="-1"
               [@addRemove]="item.state.isAdding ? 'added' : 'present'"
             >
               <listus-list-item

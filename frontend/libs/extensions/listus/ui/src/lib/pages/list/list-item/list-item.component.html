@@ -7,7 +7,7 @@
 <ion-item-sliding
   #ionSliding
   @listItem
-  [disabled]="$isSettingIsDone()"
+  [disabled]="$isSettingIsDone() || !!listItem.sourceManagement"
   [class.is-transitioning]="$isSettingIsDone()"
 >
   <!--	<ion-item button (click)="goListItem(listItem)">-->
@@ -19,7 +19,7 @@
         labelPlacement="end"
         justify="start"
         [checked]="listItem.status === 'done'"
-        [disabled]="$isSettingIsDone()"
+        [disabled]="$isSettingIsDone() || !!listItem.sourceManagement"
         [value]="listItem.status === 'done'"
         (ionChange)="onIsDoneCheckboxChanged($event)"
       />
@@ -52,6 +52,43 @@
     }
 
     <ion-buttons slot="end">
+      @if (listItem.sourceManagement) {
+        <ion-button
+          aria-label="Open source for {{ listItem.title }}"
+          [disabled]="$isSettingIsDone()"
+          (click)="openSourceAction($event)"
+        >
+          Open source
+        </ion-button>
+      } @else if (listItem.dateTask) {
+        @if ($dateTask()?.dueDate; as dueDate) {
+          <ion-badge color="light">Due {{ dueDate }}</ion-badge>
+        } @else if ($dateTaskUnavailable()) {
+          <ion-badge color="warning">Due date unavailable</ion-badge>
+        } @else {
+          <ion-badge color="light">Loading due date…</ion-badge>
+        }
+      }
+      @if (!listItem.sourceManagement && $supportsDateTask()) {
+        <input
+          type="date"
+          [value]="$dateTask()?.dueDate || ''"
+          [attr.aria-label]="(listItem.dateTask ? 'Change due date for ' : 'Add due date for ') + listItem.title"
+          [disabled]="$isSettingIsDone()"
+          (change)="onDueDateChanged($event)"
+        />
+        @if (listItem.dateTask) {
+          <ion-button
+            fill="clear"
+            color="medium"
+            aria-label="Remove due date for {{ listItem.title }}"
+            [disabled]="$isSettingIsDone()"
+            (click)="removeDueDate($event)"
+          >
+            Remove due date
+          </ion-button>
+        }
+      }
       <!--					<ion-button *ngIf="listType === 'to-cook'" (click)="openCopyListItemDialog(listItem, $event)">🛒</ion-button>-->
       @if ($isReorderMode()) {
         <ion-button (click)="deleteFromList(listItem)" color="medium">
@@ -61,7 +98,7 @@
         <ion-button
           aria-label="Remove {{ listItem.title }}"
           class="list-item-remove-button"
-          [disabled]="$isSettingIsDone()"
+          [disabled]="$isSettingIsDone() || !!listItem.sourceManagement || !!listItem.dateTask"
           color="medium"
           (click)="confirmDeleteFromList(listItem, $event)"
         >
@@ -76,7 +113,10 @@
 
     <ion-reorder slot="end"></ion-reorder>
   </ion-item>
-  <ion-item-options side="start" (ionSwipe)="setIsDone(false, ionSliding)">
+  <ion-item-options
+    side="start"
+    (ionSwipe)="setIsDone(false, ionSliding)"
+  >
     @if ($isDone()) {
       <ion-item-option
         expandable="true"
