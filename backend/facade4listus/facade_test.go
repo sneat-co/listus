@@ -2,6 +2,7 @@ package facade4listus
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/sneat-co/listus/backend/dal4listus"
@@ -41,13 +42,19 @@ func TestCreateList_Succeeds(t *testing.T) {
 	// CreateList builds a ListDbo from the request. It must populate UserIDs
 	// (from the requesting user) as well as SpaceIDs, otherwise the formed DTO
 	// fails its own Validate(). A valid request must succeed.
-	_, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{
+	response, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{
 		SpaceRequest: spaceRequest(testSpaceID),
 		Type:         dbo4listus.ListTypeToDo,
 		Title:        "Groceries",
 	})
 	if err != nil {
 		t.Fatalf("CreateList failed: %v", err)
+	}
+	if response.ID == "" {
+		t.Fatal("CreateList returned an empty list ID")
+	}
+	if !strings.HasPrefix(response.ID, string(dbo4listus.ListTypeToDo)+"!") {
+		t.Fatalf("CreateList returned ID %q without the requested list type", response.ID)
 	}
 }
 
