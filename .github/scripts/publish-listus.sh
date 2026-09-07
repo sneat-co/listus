@@ -7,10 +7,15 @@
 # because a push/PR made with the default GITHUB_TOKEN does not trigger the
 # checks that PR needs to satisfy those requirements.
 #
-# Idempotent: if Nx's publish step fails only because the version it
-# resolved is already on npm (e.g. a rerun after a prior push failure like
-# run 34127816455), that failure is downgraded to a notice instead of
-# failing the job.
+# Idempotent: if Nx fails only because the version it resolved was already
+# released (npm already has it, or the local git tag for it already exists),
+# that failure is downgraded to a notice instead of failing the job. Both
+# cases show up here after a prior run's version-bump commit failed to reach
+# main (e.g. run 34127816455): Nx still resolves "current version" from the
+# nearest ancestor git tag, so it can recompute the same already-released
+# version and either try to re-publish it (npm rejects that) or try to
+# recreate its already-pushed release tag (git rejects that too, and it
+# happens even earlier in Nx's pipeline, before publish is attempted).
 set -uo pipefail
 
 before_head="$(git rev-parse HEAD)"
@@ -20,8 +25,8 @@ status=$?
 printf '%s\n' "${output}"
 
 if [[ ${status} -ne 0 ]]; then
-  if printf '%s\n' "${output}" | grep -qiE 'you cannot publish over the previously published version|EPUBLISHCONFLICT'; then
-    echo "::notice::Resolved listus version is already published to npm; treating publish as already done."
+  if printf '%s\n' "${output}" | grep -qiE "you cannot publish over the previously published version|EPUBLISHCONFLICT|tag '[^']*' already exists"; then
+    echo "::notice::Resolved listus version was already released (published to npm and/or already tagged); treating this run as already done."
   else
     exit "${status}"
   fi
