@@ -2,11 +2,12 @@ import { HttpParams } from '@angular/common/http';
 import { Injectable, inject, Injector } from '@angular/core';
 import {
   Firestore as AngularFirestore,
+  CollectionReference,
   DocumentReference,
   collection,
   doc,
 } from 'firebase/firestore';
-import { SneatApiService } from '@sneat/api';
+import { SneatApiService, SneatFirestoreService } from '@sneat/api';
 import { ISpaceContext } from '@sneat/space-models';
 import { ModuleSpaceItemService } from '@sneat/space-services';
 import { Observable, throwError } from 'rxjs';
@@ -17,6 +18,7 @@ import {
   IListBrief,
   IListContext,
   IListDbo,
+  IListusSpaceDbo,
   ListType,
   ICreateListItemsRequest,
   ICreateListRequest,
@@ -38,11 +40,30 @@ import {
 
 @Injectable()
 export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
+  private readonly listusSpaceRecords: SneatFirestoreService<
+    IListusSpaceDbo,
+    IListusSpaceDbo
+  >;
+
   constructor() {
     const afs = inject(AngularFirestore);
     const sneatApiService = inject(SneatApiService);
     const injector = inject(Injector);
     super(injector, 'listus', 'lists', afs, sneatApiService);
+    this.listusSpaceRecords = new SneatFirestoreService(injector);
+  }
+
+  public observeSpaceLists(
+    spaceID: string,
+  ): Observable<Readonly<Record<string, IListBrief>>> {
+    const extensionRecords = collection(
+      this.spacesCollection,
+      spaceID,
+      'ext',
+    ) as CollectionReference<IListusSpaceDbo>;
+    return this.listusSpaceRecords.watchByID(extensionRecords, 'listus').pipe(
+      map((record) => record.dbo?.lists || {}),
+    );
   }
 
   public createList(request: ICreateListRequest): Observable<IListContext> {
