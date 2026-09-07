@@ -57,6 +57,23 @@ async function signIn(page: Page, actor: Actor): Promise<void> {
   await page.waitForURL((url) => !url.pathname.includes('/login'));
 }
 
+async function openCalendarDate(
+  page: Page,
+  spaceID: string,
+  date: string,
+): Promise<void> {
+  await page.goto(`/space/family/${spaceID}/calendar?tab=day`);
+  await page.getByText('Pick date', { exact: true }).click();
+  const picker = page.locator('ion-datetime.sneat-date-picker');
+  await expect(picker).toBeVisible();
+  await picker.evaluate((element, value) => {
+    (element as HTMLElement & { value: string }).value = value;
+    element.dispatchEvent(
+      new CustomEvent('ionChange', { detail: { value }, bubbles: true }),
+    );
+  }, date);
+}
+
 test('real @authenticated Listus due task stays linked through its lifecycle', async ({
   page,
   request,
@@ -126,7 +143,7 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
     page.locator('ion-reorder').filter({ hasText: title }),
   ).toBeVisible();
 
-  await page.goto(`/space/family/${spaceID}/calendar?tab=day&date=2026-09-21`);
+  await openCalendarDate(page, spaceID, '2026-09-21');
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 
   await page.goto(listURL);
@@ -140,9 +157,9 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
   await loadedRow.getByLabel(`Change due date for ${title}`).fill('2026-09-23');
   expect((await reschedule).ok()).toBeTruthy();
 
-  await page.goto(`/space/family/${spaceID}/calendar?tab=day&date=2026-09-21`);
+  await openCalendarDate(page, spaceID, '2026-09-21');
   await expect(page.getByText(title, { exact: true })).toHaveCount(0);
-  await page.goto(`/space/family/${spaceID}/calendar?tab=day&date=2026-09-23`);
+  await openCalendarDate(page, spaceID, '2026-09-23');
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 
   await page.goto(listURL);
