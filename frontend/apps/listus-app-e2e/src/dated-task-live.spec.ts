@@ -115,13 +115,21 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
   await signIn(page, actor);
   await page.goto(listURL);
   await page.locator('ion-input[placeholder="New item"] input').fill(title);
+  const firstItemCreate = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/list_items_create'),
+  );
   await page.getByRole('button', { name: 'Add', exact: true }).click();
+  expect((await firstItemCreate).ok()).toBeTruthy();
   const row = page.locator('ion-reorder').filter({ hasText: title });
   await expect(row).toBeVisible();
 
   const otherTitle = `Second task ${suffix}`;
   await page.locator('ion-input[placeholder="New item"] input').fill(otherTitle);
+  const secondItemCreate = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/list_items_create'),
+  );
   await page.getByRole('button', { name: 'Add', exact: true }).click();
+  expect((await secondItemCreate).ok()).toBeTruthy();
   const otherRow = page.locator('ion-reorder').filter({ hasText: otherTitle });
   await expect(otherRow).toBeVisible();
 

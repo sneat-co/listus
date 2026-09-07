@@ -181,8 +181,8 @@ export class ListPageComponent extends BaseListPage {
           this.applyFilter();
         }),
         newListItem.added.subscribe((item: IListItemWithUiState) => {
-          this.addingItems = this.addingItems.filter(
-            (v) => v.brief.id !== item.brief.id,
+          this.addingItems = this.addingItems.map((current) =>
+            current.brief.id === item.brief.id ? item : current,
           );
           this.applyFilter();
         }),
@@ -265,8 +265,11 @@ export class ListPageComponent extends BaseListPage {
             })
           : [];
     if (allListItems && this.addingItems.length) {
+      const persistedIDs = new Set(
+        (list.dbo?.items || []).map((item) => item.id),
+      );
       this.addingItems = this.addingItems.filter(
-        (v) => !this.listItems()?.some((li) => li.brief.id === v.brief.id),
+        (item) => !persistedIDs.has(item.brief.id),
       );
       if (this.addingItems.length) {
         allListItems = [...allListItems, ...this.addingItems];
