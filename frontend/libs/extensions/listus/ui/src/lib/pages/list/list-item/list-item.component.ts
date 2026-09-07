@@ -364,7 +364,7 @@ export class ListItemComponent {
     if (!request || this.dateTaskRequestKey(request) !== currentKey) {
       request = {
         spaceID: list.space.id,
-        listID: list.id,
+        listID: canonicalListID(list),
         itemID: item.brief.id,
         operationID: this.randomID.newRandomId({ len: 20 }),
         expectedTaskRevision: revision,

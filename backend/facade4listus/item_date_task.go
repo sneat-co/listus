@@ -30,7 +30,7 @@ func SaveListItemDateTask(
 		return
 	}
 	if calendar == nil {
-		return response, errors.New("Calendar date-task provider is unavailable")
+		return response, errors.New("calendar date-task provider is unavailable")
 	}
 	db, err := facade.GetSneatDB(ctx)
 	if err != nil {
@@ -111,9 +111,10 @@ func SaveListItemDateTask(
 				return err
 			}
 		}
-		if request.State == listusmodels.SourceTodoCompleted {
+		switch request.State {
+		case listusmodels.SourceTodoCompleted:
 			item.Status = "done"
-		} else if request.State == listusmodels.SourceTodoActive {
+		case listusmodels.SourceTodoActive:
 			item.Status = "active"
 		}
 		items := append([]*dbo4listus.ListItemBrief(nil), list.Data.Items...)

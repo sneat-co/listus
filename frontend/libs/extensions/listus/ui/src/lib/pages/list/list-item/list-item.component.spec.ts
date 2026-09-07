@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ToastController } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import * as ionicons from 'ionicons/icons';
 import { RandomIdService } from '@sneat/random';
 import {
   IListItemSourceActionNavigator,
@@ -14,6 +16,18 @@ import { of, throwError } from 'rxjs';
 import { ListusComponentBaseParams } from '../../../listus-component-base-params';
 import { ListDialogsService } from '../../dialogs/ListDialogs.service';
 import { ListItemComponent } from './list-item.component';
+
+// jsdom has no layout engine and cannot resolve the relative `svg/*.svg`
+// URLs Ionicons lazily fetches for an unregistered icon name, so rendering
+// any <ion-icon> used by this component's template throws `TypeError:
+// Invalid URL`. Register the icons this template references up front, the
+// same way the app bootstrap does in apps/listus-app/src/register-ionicons.ts.
+addIcons({
+  'close-outline': ionicons.closeOutline,
+  'trash-outline': ionicons.trashOutline,
+  checkmark: ionicons.checkmark,
+  trash: ionicons.trash,
+});
 
 describe('ListItemComponent linked task authority', () => {
   const errorLogger = { logError: vi.fn(), logErrorHandler: () => vi.fn() };
@@ -76,9 +90,9 @@ describe('ListItemComponent linked task authority', () => {
       state: {},
     });
     fixture.componentRef.setInput('$list', {
-      id: 'do!tasks',
+      id: 'tasks',
       space: { id: 'space-1', type: 'family' },
-      brief: { id: 'do!tasks', type: 'do', title: 'To do' },
+      brief: { id: 'tasks', type: 'do', title: 'To do' },
     });
     fixture.detectChanges();
     return fixture.componentInstance as unknown as {
