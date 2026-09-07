@@ -90,6 +90,15 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
     'Requires the integrated local Listus and Calendarius stack',
   );
   test.setTimeout(120_000);
+  const linkedDueErrors: string[] = [];
+  page.on('console', (message) => {
+    const text = message.text();
+    if (/linked due task|permission-denied/i.test(text)) linkedDueErrors.push(text);
+  });
+  page.on('pageerror', (error) => {
+    if (/linked due task|permission-denied/i.test(error.message))
+      linkedDueErrors.push(error.message);
+  });
   const actor = await authenticate(request);
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   await post(request, actor, 'users/init_user_record', {
@@ -147,6 +156,7 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
   await row.getByLabel(`Add due date for ${title}`).fill('2026-09-21');
   await expectResponseOK(await initialSave);
 
+  await page.locator('ion-segment-button[value="all"]').click();
   await page.locator('ion-select').filter({ hasText: /Swipe|Reorder/ }).click();
   await page.getByRole('radio', { name: 'Reorder', exact: true }).click();
   const reorder = page.waitForResponse(
@@ -164,9 +174,15 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
 
   await page.goto(listURL);
   const loadedRow = page.locator('ion-reorder').filter({ hasText: title });
-  await expect(loadedRow.getByLabel(`Change due date for ${title}`)).toHaveValue(
-    '2026-09-21',
-  );
+  const loadedDueInput = loadedRow.getByLabel(`Change due date for ${title}`);
+  await expect
+    .poll(
+      async () =>
+        (await loadedDueInput.inputValue()) ||
+        `No due date; row shows: ${await loadedRow.innerText()}; errors: ${linkedDueErrors.join(' | ') || 'none'}`,
+      { timeout: 10_000 },
+    )
+    .toBe('2026-09-21');
   const reschedule = page.waitForResponse(
     (response) => response.url().includes('/v0/listus/item_date_task_save'),
   );
@@ -180,16 +196,45 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
 
   await page.goto(listURL);
   const currentRow = page.locator('ion-reorder').filter({ hasText: title });
+  const completeTask = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/item_date_task_save'),
+  );
   await currentRow.locator('ion-checkbox').click();
-  await expect(currentRow.locator('ion-checkbox')).toBeChecked();
-  await currentRow.locator('ion-checkbox').click();
-  await expect(currentRow.locator('ion-checkbox')).not.toBeChecked();
+  await expectResponseOK(await completeTask);
+
+  await page.locator('ion-segment-button[value="completed"]').click();
+  const completedRow = page
+    .locator('ion-reorder')
+    .filter({ hasText: title })
+    .filter({ has: page.locator('ion-checkbox:not([aria-disabled="true"])') });
+  await expect(completedRow).toBeVisible();
+  await expect(completedRow.locator('ion-checkbox')).toBeEnabled();
+  await expect(
+    completedRow.getByLabel(`Change due date for ${title}`),
+  ).toHaveValue('2026-09-23');
+  const reopenTask = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/item_date_task_save'),
+  );
+  await completedRow.locator('ion-checkbox').click();
+  await expectResponseOK(await reopenTask);
+
+  await page.locator('ion-segment-button[value="active"]').click();
+  const reopenedRow = page
+    .locator('ion-reorder')
+    .filter({ hasText: title })
+    .filter({
+      has: page.locator(
+        'ion-checkbox[aria-checked="false"]:not([aria-disabled="true"])',
+      ),
+    });
+  await expect(reopenedRow).toBeVisible();
+  await expect(reopenedRow.locator('ion-checkbox')).not.toBeChecked();
 
   const clearDue = page.waitForResponse(
     (response) => response.url().includes('/v0/listus/item_date_task_save'),
   );
-  await currentRow.getByRole('button', { name: `Remove due date for ${title}` }).click();
+  await reopenedRow.getByRole('button', { name: `Remove due date for ${title}` }).click();
   expect((await clearDue).ok()).toBeTruthy();
-  await expect(currentRow).toBeVisible();
-  await expect(currentRow.getByLabel(`Add due date for ${title}`)).toBeVisible();
+  await expect(reopenedRow).toBeVisible();
+  await expect(reopenedRow.getByLabel(`Add due date for ${title}`)).toBeVisible();
 });
