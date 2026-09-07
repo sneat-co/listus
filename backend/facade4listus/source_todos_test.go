@@ -13,6 +13,11 @@ import (
 	"github.com/sneat-co/sneat-go-core/coretypes"
 )
 
+type uncomparableSourceTodoTx struct {
+	dal.ReadwriteTransaction
+	values []string
+}
+
 func sourceTodoSpec() listusmodels.SourceTodoSpec {
 	return listusmodels.SourceTodoSpec{
 		SpaceID: testSpaceID, ListID: dbo4listus.DoTasksListID,
@@ -125,6 +130,14 @@ func TestSourceTodoPortPlanIsTransactionBoundAndOneShot(t *testing.T) {
 		return err
 	}); err == nil {
 		t.Fatal("expected applying prepared plan in another transaction to fail")
+	}
+}
+
+func TestSameSourceTodoTransactionRejectsUncomparableDynamicValuesWithoutPanicking(t *testing.T) {
+	left := uncomparableSourceTodoTx{values: []string{"left"}}
+	right := uncomparableSourceTodoTx{values: []string{"left"}}
+	if sameSourceTodoTransaction(left, right) {
+		t.Fatal("uncomparable transaction values must fail closed")
 	}
 }
 

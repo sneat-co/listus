@@ -210,7 +210,7 @@ func sameSourceTodoTransaction(left, right dal.ReadwriteTransaction) bool {
 		return false
 	}
 	lv, rv := reflect.ValueOf(left), reflect.ValueOf(right)
-	return lv.Type() == rv.Type() && lv.Type().Comparable() && lv.Interface() == rv.Interface()
+	return lv.Type() == rv.Type() && lv.Comparable() && rv.Comparable() && lv.Interface() == rv.Interface()
 }
 
 func cloneSourceTodoItem(item *dbo4listus.ListItemBrief) (*dbo4listus.ListItemBrief, error) {

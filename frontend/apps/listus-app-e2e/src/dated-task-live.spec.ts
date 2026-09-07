@@ -74,6 +74,13 @@ async function openCalendarDate(
   }, date);
 }
 
+async function expectResponseOK(response: import('@playwright/test').Response): Promise<void> {
+  expect(
+    response.ok(),
+    `${response.request().method()} ${new URL(response.url()).pathname} returned ${response.status()}: ${await response.text()}`,
+  ).toBeTruthy();
+}
+
 test('real @authenticated Listus due task stays linked through its lifecycle', async ({
   page,
   request,
@@ -120,6 +127,7 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
   );
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   expect((await firstItemCreate).ok()).toBeTruthy();
+  await page.reload();
   const row = page.locator('ion-reorder').filter({ hasText: title });
   await expect(row).toBeVisible();
 
@@ -137,7 +145,7 @@ test('real @authenticated Listus due task stays linked through its lifecycle', a
     (response) => response.url().includes('/v0/listus/item_date_task_save'),
   );
   await row.getByLabel(`Add due date for ${title}`).fill('2026-09-21');
-  expect((await initialSave).ok()).toBeTruthy();
+  await expectResponseOK(await initialSave);
 
   await page.locator('ion-select').filter({ hasText: /Swipe|Reorder/ }).click();
   await page.getByRole('radio', { name: 'Reorder', exact: true }).click();
