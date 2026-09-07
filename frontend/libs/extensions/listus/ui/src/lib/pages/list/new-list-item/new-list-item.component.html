@@ -13,6 +13,7 @@
       (ionFocus)="focused()"
     />
     <ion-button
+      type="button"
       [color]="isFocused() && title().trim() ? 'primary' : 'medium'"
       [disabled]="disabled()"
       [fill]="title().trim() ? 'solid' : 'outline'"
