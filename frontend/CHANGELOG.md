@@ -1,3 +1,32 @@
+## 0.1.6 (2026-09-07)
+
+### 🚀 Features
+
+- **listus:** add source-managed due todos ([704de1f](https://github.com/sneat-co/listus/commit/704de1f))
+- **listus:** coordinate linked due tasks ([39cacd3](https://github.com/sneat-co/listus/commit/39cacd3))
+- **listus:** route linked task actions safely ([ff48036](https://github.com/sneat-co/listus/commit/ff48036))
+- **listus:** add due task controls ([7b79bea](https://github.com/sneat-co/listus/commit/7b79bea))
+- **listus:** read canonical due task dates ([ed834e9](https://github.com/sneat-co/listus/commit/ed834e9))
+- **listus:** observe extension-owned list briefs ([94f0eff](https://github.com/sneat-co/listus/commit/94f0eff))
+
+### 🩹 Fixes
+
+- repair CI red on PR #54 (lint, stale core-public pin, icon test, listID bug) ([#54](https://github.com/sneat-co/listus/issues/54))
+- **deps:** pin published wave-1 contracts and libraries ([1846067](https://github.com/sneat-co/listus/commit/1846067))
+- **listus:** bind source todo plans to transactions ([f7bc7e9](https://github.com/sneat-co/listus/commit/f7bc7e9))
+- **listus:** retain Calendar task revision ([3729c86](https://github.com/sneat-co/listus/commit/3729c86))
+- **listus:** limit due controls to todo lists ([1827da4](https://github.com/sneat-co/listus/commit/1827da4))
+- **listus:** return created list identity ([773ea39](https://github.com/sneat-co/listus/commit/773ea39))
+- **listus:** load lists from extension storage ([3d1ccc3](https://github.com/sneat-co/listus/commit/3d1ccc3))
+- **listus:** persist new items without decoration delay ([9cb9c5f](https://github.com/sneat-co/listus/commit/9cb9c5f))
+- **listus:** preserve created list title ([78fd1a2](https://github.com/sneat-co/listus/commit/78fd1a2))
+- **listus:** retain saved items until listener refresh ([e0a3011](https://github.com/sneat-co/listus/commit/e0a3011))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok
+- Claude Fable 5.1
+
 ## 0.1.5 (2026-09-02)
 
 ### 🩹 Fixes
