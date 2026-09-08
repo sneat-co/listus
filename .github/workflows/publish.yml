@@ -37,7 +37,7 @@ jobs:
     if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     steps:
       - name: Check out the release branch, if publish-listus.sh pushed one
@@ -51,11 +51,7 @@ jobs:
       - name: Open the protected release pull request
         if: steps.checkout.outcome == 'success'
         env:
-          # A pull request opened with the default GITHUB_TOKEN does not
-          # trigger the required status checks it needs to satisfy branch
-          # protection (GitHub deliberately suppresses workflow runs caused
-          # by its own token). The org PAT does trigger them.
-          GH_TOKEN: ${{ secrets.SNEAT_CI_READWRITE_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           branch="release/listus-${{ github.run_id }}"
@@ -66,6 +62,19 @@ jobs:
             --head "${branch}" \
             --title "chore(release): publish listus ${version:-update}" \
             --body "Nx release computed and published the listus npm packages from this push. Main requires status checks, so the version-bump commit (package.json + CHANGELOG.md) lands via this PR instead of a direct push. Merging brings main in line with what is already published to npm."
+
+      - name: Trigger protected release PR checks
+        if: steps.checkout.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.SNEAT_CI_READWRITE_TOKEN }}
+        run: |
+          set -euo pipefail
+          branch="release/listus-${{ github.run_id }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore(release): trigger protected PR checks"
+          gh auth setup-git
+          git push origin "HEAD:${branch}"
 
       - name: No release branch to publish
         if: steps.checkout.outcome != 'success'
