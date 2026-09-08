@@ -77,10 +77,10 @@ export class ListItemComponent {
   private readonly listDialogs = inject(ListDialogsService);
   private readonly toastCtrl = inject(ToastController);
   private readonly randomID = inject(RandomIdService);
-  private readonly sourceActionNavigator = inject<IListItemSourceActionNavigator>(
-    LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
-    { optional: true },
-  );
+  private readonly sourceActionNavigator =
+    inject<IListItemSourceActionNavigator>(LIST_ITEM_SOURCE_ACTION_NAVIGATOR, {
+      optional: true,
+    });
   private readonly dateTaskReader = inject<ISourceLinkedDateTaskReader>(
     SOURCE_LINKED_DATE_TASK_READER,
     { optional: true },
@@ -104,7 +104,9 @@ export class ListItemComponent {
   );
 
   protected readonly $isSettingIsDone = signal(false);
-  protected readonly $isPhotoPreviewOpen = signal(false);
+  protected readonly $photoPresentation = signal<
+    'thumbnail' | 'preview' | 'large'
+  >('thumbnail');
   protected readonly $dateTask = signal<ISourceLinkedDateTask | undefined>(
     undefined,
   );
@@ -235,14 +237,23 @@ export class ListItemComponent {
       },
     });
     if (!mediaID) {
-      this.$isPhotoPreviewOpen.set(false);
+      this.$photoPresentation.set('thumbnail');
     }
   }
 
   protected togglePhotoPreview(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    this.$isPhotoPreviewOpen.update((open) => !open);
+    this.$photoPresentation.update((presentation) => {
+      switch (presentation) {
+        case 'thumbnail':
+          return 'preview';
+        case 'preview':
+          return 'large';
+        case 'large':
+          return 'thumbnail';
+      }
+    });
   }
 
   protected setIsDone(isDone?: boolean, ionSliding?: IonItemSliding): void {
