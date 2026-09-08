@@ -4,6 +4,7 @@ import { ToastController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import * as ionicons from 'ionicons/icons';
 import { RandomIdService } from '@sneat/random';
+import { MediaService } from '@sneat/media';
 import {
   IListItemSourceActionNavigator,
   LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
@@ -27,6 +28,7 @@ addIcons({
   'trash-outline': ionicons.trashOutline,
   checkmark: ionicons.checkmark,
   trash: ionicons.trash,
+  'camera-outline': ionicons.cameraOutline,
 });
 
 describe('ListItemComponent linked task authority', () => {
@@ -75,6 +77,7 @@ describe('ListItemComponent linked task authority', () => {
           provide: RandomIdService,
           useValue: { newRandomId: vi.fn().mockReturnValue('operation-1') },
         },
+        { provide: MediaService, useValue: {} },
         {
           provide: LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
           useValue: sourceNavigator,
@@ -108,7 +111,11 @@ describe('ListItemComponent linked task authority', () => {
       of({
         itemID: 'item-1',
         dateTask: {
-          happening: { module: 'calendarius', collection: 'happenings', id: 'due-1' },
+          happening: {
+            module: 'calendarius',
+            collection: 'happenings',
+            id: 'due-1',
+          },
           source: { module: 'listus', collection: 'lists', id: 'do!tasks' },
           purpose: 'due-date',
           revision: 2,
@@ -121,9 +128,16 @@ describe('ListItemComponent linked task authority', () => {
   it('delegates source-managed completion to the owning extension', async () => {
     const component = create({
       sourceManagement: {
-        source: { module: 'debtus', collection: 'sourceObligations', id: 'bill-1' },
+        source: {
+          module: 'debtus',
+          collection: 'sourceObligations',
+          id: 'bill-1',
+        },
         purpose: 'payment-due',
-        completion: { disposition: 'requires_input', actionID: 'record-payment' },
+        completion: {
+          disposition: 'requires_input',
+          actionID: 'record-payment',
+        },
       },
     });
 
@@ -138,7 +152,11 @@ describe('ListItemComponent linked task authority', () => {
   it('uses the Calendar-coordinated endpoint and keeps the retry operation ID', () => {
     const component = create({
       dateTask: {
-        happening: { module: 'calendarius', collection: 'happenings', id: 'due-1' },
+        happening: {
+          module: 'calendarius',
+          collection: 'happenings',
+          id: 'due-1',
+        },
         source: { module: 'listus', collection: 'lists', id: 'do!tasks' },
         purpose: 'due-date',
         revision: 1,
@@ -180,11 +198,62 @@ describe('ListItemComponent linked task authority', () => {
     expect(listService.setListItemsIsCompleted).not.toHaveBeenCalled();
   });
 
+  it('keeps the Listus photo as a shared-media forward reference after linking', () => {
+    const component = create({});
+    const changed = vi.fn();
+    (
+      component as unknown as {
+        itemChanged: { subscribe(listener: (value: unknown) => void): void };
+        onPhotoChanged(mediaID: string | undefined): void;
+      }
+    ).itemChanged.subscribe(changed);
+
+    (
+      component as unknown as { onPhotoChanged(mediaID: string): void }
+    ).onPhotoChanged('media-oatmeal');
+
+    expect(changed).toHaveBeenCalledWith({
+      old: { brief: { id: 'item-1', title: 'Pay electricity' }, state: {} },
+      new: {
+        brief: {
+          id: 'item-1',
+          title: 'Pay electricity',
+          photo: { mediaID: 'media-oatmeal' },
+        },
+        state: {},
+      },
+    });
+  });
+
+  it('opens a photo from thumbnail to preview and then large presentation', () => {
+    const component = create({}) as unknown as {
+      $photoPresentation(): 'thumbnail' | 'preview' | 'large';
+      togglePhotoPreview(event: Event): void;
+    };
+    const event = {
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as unknown as Event;
+
+    component.togglePhotoPreview(event);
+    expect(component.$photoPresentation()).toBe('preview');
+
+    component.togglePhotoPreview(event);
+    expect(component.$photoPresentation()).toBe('large');
+
+    component.togglePhotoPreview(event);
+    expect(component.$photoPresentation()).toBe('thumbnail');
+  });
+
   it('reopens with the Calendar-owned due date loaded after a cold read', () => {
     const component = create({
       status: 'done',
       dateTask: {
-        happening: { module: 'calendarius', collection: 'happenings', itemID: 'due-1' },
+        happening: {
+          module: 'calendarius',
+          collection: 'happenings',
+          itemID: 'due-1',
+        },
         source: { module: 'listus', collection: 'lists', itemID: 'do!tasks' },
         purpose: 'due-date',
         revision: 1,

@@ -51,6 +51,41 @@
       </ion-badge>
     }
 
+    @if ($photoTarget(); as photoTarget) {
+      @if (listItem.photo; as photo) {
+        <ion-button
+          fill="clear"
+          size="small"
+          aria-label="{{
+            $photoPresentation() === 'thumbnail'
+              ? 'Preview photo for'
+              : $photoPresentation() === 'preview'
+                ? 'Open large photo for'
+                : 'Show thumbnail for'
+          }} {{ listItem.title }}"
+          (click)="togglePhotoPreview($event)"
+        >
+          <sneat-media-image
+            [mediaID]="photo.mediaID"
+            [crop]="photo.crop"
+            [target]="photoTarget"
+            role="photo"
+            [variant]="$photoPresentation()"
+            [alt]="'Photo of ' + listItem.title"
+            imageClass="list-item-photo"
+          />
+        </ion-button>
+      }
+      @if (!listItem.sourceManagement) {
+        <sneat-media-editor
+          [target]="photoTarget"
+          role="photo"
+          [mediaID]="listItem.photo?.mediaID"
+          (changed)="onPhotoChanged($event)"
+        />
+      }
+    }
+
     <ion-buttons slot="end">
       @if (listItem.sourceManagement) {
         <ion-button
@@ -73,7 +108,10 @@
         <input
           type="date"
           [value]="$dateTask()?.dueDate || ''"
-          [attr.aria-label]="(listItem.dateTask ? 'Change due date for ' : 'Add due date for ') + listItem.title"
+          [attr.aria-label]="
+            (listItem.dateTask ? 'Change due date for ' : 'Add due date for ') +
+            listItem.title
+          "
           [disabled]="$isSettingIsDone()"
           (change)="onDueDateChanged($event)"
         />
@@ -98,7 +136,11 @@
         <ion-button
           aria-label="Remove {{ listItem.title }}"
           class="list-item-remove-button"
-          [disabled]="$isSettingIsDone() || !!listItem.sourceManagement || !!listItem.dateTask"
+          [disabled]="
+            $isSettingIsDone() ||
+            !!listItem.sourceManagement ||
+            !!listItem.dateTask
+          "
           color="medium"
           (click)="confirmDeleteFromList(listItem, $event)"
         >
@@ -113,10 +155,7 @@
 
     <ion-reorder slot="end"></ion-reorder>
   </ion-item>
-  <ion-item-options
-    side="start"
-    (ionSwipe)="setIsDone(false, ionSliding)"
-  >
+  <ion-item-options side="start" (ionSwipe)="setIsDone(false, ionSliding)">
     @if ($isDone()) {
       <ion-item-option
         expandable="true"

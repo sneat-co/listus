@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sneat-co/listus/backend/const4listus"
+	"github.com/sneat-co/sneat-ext-contracts/media/models4media"
 	"github.com/strongo/strongoapp/with"
 )
 
@@ -35,6 +36,17 @@ func TestListItemBase_Validate(t *testing.T) {
 	}
 	if err := (ListItemBase{Title: "   "}).Validate(); err == nil {
 		t.Error("expected error for blank title")
+	}
+}
+
+func TestListItemBase_ValidatePhoto(t *testing.T) {
+	valid := ListItemBase{Title: "Oatmeal", Photo: &models4media.Ref{MediaID: "media-oatmeal"}}
+	if err := valid.Validate(); err != nil {
+		t.Fatalf("Validate() with photo = %v", err)
+	}
+	invalid := ListItemBase{Title: "Oatmeal", Photo: &models4media.Ref{}}
+	if err := invalid.Validate(); err == nil {
+		t.Fatal("Validate() with missing photo mediaID returned nil error")
 	}
 }
 

@@ -9,7 +9,8 @@ require (
 	github.com/dal-go/record v0.1.3
 	github.com/sneat-co/sneat-core-modules v0.73.0
 	github.com/sneat-co/sneat-ext-contracts/calendarius v0.27.8
-	github.com/sneat-co/sneat-ext-contracts/listus v0.0.10
+	github.com/sneat-co/sneat-ext-contracts/listus v0.0.11
+	github.com/sneat-co/sneat-ext-contracts/media v0.1.1
 	github.com/sneat-co/sneat-go-core v0.69.0
 	github.com/strongo/logus v0.4.3
 	github.com/strongo/random v0.0.2
