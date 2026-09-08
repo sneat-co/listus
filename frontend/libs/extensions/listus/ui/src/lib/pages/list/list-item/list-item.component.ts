@@ -41,6 +41,8 @@ import {
   ISourceLinkedDateTaskReader,
   SOURCE_LINKED_DATE_TASK_READER,
 } from '@sneat/extension-calendarius-contract';
+import { IMediaTarget } from '@sneat/extension-media-contract';
+import { MediaEditorComponent, MediaImageComponent } from '@sneat/media';
 import { RandomIdService } from '@sneat/random';
 import { ListusComponentBaseParams } from '../../../listus-component-base-params';
 import { ListDialogsService } from '../../dialogs/ListDialogs.service';
@@ -62,6 +64,8 @@ import { IListItemWithUiState } from '../list-item-with-ui-state';
     IonReorder,
     IonItemOptions,
     IonItemOption,
+    MediaEditorComponent,
+    MediaImageComponent,
   ],
   templateUrl: './list-item.component.html',
   styleUrls: ['./list-item.component.scss'],
@@ -100,6 +104,7 @@ export class ListItemComponent {
   );
 
   protected readonly $isSettingIsDone = signal(false);
+  protected readonly $isPhotoPreviewOpen = signal(false);
   protected readonly $dateTask = signal<ISourceLinkedDateTask | undefined>(
     undefined,
   );
@@ -118,6 +123,20 @@ export class ListItemComponent {
   protected readonly $listItem = computed(
     () => this.$listItemWithUiState().brief,
   );
+  protected readonly $photoTarget = computed<IMediaTarget | undefined>(() => {
+    const list = this.$list();
+    const item = this.$listItem();
+    if (!list || !item.id) {
+      return undefined;
+    }
+    return {
+      scope: 'space',
+      spaceID: list.space.id,
+      type: 'list_item',
+      id: item.id,
+      parentID: canonicalListID(list),
+    };
+  });
 
   private readonly observeDateTask = effect((onCleanup) => {
     const list = this.$list();
@@ -201,6 +220,29 @@ export class ListItemComponent {
     }
     const isDone = !!checked;
     this.setIsDone(isDone);
+  }
+
+  protected onPhotoChanged(mediaID: string | undefined): void {
+    const old = this.$listItemWithUiState();
+    this.itemChanged.emit({
+      old,
+      new: {
+        brief: {
+          ...old.brief,
+          photo: mediaID ? { mediaID } : undefined,
+        },
+        state: old.state,
+      },
+    });
+    if (!mediaID) {
+      this.$isPhotoPreviewOpen.set(false);
+    }
+  }
+
+  protected togglePhotoPreview(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.$isPhotoPreviewOpen.update((open) => !open);
   }
 
   protected setIsDone(isDone?: boolean, ionSliding?: IonItemSliding): void {

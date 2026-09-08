@@ -51,6 +51,32 @@
       </ion-badge>
     }
 
+    @if ($photoTarget(); as photoTarget) {
+      @if (listItem.photo; as photo) {
+        <ion-button
+          fill="clear"
+          size="small"
+          aria-label="{{ $isPhotoPreviewOpen() ? 'Show thumbnail for' : 'Preview photo for' }} {{ listItem.title }}"
+          (click)="togglePhotoPreview($event)"
+        >
+          <sneat-media-image
+            [mediaID]="photo.mediaID"
+            [variant]="$isPhotoPreviewOpen() ? 'preview' : 'thumbnail'"
+            [alt]="'Photo of ' + listItem.title"
+            imageClass="list-item-photo"
+          />
+        </ion-button>
+      }
+      @if (!listItem.sourceManagement) {
+        <sneat-media-editor
+          [target]="photoTarget"
+          role="photo"
+          [mediaID]="listItem.photo?.mediaID"
+          (changed)="onPhotoChanged($event)"
+        />
+      }
+    }
+
     <ion-buttons slot="end">
       @if (listItem.sourceManagement) {
         <ion-button

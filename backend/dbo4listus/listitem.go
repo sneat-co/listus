@@ -5,6 +5,7 @@ import (
 
 	"github.com/sneat-co/listus/backend/const4listus"
 	"github.com/sneat-co/sneat-core-modules/linkage/dbo4linkage"
+	"github.com/sneat-co/sneat-ext-contracts/media/models4media"
 	"github.com/strongo/strongoapp/with"
 	"github.com/strongo/validation"
 )
@@ -46,6 +47,9 @@ func (v WatchWith) Validate() error {
 type ListItemBase struct {
 	Title string `json:"title" firestore:"title"`
 	Emoji string `json:"emoji,omitempty" firestore:"emoji,omitempty"`
+	// Photo is a compact forward reference for fast list rendering. The shared
+	// media registry and its MediaLink remain the lifecycle authority.
+	Photo *models4media.Ref `json:"photo,omitempty" firestore:"photo,omitempty"`
 
 	Status const4listus.ListItemStatus `json:"status,omitempty" firestore:"status,omitempty"`
 
@@ -106,6 +110,11 @@ func (v ListItemBase) IsDone() bool {
 func (v ListItemBase) Validate() error {
 	if strings.TrimSpace(v.Title) == "" {
 		return validation.NewErrRecordIsMissingRequiredField("title")
+	}
+	if v.Photo != nil {
+		if err := v.Photo.Validate(); err != nil {
+			return validation.NewErrBadRecordFieldValue("photo", err.Error())
+		}
 	}
 	if v.Quantity < 0 {
 		return validation.NewErrBadRecordFieldValue("quantity", "must not be negative")

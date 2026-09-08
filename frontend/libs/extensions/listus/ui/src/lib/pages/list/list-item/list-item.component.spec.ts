@@ -4,6 +4,7 @@ import { ToastController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import * as ionicons from 'ionicons/icons';
 import { RandomIdService } from '@sneat/random';
+import { MediaService } from '@sneat/media';
 import {
   IListItemSourceActionNavigator,
   LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
@@ -27,6 +28,7 @@ addIcons({
   'trash-outline': ionicons.trashOutline,
   checkmark: ionicons.checkmark,
   trash: ionicons.trash,
+  'camera-outline': ionicons.cameraOutline,
 });
 
 describe('ListItemComponent linked task authority', () => {
@@ -75,6 +77,7 @@ describe('ListItemComponent linked task authority', () => {
           provide: RandomIdService,
           useValue: { newRandomId: vi.fn().mockReturnValue('operation-1') },
         },
+        { provide: MediaService, useValue: {} },
         {
           provide: LIST_ITEM_SOURCE_ACTION_NAVIGATOR,
           useValue: sourceNavigator,
@@ -178,6 +181,22 @@ describe('ListItemComponent linked task authority', () => {
       state: 'active',
     });
     expect(listService.setListItemsIsCompleted).not.toHaveBeenCalled();
+  });
+
+  it('keeps the Listus photo as a shared-media forward reference after linking', () => {
+    const component = create({});
+    const changed = vi.fn();
+    (component as unknown as {
+      itemChanged: { subscribe(listener: (value: unknown) => void): void };
+      onPhotoChanged(mediaID: string | undefined): void;
+    }).itemChanged.subscribe(changed);
+
+    (component as unknown as { onPhotoChanged(mediaID: string): void }).onPhotoChanged('media-oatmeal');
+
+    expect(changed).toHaveBeenCalledWith({
+      old: { brief: { id: 'item-1', title: 'Pay electricity' }, state: {} },
+      new: { brief: { id: 'item-1', title: 'Pay electricity', photo: { mediaID: 'media-oatmeal' } }, state: {} },
+    });
   });
 
   it('reopens with the Calendar-owned due date loaded after a cold read', () => {
