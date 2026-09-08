@@ -20,7 +20,22 @@ set -uo pipefail
 
 before_head="$(git rev-parse HEAD)"
 
-output="$(pnpm exec nx release --yes 2>&1)"
+# Nx resolves the current version from the nearest ancestor tag. A prior
+# protected-main release can publish and tag successfully while its release
+# commit is still waiting in a PR, leaving the newest tag on a sibling branch.
+# In that state, infer the next patch from the public registry so the next
+# verified main push cannot silently replay the already-published version.
+release_args=(--yes)
+published_version="$(npm view @sneat/extension-listus version 2>/dev/null || true)"
+if [[ "${published_version}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] &&
+   git rev-parse -q --verify "refs/tags/v${published_version}" >/dev/null &&
+   ! git merge-base --is-ancestor "refs/tags/v${published_version}" HEAD; then
+  next_patch="$((BASH_REMATCH[3] + 1))"
+  release_args=("${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${next_patch}" --yes)
+  echo "::notice::Newest published Listus tag is not an ancestor of HEAD; releasing ${release_args[0]} explicitly."
+fi
+
+output="$(pnpm exec nx release "${release_args[@]}" 2>&1)"
 status=$?
 printf '%s\n' "${output}"
 
