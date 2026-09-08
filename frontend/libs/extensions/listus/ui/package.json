@@ -16,7 +16,7 @@
     "@sneat/auth-ui": "^0.27.0",
     "@sneat/core": "^0.27.0",
     "@sneat/dto": "^0.27.0",
-    "@sneat/extension-media-contract": "^0.1.0",
+    "@sneat/extension-media-contract": "^0.1.1",
     "@sneat/random": ">=0.0.4 <0.1.0",
     "@sneat/space-components": "^0.27.0",
     "@sneat/space-models": "^0.27.0",
@@ -27,7 +27,7 @@
     "vitest": "^4.0.9",
     "@sneat/extension-contactus": "^0.14.0",
     "@sneat/extension-contactus-ui": "^0.14.0",
-    "@sneat/media": "^0.27.0"
+    "@sneat/media": "^0.27.19"
   },
   "sideEffects": false
 }
