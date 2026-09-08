@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - frontend/**
+      - .github/scripts/publish-listus.sh
       - .github/workflows/publish.yml
   workflow_dispatch:
     inputs:
