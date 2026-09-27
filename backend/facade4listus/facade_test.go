@@ -2,13 +2,17 @@ package facade4listus
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
+	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/sneat-co/listus/backend/const4listus"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
+	"github.com/sneat-co/sneat-core-modules/spaceus/dal4spaceus"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dbo4spaceus"
 	"github.com/sneat-co/sneat-go-core/coretypes"
 	"github.com/sneat-co/sneat-go-core/facade"
@@ -81,6 +85,142 @@ func TestCreateList_InvalidRequest(t *testing.T) {
 	})
 	if err == nil {
 		t.Error("expected validation error for missing type")
+	}
+}
+
+func TestCreateList_Branches(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	uctx := userCtx(ctx, testUserID)
+
+	// 1. Create first list
+	resp1, err := CreateList(uctx, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "First List",
+	})
+	if err != nil {
+		t.Fatalf("first CreateList failed: %v", err)
+	}
+
+	// 2. Create second list (SpaceModuleEntry already exists, hits lines 111-113)
+	resp2, err := CreateList(uctx, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "Second List",
+	})
+	if err != nil {
+		t.Fatalf("second CreateList failed: %v", err)
+	}
+	if resp1.ID == resp2.ID {
+		t.Fatalf("expected different IDs, got %q", resp1.ID)
+	}
+
+	// 3. Duplicate title (hits line 38)
+	_, err = CreateList(uctx, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "First List",
+	})
+	if err == nil {
+		t.Fatal("expected error for duplicate title")
+	}
+
+	// 4. Invalid UserID in context (hits line 93: listDbo.Validate fails)
+	noUserCtx := fakeNoUserCtx{ContextWithUser: uctx}
+	_, err = CreateList(noUserCtx, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "No User List",
+	})
+	if err == nil {
+		t.Fatal("expected error for empty user ID")
+	}
+
+	// 5. getSpaceModuleRecords failure (hits line 36)
+	origGetSpace := getSpaceModuleRecords
+	defer func() { getSpaceModuleRecords = origGetSpace }()
+	getSpaceModuleRecords = func(params *dal4spaceus.ModuleSpaceWorkerParams[*dbo4listus.ListusSpaceDbo], ctx facade.ContextWithUser, tx dal.ReadwriteTransaction) error {
+		return errors.New("get space records err")
+	}
+	_, err = CreateList(uctx, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "Get Space Fail",
+	})
+	if err == nil {
+		t.Fatal("expected error on getSpaceModuleRecords failure")
+	}
+	getSpaceModuleRecords = origGetSpace
+
+	// 6. Random ID collision + success (hits line 51: idGenerationAttempt++)
+	firstSubID := dbo4listus.ListKey(resp1.ID).ListSubID()
+	origRandom := randomListSubID
+	defer func() { randomListSubID = origRandom }()
+	call := 0
+	randomListSubID = func(length int) string {
+		call++
+		if call == 1 {
+			return firstSubID // duplicate, in params.SpaceModuleEntry.Data.Lists!
+		}
+		return "sub3"
+	}
+	resp3, err := CreateList(uctx, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "Third List",
+	})
+	if err != nil {
+		t.Fatalf("third CreateList failed: %v", err)
+	}
+	if resp3.ID == "" {
+		t.Fatal("expected non-empty ID")
+	}
+
+	// 7. Random ID exhaustion (hits lines 53-54)
+	randomListSubID = func(length int) string {
+		return firstSubID
+	}
+	_, err = CreateList(uctx, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "Exhaust List",
+	})
+	if err == nil {
+		t.Fatal("expected error for ID generation exhaustion")
+	}
+	randomListSubID = origRandom
+
+	// 8. Insert failure on listRecord (hits line 98)
+	origInsertList := insertListRecord
+	defer func() { insertListRecord = origInsertList }()
+	insertListRecord = func(ctx context.Context, tx dal.ReadwriteTransaction, r record.Record) error {
+		return errors.New("insert list err")
+	}
+	_, err = CreateList(uctx, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "Insert List Fail",
+	})
+	if err == nil {
+		t.Fatal("expected error on insertListRecord failure")
+	}
+	insertListRecord = origInsertList
+
+	// 9. Insert failure on spaceModuleEntry (hits line 118)
+	ctxFresh, _ := newTestDBWithSpace(t, "space2", testUserID)
+	uctxFresh := userCtx(ctxFresh, testUserID)
+	origInsertSpace := insertSpaceModuleEntry
+	defer func() { insertSpaceModuleEntry = origInsertSpace }()
+	insertSpaceModuleEntry = func(ctx context.Context, tx dal.ReadwriteTransaction, r record.Record) error {
+		return errors.New("insert space module err")
+	}
+	_, err = CreateList(uctxFresh, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest("space2"),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "Insert Space Fail",
+	})
+	if err == nil {
+		t.Fatal("expected error on insertSpaceModuleEntry failure")
 	}
 }
 
@@ -274,12 +414,57 @@ func TestReorderListItem_InvalidRequest(t *testing.T) {
 
 func TestDeleteList_NotImplementedWorker(t *testing.T) {
 	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	uctx := userCtx(ctx, testUserID)
+
+	// Create list first so DeleteSpaceItem finds it and invokes worker and briefsAdapter
+	createResp, err := CreateList(uctx, dto4listus.CreateListRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Type:         dbo4listus.ListTypeToDo,
+		Title:        "Task List",
+	})
+	if err != nil {
+		t.Fatalf("CreateList failed: %v", err)
+	}
+
 	// deleteListTxWorker always returns "not implemented", so DeleteList must surface an error.
-	err := DeleteList(userCtx(ctx, testUserID), listRequest(testSpaceID, dbo4listus.DoTasksListID))
+	err = DeleteList(uctx, listRequest(testSpaceID, createResp.ID))
 	if err == nil {
 		t.Error("expected error from DeleteList (worker not implemented)")
 	}
+
+	// Success with mocked worker
+	orig := deleteListWorker
+	defer func() { deleteListWorker = orig }()
+	deleteListWorker = func(_ facade.ContextWithUser, _ dal.ReadwriteTransaction, _ *dal4spaceus.SpaceItemWorkerParams[*dbo4listus.ListusSpaceDbo, *dbo4listus.ListDbo]) error {
+		return nil
+	}
+	if err := DeleteList(uctx, listRequest(testSpaceID, createResp.ID)); err != nil {
+		t.Fatalf("DeleteList failed with mocked worker: %v", err)
+	}
+	if count := listBriefsCount(&dbo4listus.ListusSpaceDbo{Lists: dbo4listus.ListBriefs{"a": {}}}); count != 1 {
+		t.Errorf("expected count 1, got %d", count)
+	}
+
+	// Empty user ID
+	noUserCtx := fakeNoUserCtx{ContextWithUser: uctx}
+	if err := DeleteList(noUserCtx, listRequest(testSpaceID, dbo4listus.DoTasksListID)); err == nil {
+		t.Error("expected error for empty user ID")
+	}
 }
+
+type fakeNoUserCtx struct {
+	facade.ContextWithUser
+}
+
+func (f fakeNoUserCtx) User() facade.UserContext {
+	return fakeNoUser{}
+}
+
+type fakeNoUser struct {
+	facade.UserContext
+}
+
+func (fakeNoUser) GetUserID() string { return "" }
 
 func TestDeleteList_InvalidRequest(t *testing.T) {
 	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
@@ -308,6 +493,9 @@ func getListData(t *testing.T, baseCtx context.Context, listID string) *dbo4list
 }
 
 func TestGenerateRandomListItemID(t *testing.T) {
+	orig := randomListItemID
+	defer func() { randomListItemID = orig }()
+
 	items := []*dbo4listus.ListItemBrief{{ID: "a"}, {ID: "b"}}
 
 	// Initial ID not duplicate -> returned as-is.
@@ -316,13 +504,27 @@ func TestGenerateRandomListItemID(t *testing.T) {
 		t.Errorf("got id=%q err=%v, want c/nil", id, err)
 	}
 
-	// Initial ID duplicate -> a fresh non-duplicate ID generated.
-	id, err = generateRandomListItemID(items, "a")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	// Initial ID duplicate, first random attempt is duplicate, second is unique
+	calls := 0
+	randomListItemID = func(length int) string {
+		calls++
+		if calls == 1 {
+			return "b" // duplicate
+		}
+		return "unique"
 	}
-	if id == "a" || id == "b" {
-		t.Errorf("generated duplicate id %q", id)
+	id, err = generateRandomListItemID(items, "a")
+	if err != nil || id != "unique" {
+		t.Fatalf("unexpected id: %q, err: %v", id, err)
+	}
+
+	// Loop exhausts 101 attempts with duplicate -> returns error
+	randomListItemID = func(length int) string {
+		return "a"
+	}
+	_, err = generateRandomListItemID(items, "a")
+	if err == nil {
+		t.Fatal("expected error when all attempts fail")
 	}
 }
 

@@ -215,6 +215,27 @@ func TestListDbo_Validate(t *testing.T) {
 			t.Error("expected error for invalid item")
 		}
 	})
+	t.Run("invalid spaceIDs", func(t *testing.T) {
+		dbo := validListDbo()
+		dbo.WithSpaceIDs = dbmodels.WithSpaceIDs{SpaceIDs: []coretypes.SpaceID{""}}
+		if err := dbo.Validate(); err == nil {
+			t.Error("expected error for invalid spaceIDs")
+		}
+	})
+	t.Run("invalid userIDs", func(t *testing.T) {
+		dbo := validListDbo()
+		dbo.WithUserIDs = dbmodels.WithUserIDs{UserIDs: []string{""}}
+		if err := dbo.Validate(); err == nil {
+			t.Error("expected error for invalid userIDs")
+		}
+	})
+	t.Run("invalid listBase", func(t *testing.T) {
+		dbo := validListDbo()
+		dbo.ListBase = ListBase{}
+		if err := dbo.Validate(); err == nil {
+			t.Error("expected error for invalid listBase")
+		}
+	})
 }
 
 func TestListusSpaceDbo_Validate(t *testing.T) {
@@ -233,4 +254,11 @@ func TestListusSpaceDbo_Validate(t *testing.T) {
 			t.Error("expected error for invalid list brief")
 		}
 	})
+	t.Run("invalid createdFields", func(t *testing.T) {
+		v := ListusSpaceDbo{}
+		if err := v.Validate(); err == nil {
+			t.Error("expected error for missing created fields")
+		}
+	})
 }
+

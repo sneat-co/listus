@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/dal-go/record/update"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
@@ -12,6 +13,10 @@ import (
 	"github.com/sneat-co/sneat-go-core/facade"
 	"github.com/strongo/validation"
 )
+
+var updateListRecordInTx = func(ctx context.Context, tx dal.ReadwriteTransaction, key *record.Key, updates []update.Update) error {
+	return tx.Update(ctx, key, updates)
+}
 
 // ReorderListItem reorders list items
 func ReorderListItem(ctx facade.ContextWithUser, request dto4listus.ReorderListItemsRequest) (err error) {
@@ -68,7 +73,7 @@ func ReorderListItem(ctx facade.ContextWithUser, request dto4listus.ReorderListI
 		listKey := list.Record.Key()
 		//logus.Debugf("Updating list with listKey=%v, item[1]: %+v; updates[0]: %+v",
 		//	listKey, list.Data.Items[1], listUpdates[0].Value)
-		if err = tx.Update(ctx, listKey, listUpdates); err != nil {
+		if err = updateListRecordInTx(ctx, tx, listKey, listUpdates); err != nil {
 			return fmt.Errorf("failed to update list record: %w", err)
 		}
 		//logus.Debugf("Updated list with listKey=%v, field=%s, item[1]: %+v", listKey, listUpdates[0].Field, listUpdates[0].Value)

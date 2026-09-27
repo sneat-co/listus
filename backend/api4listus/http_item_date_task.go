@@ -10,6 +10,8 @@ import (
 	"github.com/sneat-co/sneat-go-core/apicore/verify"
 )
 
+var saveListItemDateTask = facade4listus.SaveListItemDateTask
+
 func httpPostSaveListItemDateTask(provider calendarfacade.SourceLinkedDateTaskProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var request dto4listus.SaveListItemDateTaskRequest
@@ -17,7 +19,7 @@ func httpPostSaveListItemDateTask(provider calendarfacade.SourceLinkedDateTaskPr
 		if err != nil {
 			return
 		}
-		response, err := facade4listus.SaveListItemDateTask(ctx, request, provider)
+		response, err := saveListItemDateTask(ctx, request, provider)
 		apicore.ReturnJSON(ctx, w, r, http.StatusOK, err, response)
 	}
 }

@@ -2,6 +2,7 @@ package facade4listus
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
+	"github.com/sneat-co/listus/backend/movius/tmdbclient"
 	"github.com/sneat-co/sneat-go-core/coretypes"
 )
 
@@ -254,3 +256,125 @@ func TestSetListItemWatchWith_ItemNotFound(t *testing.T) {
 		t.Error("expected error for missing item id")
 	}
 }
+
+type fakeMovieResolver struct {
+	searchMovieFunc  func(ctx context.Context, query string) ([]tmdbclient.MovieSummary, error)
+	searchPersonFunc func(ctx context.Context, actor string) ([]tmdbclient.MovieSummary, error)
+	resolveFunc      func(ctx context.Context, tmdbID int) (tmdbclient.MovieDetails, error)
+}
+
+func (f fakeMovieResolver) SearchMovie(ctx context.Context, query string) ([]tmdbclient.MovieSummary, error) {
+	if f.searchMovieFunc != nil {
+		return f.searchMovieFunc(ctx, query)
+	}
+	return nil, nil
+}
+func (f fakeMovieResolver) SearchPerson(ctx context.Context, actor string) ([]tmdbclient.MovieSummary, error) {
+	if f.searchPersonFunc != nil {
+		return f.searchPersonFunc(ctx, actor)
+	}
+	return nil, nil
+}
+func (f fakeMovieResolver) Resolve(ctx context.Context, tmdbID int) (tmdbclient.MovieDetails, error) {
+	if f.resolveFunc != nil {
+		return f.resolveFunc(ctx, tmdbID)
+	}
+	return tmdbclient.MovieDetails{}, nil
+}
+
+func swapMovieClient(t *testing.T, client movieResolver) {
+	t.Helper()
+	old := movieClient
+	movieClient = client
+	t.Cleanup(func() { movieClient = old })
+}
+
+func TestSearchMovies_Errors(t *testing.T) {
+	ctx := userCtx(context.Background(), testUserID)
+
+	// 1. Invalid request
+	if _, err := SearchMovies(ctx, dto4listus.MovieSearchRequest{}); err == nil {
+		t.Error("expected error for empty query")
+	}
+
+	// 2. SearchMovie fails
+	swapMovieClient(t, fakeMovieResolver{
+		searchMovieFunc: func(ctx context.Context, query string) ([]tmdbclient.MovieSummary, error) {
+			return nil, errors.New("search movie error")
+		},
+	})
+	if _, err := SearchMovies(ctx, dto4listus.MovieSearchRequest{Query: "test"}); err == nil {
+		t.Error("expected error when SearchMovie fails")
+	}
+
+	// 3. SearchPerson fails
+	swapMovieClient(t, fakeMovieResolver{
+		searchMovieFunc: func(ctx context.Context, query string) ([]tmdbclient.MovieSummary, error) {
+			return nil, nil
+		},
+		searchPersonFunc: func(ctx context.Context, actor string) ([]tmdbclient.MovieSummary, error) {
+			return nil, errors.New("search person error")
+		},
+	})
+	if _, err := SearchMovies(ctx, dto4listus.MovieSearchRequest{Query: "test"}); err == nil {
+		t.Error("expected error when SearchPerson fails")
+	}
+}
+
+func TestResolveMovie_Errors(t *testing.T) {
+	ctx := userCtx(context.Background(), testUserID)
+
+	// 1. Invalid request
+	if _, err := ResolveMovie(ctx, dto4listus.MovieResolveRequest{}); err == nil {
+		t.Error("expected error for empty tmdbID")
+	}
+
+	// 2. Resolve fails
+	swapMovieClient(t, fakeMovieResolver{
+		resolveFunc: func(ctx context.Context, tmdbID int) (tmdbclient.MovieDetails, error) {
+			return tmdbclient.MovieDetails{}, errors.New("resolve error")
+		},
+	})
+	if _, err := ResolveMovie(ctx, dto4listus.MovieResolveRequest{TmdbID: 101}); err == nil {
+		t.Error("expected error when Resolve fails")
+	}
+}
+
+func TestAddMovieToWatchlist_Errors(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	uctx := userCtx(ctx, testUserID)
+
+	// 1. SearchMovie fails when querying
+	swapMovieClient(t, fakeMovieResolver{
+		searchMovieFunc: func(ctx context.Context, query string) ([]tmdbclient.MovieSummary, error) {
+			return nil, errors.New("search error")
+		},
+	})
+	if _, err := AddMovieToWatchlist(uctx, dto4listus.AddMovieToWatchlistRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		Query:        "nonexistent",
+	}); err == nil {
+		t.Error("expected error when SearchMovie fails")
+	}
+
+	// 2. Resolve fails
+	swapMovieClient(t, fakeMovieResolver{
+		resolveFunc: func(ctx context.Context, tmdbID int) (tmdbclient.MovieDetails, error) {
+			return tmdbclient.MovieDetails{}, errors.New("resolve error")
+		},
+	})
+	if _, err := AddMovieToWatchlist(uctx, dto4listus.AddMovieToWatchlistRequest{
+		SpaceRequest: spaceRequest(testSpaceID),
+		TmdbID:       101,
+	}); err == nil {
+		t.Error("expected error when Resolve fails")
+	}
+}
+
+func TestSetListItemWatchWith_InvalidRequest(t *testing.T) {
+	ctx := userCtx(context.Background(), testUserID)
+	if _, _, err := SetListItemWatchWith(ctx, dto4listus.SetListItemWatchWithRequest{}); err == nil {
+		t.Error("expected error for invalid request")
+	}
+}
+

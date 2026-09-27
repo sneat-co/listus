@@ -69,3 +69,69 @@ func TestListItemMediaTargetAdapter_RejectsOtherRoles(t *testing.T) {
 		t.Fatal("Current() with avatar role returned nil error")
 	}
 }
+
+func TestListItemMediaTargetAdapter_Errors(t *testing.T) {
+	adapter := ListItemMediaTargetAdapter{}
+	_, db := seedDB(t)
+
+	// 1. Invalid target in Current
+	invalidTarget := models4media.Target{Scope: "invalid"}
+	err := db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		_, err := adapter.Current(ctx, tx, invalidTarget, ListItemPhotoMediaRole)
+		return err
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid target in Current")
+	}
+
+	// 2. Invalid target in Set
+	err = db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		return adapter.Set(ctx, tx, invalidTarget, ListItemPhotoMediaRole, nil)
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid target in Set")
+	}
+
+	// 3. List does not exist in DB (tx.Get fails)
+	nonExistentTarget := models4media.Target{
+		Scope:    models4media.TargetScopeSpace,
+		SpaceID:  string(testSpaceID),
+		Type:     ListItemMediaTargetType,
+		ID:       "item1",
+		ParentID: "non-existent-list",
+	}
+	err = db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		_, err := adapter.Current(ctx, tx, nonExistentTarget, ListItemPhotoMediaRole)
+		return err
+	})
+	if err == nil {
+		t.Fatal("expected error when list does not exist")
+	}
+
+	// 4. List exists, but item is not in list
+	entry := NewListEntry(testSpaceID, dbo4listus.ListKey("empty-list"))
+	entry.Data.Type = dbo4listus.ListTypeToDo
+	entry.Data.WithSpaceIDs = dbmodels.WithSingleSpaceID(testSpaceID)
+	entry.Data.WithUserIDs = dbmodels.WithUserIDs{UserIDs: []string{testUserID}}
+	if err := db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		return tx.Insert(ctx, entry.Record)
+	}); err != nil {
+		t.Fatalf("seed empty-list: %v", err)
+	}
+
+	itemNotFoundTarget := models4media.Target{
+		Scope:    models4media.TargetScopeSpace,
+		SpaceID:  string(testSpaceID),
+		Type:     ListItemMediaTargetType,
+		ID:       "missing-item",
+		ParentID: "empty-list",
+	}
+	err = db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		_, err := adapter.Current(ctx, tx, itemNotFoundTarget, ListItemPhotoMediaRole)
+		return err
+	})
+	if err == nil {
+		t.Fatal("expected error when item not in list")
+	}
+}
+

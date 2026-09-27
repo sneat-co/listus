@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"github.com/sneat-co/listus/backend/const4listus"
+	"github.com/sneat-co/sneat-core-modules/linkage/dbo4linkage"
 	"github.com/sneat-co/sneat-ext-contracts/media/models4media"
+	"github.com/sneat-co/sneat-go-core/coretypes"
 	"github.com/strongo/strongoapp/with"
 )
 
@@ -125,3 +127,56 @@ func TestListItemBrief_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestListItemBase_Validate_LinkageSourceManagementDateTask(t *testing.T) {
+	itemRef := coretypes.NewItemRefSameSpace("contactus", "contacts", "c1")
+
+	// Linkage
+	validLinkage := &dbo4linkage.WithRelatedAndIDs{
+		WithRelatedIDs: dbo4linkage.WithRelatedIDs{
+			RelatedIDs: []string{"-"},
+		},
+	}
+	invalidLinkage := &dbo4linkage.WithRelatedAndIDs{
+		WithRelatedIDs: dbo4linkage.WithRelatedIDs{
+			RelatedIDs: []string{""},
+		},
+	}
+	if err := (ListItemBase{Title: "Milk", Linkage: validLinkage}).Validate(); err != nil {
+		t.Errorf("unexpected error for valid Linkage: %v", err)
+	}
+	if err := (ListItemBase{Title: "Milk", Linkage: invalidLinkage}).Validate(); err == nil {
+		t.Error("expected error for invalid Linkage")
+	}
+
+	// SourceManagement
+	validSM := &SourceManagement{
+		Source:      itemRef,
+		Purpose:     "todo",
+		ActionID:    "act1",
+		Disposition: SourceCompletionNavigate,
+	}
+	invalidSM := &SourceManagement{}
+	if err := (ListItemBase{Title: "Milk", SourceManagement: validSM}).Validate(); err != nil {
+		t.Errorf("unexpected error for valid SourceManagement: %v", err)
+	}
+	if err := (ListItemBase{Title: "Milk", SourceManagement: invalidSM}).Validate(); err == nil {
+		t.Error("expected error for invalid SourceManagement")
+	}
+
+	// DateTask
+	validDT := &DateTaskLink{
+		Happening: itemRef,
+		Source:    itemRef,
+		Purpose:   "calendar",
+		Revision:  1,
+	}
+	invalidDT := &DateTaskLink{}
+	if err := (ListItemBase{Title: "Milk", DateTask: validDT}).Validate(); err != nil {
+		t.Errorf("unexpected error for valid DateTask: %v", err)
+	}
+	if err := (ListItemBase{Title: "Milk", DateTask: invalidDT}).Validate(); err == nil {
+		t.Error("expected error for invalid DateTask")
+	}
+}
+

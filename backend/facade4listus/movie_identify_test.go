@@ -7,6 +7,7 @@ import (
 
 	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/listus/backend/movius/aiclient"
+	"github.com/sneat-co/listus/backend/movius/tmdbclient"
 )
 
 // fakeIdentifier substitutes the movius/aiclient seam so tests never hit the
@@ -85,3 +86,50 @@ func TestIdentifyMovies_DefaultClientIsMock(t *testing.T) {
 		t.Error("expected default identifyClient to be mock mode when ANTHROPIC_API_KEY is unset in test env")
 	}
 }
+
+func TestIdentifyMovies_DegradedPath_SearchError(t *testing.T) {
+	swapIdentifyClient(t, fakeIdentifier{isMock: true})
+	swapMovieClient(t, fakeMovieResolver{
+		searchMovieFunc: func(ctx context.Context, query string) ([]tmdbclient.MovieSummary, error) {
+			return nil, errors.New("search err")
+		},
+	})
+	if _, err := IdentifyMovies(t.Context(), dto4listus.MovieIdentifyRequest{Description: "test"}); err == nil {
+		t.Error("expected error when degraded SearchMovie fails")
+	}
+}
+
+func TestIdentifyMovies_AIPath_SearchError(t *testing.T) {
+	swapIdentifyClient(t, fakeIdentifier{guesses: []aiclient.MovieGuess{{Title: "G1"}}})
+	swapMovieClient(t, fakeMovieResolver{
+		searchMovieFunc: func(ctx context.Context, query string) ([]tmdbclient.MovieSummary, error) {
+			return nil, errors.New("search err")
+		},
+	})
+	if _, err := IdentifyMovies(t.Context(), dto4listus.MovieIdentifyRequest{Description: "test"}); err == nil {
+		t.Error("expected error when AI SearchMovie fails")
+	}
+}
+
+func TestIdentifyMovies_AIPath_Truncate(t *testing.T) {
+	var guesses []aiclient.MovieGuess
+	for i := 1; i <= 15; i++ {
+		guesses = append(guesses, aiclient.MovieGuess{Title: "Movie"})
+	}
+	swapIdentifyClient(t, fakeIdentifier{guesses: guesses})
+	call := 0
+	swapMovieClient(t, fakeMovieResolver{
+		searchMovieFunc: func(ctx context.Context, query string) ([]tmdbclient.MovieSummary, error) {
+			call++
+			return []tmdbclient.MovieSummary{{TmdbID: call, Title: "Movie"}}, nil
+		},
+	})
+	response, err := IdentifyMovies(t.Context(), dto4listus.MovieIdentifyRequest{Description: "test"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(response.Movies) != 10 {
+		t.Errorf("expected 10 movies truncated, got %d", len(response.Movies))
+	}
+}
+

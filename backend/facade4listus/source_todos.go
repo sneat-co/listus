@@ -81,7 +81,7 @@ func (sourceTodoPort) PlanSourceTodo(
 
 	itemID := stableSourceTodoItemID(spec.Source, spec.Purpose)
 	itemRef := coretypes.NewItemRefSameSpace(const4listus.ExtensionID, dbo4listus.ListsCollection, spec.ListID)
-	subPath, err := coretypes.FormatItemSubPath(
+	subPath, err := formatItemSubPathInSourceTodo(
 		coretypes.ItemSubPathSegment{Field: "items"},
 		coretypes.ItemSubPathSegment{Key: "id", Value: itemID},
 	)
@@ -142,14 +142,14 @@ func (sourceTodoPort) PlanSourceTodo(
 	if item.Linkage == nil {
 		item.Linkage = new(dbo4linkage.WithRelatedAndIDs)
 	}
-	_, err = item.Linkage.AddRelationshipAndID(time.Now(), actorUserID, spec.SpaceID, dbo4linkage.RelationshipItemRolesCommand{
+	_, err = addRelationshipAndIDInSourceTodo(item.Linkage, time.Now(), actorUserID, spec.SpaceID, dbo4linkage.RelationshipItemRolesCommand{
 		ItemRef: spec.DueHappening,
 		Add:     &dbo4linkage.RolesCommand{RolesOfItem: []string{"date-task"}, RolesToItem: []string{"todo-item"}},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("link Calendar task: %w", err)
 	}
-	_, err = item.Linkage.AddRelationshipAndID(time.Now(), actorUserID, spec.SpaceID, dbo4linkage.RelationshipItemRolesCommand{
+	_, err = addRelationshipAndIDInSourceTodo(item.Linkage, time.Now(), actorUserID, spec.SpaceID, dbo4linkage.RelationshipItemRolesCommand{
 		ItemRef: spec.Source,
 		Add:     &dbo4linkage.RolesCommand{RolesOfItem: []string{"source"}, RolesToItem: []string{"todo-item"}},
 	})
@@ -161,7 +161,7 @@ func (sourceTodoPort) PlanSourceTodo(
 	} else {
 		item.Status = const4listus.ListItemStatusDone
 	}
-	if err := item.Validate(); err != nil {
+	if err := validateItemInSourceTodo(item); err != nil {
 		return nil, fmt.Errorf("prepared source todo is invalid: %w", err)
 	}
 
@@ -194,10 +194,10 @@ func (sourceTodoPort) ApplySourceTodo(
 		update.ByFieldName("items", plan.items),
 		update.ByFieldName("count", len(plan.items)),
 	}
-	if err := tx.Update(ctx, plan.entry.Key, updates); err != nil {
+	if err := txUpdateInSourceTodo(ctx, tx, plan.entry.Key, updates); err != nil {
 		return listusmodels.SourceTodoPlanView{}, fmt.Errorf("apply source todo: %w", err)
 	}
-	if err := tx.Update(ctx, plan.module.Key, []update.Update{
+	if err := txUpdateInSourceTodo(ctx, tx, plan.module.Key, []update.Update{
 		update.ByFieldPath([]string{"lists", plan.view.ListID, "itemsCount"}, len(plan.items)),
 	}); err != nil {
 		return listusmodels.SourceTodoPlanView{}, fmt.Errorf("update Listus Space summary: %w", err)
@@ -213,13 +213,28 @@ func sameSourceTodoTransaction(left, right dal.ReadwriteTransaction) bool {
 	return lv.Type() == rv.Type() && lv.Comparable() && rv.Comparable() && lv.Interface() == rv.Interface()
 }
 
+var (
+	formatItemSubPathInSourceTodo    = coretypes.FormatItemSubPath
+	jsonMarshalSourceTodoItem        = json.Marshal
+	jsonUnmarshalSourceTodoItem      = json.Unmarshal
+	addRelationshipAndIDInSourceTodo = func(linkage *dbo4linkage.WithRelatedAndIDs, now time.Time, userID string, spaceID coretypes.SpaceID, cmd dbo4linkage.RelationshipItemRolesCommand) ([]update.Update, error) {
+		return linkage.AddRelationshipAndID(now, userID, spaceID, cmd)
+	}
+	validateItemInSourceTodo = func(item *dbo4listus.ListItemBrief) error {
+		return item.Validate()
+	}
+	txUpdateInSourceTodo = func(ctx context.Context, tx dal.ReadwriteTransaction, key *record.Key, updates []update.Update) error {
+		return tx.Update(ctx, key, updates)
+	}
+)
+
 func cloneSourceTodoItem(item *dbo4listus.ListItemBrief) (*dbo4listus.ListItemBrief, error) {
-	b, err := json.Marshal(item)
+	b, err := jsonMarshalSourceTodoItem(item)
 	if err != nil {
 		return nil, fmt.Errorf("clone source todo item: %w", err)
 	}
 	var clone dbo4listus.ListItemBrief
-	if err := json.Unmarshal(b, &clone); err != nil {
+	if err := jsonUnmarshalSourceTodoItem(b, &clone); err != nil {
 		return nil, fmt.Errorf("clone source todo item: %w", err)
 	}
 	return &clone, nil

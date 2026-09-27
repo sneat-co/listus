@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/dal-go/record/update"
 	"github.com/sneat-co/listus/backend/const4listus"
 	"github.com/sneat-co/listus/backend/dal4listus"
@@ -107,7 +108,7 @@ func SaveListItemDateTask(
 			item.DateTask = nil
 		} else {
 			item.DateTask = &dbo4listus.DateTaskLink{Happening: happeningRef, Source: itemRef, Purpose: "due-date", Revision: mutation.Task.Revision}
-			if _, err = item.Linkage.AddRelationshipAndID(time.Now(), ctx.User().GetUserID(), request.SpaceID, dbo4linkage.RelationshipItemRolesCommand{ItemRef: happeningRef, Add: &dbo4linkage.RolesCommand{RolesOfItem: []string{"date-task"}, RolesToItem: []string{"todo-item"}}}); err != nil {
+			if _, err = addRelationshipAndIDInDateTask(item.Linkage, time.Now(), ctx.User().GetUserID(), request.SpaceID, dbo4linkage.RelationshipItemRolesCommand{ItemRef: happeningRef, Add: &dbo4linkage.RolesCommand{RolesOfItem: []string{"date-task"}, RolesToItem: []string{"todo-item"}}}); err != nil {
 				return err
 			}
 		}
@@ -122,7 +123,7 @@ func SaveListItemDateTask(
 		if err = prepared.Apply(txCtx, tx); err != nil {
 			return err
 		}
-		if err = tx.Update(txCtx, list.Key, []update.Update{update.ByFieldName("items", items)}); err != nil {
+		if err = txUpdateInDateTask(txCtx, tx, list.Key, []update.Update{update.ByFieldName("items", items)}); err != nil {
 			return err
 		}
 		response = dto4listus.SaveListItemDateTaskResponse{ItemID: item.ID}
@@ -134,9 +135,19 @@ func SaveListItemDateTask(
 	return
 }
 
+var (
+	formatItemSubPath              = coretypes.FormatItemSubPath
+	addRelationshipAndIDInDateTask = func(linkage *dbo4linkage.WithRelatedAndIDs, now time.Time, userID string, spaceID coretypes.SpaceID, cmd dbo4linkage.RelationshipItemRolesCommand) ([]update.Update, error) {
+		return linkage.AddRelationshipAndID(now, userID, spaceID, cmd)
+	}
+	txUpdateInDateTask = func(ctx context.Context, tx dal.ReadwriteTransaction, key *record.Key, updates []update.Update) error {
+		return tx.Update(ctx, key, updates)
+	}
+)
+
 func listItemRef(spaceID coretypes.SpaceID, listID, itemID string) (coretypes.ItemRef, error) {
 	ref := coretypes.NewFullItemRef(const4listus.ExtensionID, dbo4listus.ListsCollection, spaceID, listID)
-	path, err := coretypes.FormatItemSubPath(coretypes.ItemSubPathSegment{Field: "items"}, coretypes.ItemSubPathSegment{Key: "id", Value: itemID})
+	path, err := formatItemSubPath(coretypes.ItemSubPathSegment{Field: "items"}, coretypes.ItemSubPathSegment{Key: "id", Value: itemID})
 	if err != nil {
 		return coretypes.ItemRef{}, err
 	}

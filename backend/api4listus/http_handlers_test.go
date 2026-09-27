@@ -570,3 +570,106 @@ func TestHttpPostSetListItemWatchWith_400OnInvalidWatchWith(t *testing.T) {
 		t.Fatalf("status = %d, want 400; body=%s", w.Code, w.Body.String())
 	}
 }
+
+func TestHttpPostSaveListItemDateTask(t *testing.T) {
+	// 1. Auth rejected
+	authRejected(t)
+	w := httptest.NewRecorder()
+	handler := httpPostSaveListItemDateTask(&routeDateTaskProvider{})
+	body := `{"spaceID":"s1","listID":"todo:123","itemID":"it1","operationID":"op1","expectedTaskRevision":1,"dueDate":"2026-09-27","state":"active"}`
+	handler(w, newPostRequest("/v0/listus/item_date_task_save", body))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", w.Code)
+	}
+
+	// 2. Success
+	authAsUser(t)
+	orig := saveListItemDateTask
+	t.Cleanup(func() { saveListItemDateTask = orig })
+	saveListItemDateTask = func(_ facade.ContextWithUser, _ dto4listus.SaveListItemDateTaskRequest, _ calendarfacade.SourceLinkedDateTaskProvider) (dto4listus.SaveListItemDateTaskResponse, error) {
+		return dto4listus.SaveListItemDateTaskResponse{}, nil
+	}
+	w = httptest.NewRecorder()
+	handler(w, newPostRequest("/v0/listus/item_date_task_save", body))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHttpHandlers_AuthRejectedAndValidationErrors(t *testing.T) {
+	// httpDeleteListItems
+	authRejected(t)
+	w := httptest.NewRecorder()
+	httpDeleteListItems(w, newPostRequest("/v0/listus/list_items_delete?"+listQuery, `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpDeleteListItems status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpDeleteListItems(w, newPostRequest("/v0/listus/list_items_delete?spaceID=s1&listID=invalid", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("httpDeleteListItems status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+
+	// httpPostReorderListItem
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostReorderListItem(w, newPostRequest("/v0/listus/list_items_reorder?"+listQuery, `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostReorderListItem status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpPostReorderListItem(w, newPostRequest("/v0/listus/list_items_reorder?spaceID=s1&listID=invalid", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("httpPostReorderListItem status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+
+	// httpPostSetListItemsIsDone
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostSetListItemsIsDone(w, newPostRequest("/v0/listus/list_items_set_is_done?"+listQuery, `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostSetListItemsIsDone status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpPostSetListItemsIsDone(w, newPostRequest("/v0/listus/list_items_set_is_done?spaceID=s1&listID=invalid", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("httpPostSetListItemsIsDone status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+
+	// httpPostSetListItemWatchWith
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostSetListItemWatchWith(w, newPostRequest("/v0/listus/list_items_set_watch_with?"+listQuery, `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostSetListItemWatchWith status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpPostSetListItemWatchWith(w, newPostRequest("/v0/listus/list_items_set_watch_with?spaceID=s1&listID=invalid", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("httpPostSetListItemWatchWith status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+
+	// httpPostAddMovieToWatchlist
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostAddMovieToWatchlist(w, newPostRequest("/v0/listus/movies/add_to_watchlist", `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostAddMovieToWatchlist status = %d, want 401", w.Code)
+	}
+
+	// httpPostResolveMovie
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostResolveMovie(w, newPostRequest("/v0/listus/movies/resolve", `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostResolveMovie status = %d, want 401", w.Code)
+	}
+}

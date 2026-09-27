@@ -1,6 +1,7 @@
 package facade4listus
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -20,6 +21,8 @@ import (
 	"github.com/strongo/strongoapp/with"
 )
 
+var randomListSubID = random.ID
+
 // CreateList creates a new list
 func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest) (response dto4listus.CreateListResponse, err error) {
 	request.Title = strings.TrimSpace(request.Title)
@@ -29,7 +32,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 	var createdListID dbo4listus.ListKey
 	err = dal4spaceus2.CreateSpaceItem(ctx, request.SpaceRequest, const4listus.ExtensionID, new(dbo4listus.ListusSpaceDbo),
 		func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *dal4spaceus2.ModuleSpaceWorkerParams[*dbo4listus.ListusSpaceDbo]) (err error) {
-			if err = params.GetRecords(ctx, tx); err != nil {
+			if err = getSpaceModuleRecords(params, ctx, tx); err != nil {
 				return
 			}
 
@@ -43,7 +46,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			idGenerationAttempt := 0 // must be before checkId label
 			var listSubID string
 			for {
-				listSubID = random.ID(idLen)
+				listSubID = randomListSubID(idLen)
 				listID := dbo4listus.NewListKey(listType, listSubID)
 				if _, found := params.SpaceModuleEntry.Data.Lists[string(listID)]; !found {
 					break
@@ -94,7 +97,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			}
 			listKey := dal4listus.NewListKey(request.SpaceID, listID)
 			listRecord := record.NewRecordWithData(listKey, &listDbo)
-			if err = tx.Insert(ctx, listRecord); err != nil {
+			if err = insertListRecord(ctx, tx, listRecord); err != nil {
 				return fmt.Errorf("failed to insert listDbo record")
 			}
 			if params.SpaceModuleEntry.Data.Lists == nil {
@@ -114,7 +117,7 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 			} else {
 				params.SpaceModuleEntry.Data.CreatedAt = modified.At
 				params.SpaceModuleEntry.Data.CreatedBy = modified.By
-				if err = tx.Insert(ctx, params.SpaceModuleEntry.Record); err != nil {
+				if err = insertSpaceModuleEntry(ctx, tx, params.SpaceModuleEntry.Record); err != nil {
 					return fmt.Errorf("failed to insert team module entry record: %w", err)
 				}
 			}
@@ -126,3 +129,16 @@ func CreateList(ctx facade.ContextWithUser, request dto4listus.CreateListRequest
 	}
 	return
 }
+
+var getSpaceModuleRecords = func(params *dal4spaceus2.ModuleSpaceWorkerParams[*dbo4listus.ListusSpaceDbo], ctx facade.ContextWithUser, tx dal.ReadwriteTransaction) error {
+	return params.GetRecords(ctx, tx)
+}
+
+var insertListRecord = func(ctx context.Context, tx dal.ReadwriteTransaction, r record.Record) error {
+	return tx.Insert(ctx, r)
+}
+
+var insertSpaceModuleEntry = func(ctx context.Context, tx dal.ReadwriteTransaction, r record.Record) error {
+	return tx.Insert(ctx, r)
+}
+
