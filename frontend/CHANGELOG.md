@@ -1,3 +1,21 @@
+## 0.1.8 (2026-10-01)
+
+### 🚀 Features
+
+- **listus-ui:** export ListItemComponent, NewListItemComponent and IListItemWithUiState ([c375f75](https://github.com/sneat-co/listus/commit/c375f75))
+- **listus-ui:** export LISTUS_LIST_ITEM_PROVIDERS for hosts embedding the row and input ([82df0dc](https://github.com/sneat-co/listus/commit/82df0dc))
+- **listus-ui:** export the list-item row, the new-item input and their providers ([#62](https://github.com/sneat-co/listus/pull/62))
+
+### 🩹 Fixes
+
+- **release:** open protected release PRs reliably ([bdcd4cf](https://github.com/sneat-co/listus/commit/bdcd4cf))
+- **release:** open protected release PRs reliably ([#61](https://github.com/sneat-co/listus/pull/61))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok @trakhimenok
+- Claude Sonnet 5.5
+
 ## 0.1.7 (2026-09-08)
 
 ### 🚀 Features
