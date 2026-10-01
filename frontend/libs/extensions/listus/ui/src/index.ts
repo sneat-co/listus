@@ -7,3 +7,4 @@ export * from './lib/source-linked-date-task-navigator';
 export * from './lib/pages/list/list-item/list-item.component';
 export * from './lib/pages/list/new-list-item/new-list-item.component';
 export * from './lib/pages/list/list-item-with-ui-state';
+export * from './lib/listus-list-item-providers';
