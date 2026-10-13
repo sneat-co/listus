@@ -39,7 +39,7 @@ overrides:
   '@sneat/ui': 0.27.17
   '@sneat/wizard': 0.27.17
   'js-yaml@3': ^5.0.0
-  'js-yaml@4': ^4.3.2
+  'js-yaml@4': ^5.0.0
 allowBuilds:
   '@firebase/util': true
   '@parcel/watcher': true
