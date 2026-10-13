@@ -1,3 +1,31 @@
+## 0.1.17 (2026-10-13)
+
+### 🚀 Features
+
+- **listus-ui:** export ListItemComponent, NewListItemComponent and IListItemWithUiState ([c375f75](https://github.com/sneat-co/listus/commit/c375f75))
+- **listus-ui:** export LISTUS_LIST_ITEM_PROVIDERS for hosts embedding the row and input ([82df0dc](https://github.com/sneat-co/listus/commit/82df0dc))
+- **listus-ui:** export the list-item row, the new-item input and their providers ([#62](https://github.com/sneat-co/listus/pull/62))
+
+### 🩹 Fixes
+
+- **deps:** update dependency @angular/platform-server to v22.1.6 [security] ([5821402](https://github.com/sneat-co/listus/commit/5821402))
+- **deps:** update dependency @angular/platform-server to v22.1.6 [security] ([#64](https://github.com/sneat-co/listus/pull/64))
+- **deps:** update dependency @angular/ssr to v22.1.7 [security] ([fdc41f6](https://github.com/sneat-co/listus/commit/fdc41f6))
+- **deps:** update dependency @angular/ssr to v22.1.7 [security] ([#70](https://github.com/sneat-co/listus/pull/70))
+- **deps:** update dependency @angular/router to v22.2.0 [security] ([da8902c](https://github.com/sneat-co/listus/commit/da8902c))
+- **deps:** update dependency @angular/router to v22.2.0 [security] ([#68](https://github.com/sneat-co/listus/pull/68))
+- **deps:** update module github.com/dal-go/record to v0.1.4 ([6572f15](https://github.com/sneat-co/listus/commit/6572f15))
+- **deps:** update module github.com/dal-go/record to v0.1.4 ([#78](https://github.com/sneat-co/listus/pull/78))
+- **deps:** resolve remaining security advisories ([0c8a908](https://github.com/sneat-co/listus/commit/0c8a908))
+- **deps:** update Listus backend module checksums ([38fb702](https://github.com/sneat-co/listus/commit/38fb702))
+- **deps:** resolve remaining security advisories ([#80](https://github.com/sneat-co/listus/pull/80))
+- **release:** open protected release PRs reliably ([bdcd4cf](https://github.com/sneat-co/listus/commit/bdcd4cf))
+- **release:** open protected release PRs reliably ([#61](https://github.com/sneat-co/listus/pull/61))
+
+### ❤️ Thank You
+
+- Alexander Trakhimenok @trakhimenok
+
 ## 0.1.7 (2026-09-08)
 
 ### 🚀 Features
