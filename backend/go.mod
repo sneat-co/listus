@@ -6,7 +6,7 @@ toolchain go1.27.2
 
 require (
 	github.com/dal-go/dalgo v0.79.4
-	github.com/dal-go/record v0.1.4
+	github.com/dal-go/record v0.1.5
 	github.com/sneat-co/sneat-core-modules v0.73.0
 	github.com/sneat-co/sneat-ext-contracts/calendarius v0.27.8
 	github.com/sneat-co/sneat-ext-contracts/listus v0.0.11
