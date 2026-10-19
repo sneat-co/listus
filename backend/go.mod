@@ -12,7 +12,7 @@ require (
 	github.com/sneat-co/sneat-ext-contracts/listus v0.0.11
 	github.com/sneat-co/sneat-ext-contracts/media v0.1.1
 	github.com/sneat-co/sneat-go-core v0.69.0
-	github.com/strongo/logus v0.4.3
+	github.com/strongo/logus v0.4.7
 	github.com/strongo/random v0.0.2
 	github.com/strongo/slice v0.3.10
 	github.com/strongo/strongoapp v0.31.58
