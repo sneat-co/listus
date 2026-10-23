@@ -141,4 +141,3 @@ var insertListRecord = func(ctx context.Context, tx dal.ReadwriteTransaction, r 
 var insertSpaceModuleEntry = func(ctx context.Context, tx dal.ReadwriteTransaction, r record.Record) error {
 	return tx.Insert(ctx, r)
 }
-
