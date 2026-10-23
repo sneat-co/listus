@@ -674,3 +674,42 @@ func TestHttpHandlers_AuthRejectedAndValidationErrors(t *testing.T) {
 		t.Fatalf("httpPostResolveMovie status = %d, want 401", w.Code)
 	}
 }
+
+func TestHttpPostApplyListTemplate(t *testing.T) {
+	authRejected(t)
+	w := httptest.NewRecorder()
+	httpPostApplyListTemplate(w, newPostRequest("/v0/listus/list_templates_apply", `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpPostApplyListTemplate(w, newPostRequest("/v0/listus/list_templates_apply", "not json"))
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400; body=%s", w.Code, w.Body.String())
+	}
+
+	old := applyListTemplate
+	t.Cleanup(func() { applyListTemplate = old })
+	applyListTemplate = func(ctx facade.ContextWithUser, request dto4listus.ApplyListTemplateRequest) (dto4listus.ApplyListTemplateResult, error) {
+		return dto4listus.ApplyListTemplateResult{Disposition: "applied"}, nil
+	}
+	w = httptest.NewRecorder()
+	httpPostApplyListTemplate(w, newPostRequest("/v0/listus/list_templates_apply", `{"spaceID":"s1","sourceListID":"buy!regular","destinationListID":"buy!groceries","requestID":"click-1"}`))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "applied") {
+		t.Errorf("body %q missing disposition", w.Body.String())
+	}
+
+	applyListTemplate = func(ctx facade.ContextWithUser, request dto4listus.ApplyListTemplateRequest) (dto4listus.ApplyListTemplateResult, error) {
+		return dto4listus.ApplyListTemplateResult{}, errBoom
+	}
+	w = httptest.NewRecorder()
+	httpPostApplyListTemplate(w, newPostRequest("/v0/listus/list_templates_apply", `{"spaceID":"s1","sourceListID":"buy!regular","destinationListID":"buy!groceries","requestID":"click-1"}`))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+}

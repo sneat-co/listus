@@ -527,8 +527,12 @@ func TestGenerateRandomListItemID(t *testing.T) {
 		t.Fatal("expected error when all attempts fail")
 	}
 
+	// A blank initial ID is not an ID. Generate a fresh one instead of keeping it.
+	randomListItemID = func(length int) string {
+		return "fresh"
+	}
 	id, err = generateRandomListItemID(items, "")
-	if err != nil || id == "" || id == "a" || id == "b" {
+	if err != nil || id != "fresh" {
 		t.Errorf("blank initial ID did not produce a fresh ID: id=%q err=%v", id, err)
 	}
 }
