@@ -1,6 +1,6 @@
 {
   "name": "@sneat/extension-listus",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "publishConfig": {
     "access": "public"
   },

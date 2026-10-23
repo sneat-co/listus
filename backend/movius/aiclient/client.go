@@ -96,13 +96,15 @@ type messagesResponse struct {
 	} `json:"content"`
 }
 
+var jsonMarshal = json.Marshal
+
 // GuessMovies asks Claude for up to MaxGuesses movie title+year guesses
 // matching the given vague description.
 func (c *Client) GuessMovies(ctx context.Context, description string) ([]MovieGuess, error) {
 	if c.IsMock() {
 		return mockGuessMovies(description), nil
 	}
-	body, err := json.Marshal(messagesRequest{
+	body, err := jsonMarshal(messagesRequest{
 		Model:     c.model,
 		MaxTokens: maxTokens,
 		System:    systemPrompt,

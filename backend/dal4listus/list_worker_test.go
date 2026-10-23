@@ -7,6 +7,7 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/record"
+	"github.com/dal-go/record/update"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dbo4spaceus"
@@ -121,3 +122,100 @@ func TestGetListForUpdate_RoundTrip(t *testing.T) {
 		t.Errorf("read type = %q, want %q", read.Data.Type, dbo4listus.ListTypeToDo)
 	}
 }
+
+func TestRunListWorker_NonStandardListNotFound(t *testing.T) {
+	ctx, _ := seedDB(t)
+	request := dto4listus.ListRequest{
+		SpaceRequest: dto4spaceus.SpaceRequest{SpaceID: testSpaceID},
+		ListID:       dbo4listus.ListKey("custom-list"),
+	}
+	err := RunListWorker(userCtx(ctx), request, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *ListWorkerParams) error {
+		return nil
+	})
+	if err == nil || !record.IsNotFound(err) {
+		t.Fatalf("expected not-found error for non-standard list, got %v", err)
+	}
+}
+
+func TestRunListWorker_NormalizesTitleAndAppliesUpdates(t *testing.T) {
+	ctx, db := seedDB(t)
+	entry := NewListEntry(testSpaceID, dbo4listus.ListKey("custom-list"))
+	entry.Data.Type = dbo4listus.ListTypeToDo
+	entry.Data.Title = "custom-list"
+	entry.Data.WithUserIDs = dbmodels.WithUserIDs{UserIDs: []string{testUserID}}
+	entry.Data.WithSpaceIDs = dbmodels.WithSingleSpaceID(testSpaceID)
+	if err := db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		return tx.Insert(ctx, entry.Record)
+	}); err != nil {
+		t.Fatalf("insert list failed: %v", err)
+	}
+
+	request := dto4listus.ListRequest{
+		SpaceRequest: dto4spaceus.SpaceRequest{SpaceID: testSpaceID},
+		ListID:       dbo4listus.ListKey("custom-list"),
+	}
+	err := RunListWorker(userCtx(ctx), request, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *ListWorkerParams) error {
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("RunListWorker failed: %v", err)
+	}
+}
+
+func TestRunListWorker_UnmarkedChangedWithUpdates(t *testing.T) {
+	ctx, db := seedDB(t)
+	entry := NewListEntry(testSpaceID, dbo4listus.ListKey("custom-list"))
+	entry.Data.Type = dbo4listus.ListTypeToDo
+	entry.Data.Title = "My List"
+	entry.Data.WithUserIDs = dbmodels.WithUserIDs{UserIDs: []string{testUserID}}
+	entry.Data.WithSpaceIDs = dbmodels.WithSingleSpaceID(testSpaceID)
+	if err := db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		return tx.Insert(ctx, entry.Record)
+	}); err != nil {
+		t.Fatalf("insert list failed: %v", err)
+	}
+
+	request := dto4listus.ListRequest{
+		SpaceRequest: dto4spaceus.SpaceRequest{SpaceID: testSpaceID},
+		ListID:       dbo4listus.ListKey("custom-list"),
+	}
+	err := RunListWorker(userCtx(ctx), request, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *ListWorkerParams) error {
+		params.ListUpdates = append(params.ListUpdates, update.ByFieldName("title", "New Title"))
+		return nil
+	})
+	if err == nil {
+		t.Fatal("expected error when list updates exist but record is not marked as changed")
+	}
+}
+
+func TestRunListWorker_UpdateError(t *testing.T) {
+	ctx, db := seedDB(t)
+	entry := NewListEntry(testSpaceID, dbo4listus.ListKey("custom-list"))
+	entry.Data.Type = dbo4listus.ListTypeToDo
+	entry.Data.Title = "My List"
+	entry.Data.WithUserIDs = dbmodels.WithUserIDs{UserIDs: []string{testUserID}}
+	entry.Data.WithSpaceIDs = dbmodels.WithSingleSpaceID(testSpaceID)
+	if err := db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		return tx.Insert(ctx, entry.Record)
+	}); err != nil {
+		t.Fatalf("insert list failed: %v", err)
+	}
+
+	request := dto4listus.ListRequest{
+		SpaceRequest: dto4spaceus.SpaceRequest{SpaceID: testSpaceID},
+		ListID:       dbo4listus.ListKey("custom-list"),
+	}
+	err := RunListWorker(userCtx(ctx), request, func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *ListWorkerParams) error {
+		// Delete the record from DB inside worker so tx.Update fails on non-existent record
+		if err := tx.Delete(ctx, params.List.Record.Key()); err != nil {
+			return err
+		}
+		params.ListUpdates = append(params.ListUpdates, update.ByFieldName("title", "New Title"))
+		params.List.Record.MarkAsChanged()
+		return nil
+	})
+	if err == nil {
+		t.Fatal("expected error when tx.Update fails")
+	}
+}
+

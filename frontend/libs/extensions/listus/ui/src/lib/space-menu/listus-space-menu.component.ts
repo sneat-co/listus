@@ -26,13 +26,18 @@ import { IIdAndBrief } from '@sneat/core';
 import { ISpaceContext } from '@sneat/space-models';
 import { SpaceServiceModule } from '@sneat/space-services';
 import { ClassName } from '@sneat/ui';
-import { filter, takeUntil, take } from 'rxjs/operators';
+import { switchMap, takeUntil, take, tap } from 'rxjs/operators';
+import { of } from 'rxjs';
 import {
   IListGroup,
-  IListusSpaceDbo,
+  IListusService,
+  LISTUS_SERVICE,
   ListType,
 } from '@sneat/extension-listus-contract';
-import { builtInListGroups } from '../pages/lists/built-in-lists';
+import {
+  builtInListGroups,
+  listGroupsFromBriefs,
+} from '../pages/lists/built-in-lists';
 
 // listus-specific side menu rendered in the space "menu" outlet. Unlike the
 // generic @sneat SpaceMenuComponent (which hardcodes every sneat-app extension —
@@ -63,9 +68,11 @@ import { builtInListGroups } from '../pages/lists/built-in-lists';
 export class ListusSpaceMenuComponent extends SpaceBaseComponent {
   protected readonly $disabled = computed(() => !this.$spaceID());
   protected readonly $listGroups = signal<IListGroup[]>([]);
+  private readonly $persistedListGroups = signal<IListGroup[]>([]);
 
   private readonly menuCtrl = inject(MenuController);
   private readonly router = inject(Router);
+  private readonly listService = inject<IListusService>(LISTUS_SERVICE);
 
   constructor() {
     super();
@@ -76,9 +83,25 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
     this.spaceTypeChanged$
       .pipe(takeUntil(this.destroyed$))
       .subscribe((spaceType) => {
-        if (spaceType && !this.$listGroups().length) {
-          this.$listGroups.set([...builtInListGroups(spaceType)]);
-        }
+        if (spaceType) this.refreshListGroups();
+      });
+    this.spaceIDChanged$
+      .pipe(
+        tap(() => {
+          this.$persistedListGroups.set([]);
+          this.refreshListGroups();
+        }),
+        switchMap((spaceID) =>
+          spaceID ? this.listService.observeSpaceLists(spaceID) : of({}),
+        ),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe({
+        next: (briefs) => {
+          this.$persistedListGroups.set(listGroupsFromBriefs(briefs));
+          this.refreshListGroups();
+        },
+        error: this.errorLogger.logErrorHandler('Failed to load lists'),
       });
   }
 
@@ -86,13 +109,21 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
   // the space DBO, deduped by group type.
   protected override onSpaceDboChanged(): void {
     super.onSpaceDboChanged();
-    const groups: IListGroup[] = this.space
-      ? [...builtInListGroups(this.space.type)]
-      : [];
-    const dbo = this.space?.dbo as unknown as IListusSpaceDbo | undefined;
-    (dbo?.listGroups || []).forEach((g) => {
+    this.refreshListGroups();
+  }
+
+  private refreshListGroups(): void {
+    const groups = this.space ? [...builtInListGroups(this.space.type)] : [];
+    this.$persistedListGroups().forEach((g) => {
       if (!groups.some((x) => x.type === g.type)) {
         groups.push(g);
+      } else {
+        const group = groups.find((x) => x.type === g.type);
+        group?.lists?.push(
+          ...(g.lists || []).filter(
+            (list) => !group.lists?.some((current) => current.id === list.id),
+          ),
+        );
       }
     });
     this.$listGroups.set(groups);
@@ -110,23 +141,34 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
       brief: spaceRef.brief,
     } as ISpaceContext;
 
-    if (!currentList || this.hasList(target, currentList.type, currentList.id)) {
+    if (!currentList) {
       this.navigateToSelectedSpace(target, currentList);
       return;
     }
 
-    // Built-in lists can be determined from the space type immediately. For a
-    // custom list, wait for the selected space document before deciding whether
-    // its matching list route is valid.
-    this.spaceService
-      .watchSpace(spaceRef.id)
+    const builtIn = builtInListGroups(target.type);
+    if (this.hasListInGroups(builtIn, currentList.type, currentList.id)) {
+      this.navigateToSelectedSpace(target, currentList, true);
+      return;
+    }
+
+    this.listService
+      .observeSpaceLists(spaceRef.id)
       .pipe(
-        filter((space) => space.dbo !== undefined),
         take(1),
         takeUntil(this.destroyed$),
       )
       .subscribe({
-        next: (space) => this.navigateToSelectedSpace(space, currentList),
+        next: (briefs) =>
+          this.navigateToSelectedSpace(
+            target,
+            currentList,
+            this.hasListInGroups(
+              listGroupsFromBriefs(briefs),
+              currentList.type,
+              currentList.id,
+            ),
+          ),
         error: this.errorLogger.logErrorHandler(
           'Failed to load selected space before navigating',
         ),
@@ -136,9 +178,21 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
   private navigateToSelectedSpace(
     space: ISpaceContext,
     currentList?: { type: ListType; id: string },
+    currentListExists = currentList
+      ? this.hasListInGroups(
+          this.$persistedListGroups(),
+          currentList.type,
+          currentList.id,
+        ) ||
+        this.hasListInGroups(
+          builtInListGroups(space.type),
+          currentList.type,
+          currentList.id,
+        )
+      : false,
   ): void {
     const page =
-      currentList && this.hasList(space, currentList.type, currentList.id)
+      currentList && currentListExists
         ? `list/${currentList.type}/${currentList.id}`
         : 'lists';
     this.spaceNav
@@ -160,10 +214,12 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
     return { type: routeMatch[1] as ListType, id: routeMatch[2] };
   }
 
-  private hasList(space: ISpaceContext, type: ListType, id: string): boolean {
-    const persistedGroups = (space.dbo as IListusSpaceDbo | undefined)
-      ?.listGroups;
-    return [...builtInListGroups(space.type), ...(persistedGroups || [])].some(
+  private hasListInGroups(
+    groups: readonly IListGroup[],
+    type: ListType,
+    id: string,
+  ): boolean {
+    return groups.some(
       (group) =>
         group.lists?.some(
           (list) => list.type === type && list.id === id,

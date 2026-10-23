@@ -6,8 +6,10 @@ import (
 	"github.com/sneat-co/sneat-go-core/extension"
 )
 
-func Extension() extension.Config {
+func Extension(dependencies ...api4listus.Dependencies) extension.Config {
 	return extension.NewExtension(const4listus.ExtensionID,
-		extension.RegisterRoutes(api4listus.RegisterHttpRoutes),
+		extension.RegisterRoutes(func(handle extension.HTTPHandleFunc) {
+			api4listus.RegisterHttpRoutes(handle, dependencies...)
+		}),
 	)
 }

@@ -79,14 +79,10 @@ jobs:
       - name: Configure private Go module access
         run: |
           git config --global url."https://x-access-token:${{ secrets.SNEAT_CI_READWRITE_TOKEN }}@github.com/".insteadOf "https://github.com/"
-      - name: Enforce bot API coverage floor (90%)
+      - name: Enforce backend 100% statement coverage
         run: |
-          go test -coverprofile=botapi-coverage.out ./botapi
-          coverage="$(go tool cover -func=botapi-coverage.out | awk '/^total:/ {print $3}' | tr -d '%')"
-          awk -v coverage="$coverage" 'BEGIN { exit !(coverage + 0 >= 90.0) }' || {
-            echo "botapi coverage ${coverage}% is below the 90.0% floor" >&2
-            exit 1
-          }
+          go test -count=1 -coverprofile=backend-coverage.out ./...
+          awk 'NR>1 && $NF==0 {print; bad=1} END{exit bad}' backend-coverage.out
 
   # Backend runs strongo's Standard Go CI (lint · test · build). Backend module
   # tags are published explicitly from a verified main commit; this repository's
@@ -111,7 +107,7 @@ jobs:
       GOPRIVATE: github.com/sneat-co
       goprivate_git_host: github.com/sneat-co
       tag_prefix: backend/v
-      min_test_coverage_percent: 78.3
+      min_test_coverage_percent: 100
 
   frontend:
     uses: sneat-co/cicd/.github/workflows/nx-ci.yml@742b19b0d4d7e12fa2068951773bdd01d64532e1
