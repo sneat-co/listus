@@ -36,6 +36,8 @@ import {
   SearchMoviesRequest,
   SearchMoviesResponse,
   SetListItemWatchWithRequest,
+  IApplyListTemplateRequest,
+  IApplyListTemplateResult,
 } from '@sneat/extension-listus-contract';
 
 @Injectable()
@@ -68,7 +70,7 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
 
   public createList(request: ICreateListRequest): Observable<IListContext> {
     return this.sneatApiService
-      .post<IListContext>('lists/create_list', request)
+      .post<IListContext>('listus/create_list', request)
       .pipe(
         map((list) => {
           if (!list.brief) {
@@ -99,7 +101,7 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
   }
 
   private getFullListID(type: ListType, shortID: string): string {
-    return `${type}:${shortID}`;
+    return `${type}!${shortID}`;
   }
 
   public createListItems(
@@ -115,6 +117,15 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
       items: params.items,
     };
     return this.sneatApiService.post('listus/list_items_create', request);
+  }
+
+  public applyListTemplate(
+    request: IApplyListTemplateRequest,
+  ): Observable<IApplyListTemplateResult> {
+    return this.sneatApiService.post<IApplyListTemplateResult>(
+      'listus/list_templates_apply',
+      request,
+    );
   }
 
   public setListItemsIsCompleted(
@@ -191,10 +202,7 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
   public addMovieToWatchlist(
     request: AddMovieToWatchlistRequest,
   ): Observable<AddMovieToWatchlistResponse> {
-    return this.sneatApiService.post(
-      'listus/movies/add_to_watchlist',
-      request,
-    );
+    return this.sneatApiService.post('listus/movies/add_to_watchlist', request);
   }
 
   public setListItemWatchWith(

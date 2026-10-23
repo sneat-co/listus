@@ -24,7 +24,7 @@ func TestModule_withoutDependencies(t *testing.T) {
 	m := Extension()
 	extension.AssertExtension(t, m, extension.Expected{
 		ExtID:         const4listus.ExtensionID,
-		HandlersCount: 11,
+		HandlersCount: 12,
 		DelayersCount: 0,
 	})
 }
@@ -33,7 +33,7 @@ func TestModule_withDependencies(t *testing.T) {
 	m := Extension(api4listus.Dependencies{SourceLinkedDateTasks: stubSourceLinkedDateTaskProvider{}})
 	extension.AssertExtension(t, m, extension.Expected{
 		ExtID:         const4listus.ExtensionID,
-		HandlersCount: 12,
+		HandlersCount: 13,
 		DelayersCount: 0,
 	})
 }

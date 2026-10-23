@@ -19,7 +19,7 @@ func generateRandomListItemID(items []*dbo4listus.ListItemBrief, initialID strin
 		return false
 	}
 	id = initialID
-	if !isDuplicateID() {
+	if id != "" && !isDuplicateID() {
 		return
 	}
 next:
