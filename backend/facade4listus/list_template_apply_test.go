@@ -276,8 +276,9 @@ func TestApplyListTemplateReportsRandomIDFailure(t *testing.T) {
 }
 
 func TestMatchingItemSkipsNilEntries(t *testing.T) {
-	wanted := &dbo4listus.ListItemBrief{Title: "Milk", Emoji: "🥛"}
-	if got := matchingItem([]*dbo4listus.ListItemBrief{nil, {Title: "Milk", Emoji: "🥛"}}, wanted); got == nil || got.Title != "Milk" {
+	milk := dbo4listus.ListItemBase{Title: "Milk", Emoji: "🥛"}
+	wanted := &dbo4listus.ListItemBrief{ListItemBase: milk}
+	if got := matchingItem([]*dbo4listus.ListItemBrief{nil, {ListItemBase: milk}}, wanted); got == nil || got.Title != "Milk" {
 		t.Fatalf("matching item = %+v", got)
 	}
 	if got := matchingItem([]*dbo4listus.ListItemBrief{nil}, wanted); got != nil {
