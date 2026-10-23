@@ -7,6 +7,14 @@
   pointer-events: none;
 }
 
+.list-item-photo {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
 ion-item ion-buttons[slot='end'] ion-button {
   // TODO: better way to do it?
   margin-right: -1em;

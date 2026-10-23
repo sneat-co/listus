@@ -1,8 +1,8 @@
 overrides:
   '@angular-devkit/core': 22.1.5
   '@angular-devkit/schematics': 22.1.5
-  '@angular/router': 22.1.3
-  '@angular/platform-server': 22.1.3
+  '@angular/router': 22.2.1
+  '@angular/platform-server': 22.2.1
   '@angular/platform-browser-dynamic': 22.1.3
   '@angular/platform-browser': 22.1.3
   '@angular/forms': 22.1.3
@@ -12,32 +12,34 @@ overrides:
   '@angular/animations': 22.1.3
   '@sneat/api-firebase-auth': 0.27.0
   '@sneat/api-public': 0.27.0
-  '@sneat/api': 0.27.0
+  '@sneat/api': 0.27.17
   '@sneat/app-auth': 0.27.6
   '@sneat/app-ionic': 0.27.0
   '@sneat/app-public': 0.27.0
-  '@sneat/app': 0.27.0
-  '@sneat/auth-core': 0.27.0
-  '@sneat/auth-models': 0.27.0
-  '@sneat/auth-ui': 0.27.0
-  '@sneat/components': 0.27.7
-  '@sneat/core-public': 0.27.7
-  '@sneat/core': 0.27.7
-  '@sneat/data': 0.27.0
-  '@sneat/datagrid': 0.27.0
-  '@sneat/dto': 0.27.0
-  '@sneat/extension-calendarius-contract': 0.27.0
+  '@sneat/app': 0.27.17
+  '@sneat/auth-core': 0.27.17
+  '@sneat/auth-models': 0.27.17
+  '@sneat/auth-ui': 0.27.17
+  '@sneat/components': 0.27.17
+  '@sneat/core-public': 0.27.17
+  '@sneat/core': 0.27.17
+  '@sneat/data': 0.27.17
+  '@sneat/datagrid': 0.27.17
+  '@sneat/dto': 0.27.17
+  '@sneat/extension-calendarius-contract': 0.27.8
   '@sneat/extension-calendarius-internal': 0.27.0
   '@sneat/extension-calendarius-shared': 0.27.0
-  '@sneat/grid': 0.27.0
-  '@sneat/logging': 0.27.0
-  '@sneat/space-components': 0.27.7
-  '@sneat/space-models': 0.27.0
+  '@sneat/grid': 0.27.17
+  '@sneat/logging': 0.27.17
+  '@sneat/space-components': 0.27.17
+  '@sneat/space-models': 0.27.17
   '@sneat/space-nav-ionic': 0.27.0
   '@sneat/space-nav-router': 0.27.0
-  '@sneat/space-services': 0.27.0
-  '@sneat/ui': 0.27.0
-  '@sneat/wizard': 0.27.0
+  '@sneat/space-services': 0.27.17
+  '@sneat/ui': 0.27.17
+  '@sneat/wizard': 0.27.17
+  'js-yaml@3': ^5.0.0
+  'js-yaml@4': ^5.0.0
 allowBuilds:
   '@firebase/util': true
   '@parcel/watcher': true

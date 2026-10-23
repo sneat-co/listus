@@ -1,11 +1,13 @@
 package facade4listus
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/dal-go/record/update"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
@@ -32,6 +34,21 @@ func CreateListItems(ctx facade.ContextWithUser, request dto4listus.CreateListIt
 	return
 }
 
+var (
+	getListWorkerRecords = func(params *dal4listus.ListWorkerParams, ctx facade.ContextWithUser, tx dal.ReadwriteTransaction) error {
+		return params.GetRecords(ctx, tx)
+	}
+	validateListInCreateListItems = func(list *dbo4listus.ListDbo) error {
+		return list.Validate()
+	}
+	txUpdateInCreateListItems = func(ctx context.Context, tx dal.ReadwriteTransaction, key *record.Key, updates []update.Update) error {
+		return tx.Update(ctx, key, updates)
+	}
+	txInsertInCreateListItems = func(ctx context.Context, tx dal.ReadwriteTransaction, r record.Record) error {
+		return tx.Insert(ctx, r)
+	}
+)
+
 func createListItemsTxWorker(
 	ctx facade.ContextWithUser,
 	tx dal.ReadwriteTransaction,
@@ -42,7 +59,7 @@ func createListItemsTxWorker(
 	list dal4listus.ListEntry,
 	err error,
 ) {
-	if err = params.GetRecords(ctx, tx); err != nil {
+	if err = getListWorkerRecords(params, ctx, tx); err != nil {
 		return
 	}
 	//if slice.Index(params.Space.Data.UserIDs, uid) < 0 {
@@ -82,7 +99,7 @@ func createListItemsTxWorker(
 				Title: string(request.ListID),
 			},
 		}
-		if listBrief.Type == dbo4listus.ListTypeToBuy && request.ListID == "groceries" {
+		if listBrief.Type == dbo4listus.ListTypeToBuy && (request.ListID == "groceries" || request.ListID == dbo4listus.BuyGroceriesListID) {
 			listBrief.Emoji = "🛒"
 		}
 		params.SpaceModuleEntry.Data.Lists[string(request.ListID)] = listBrief
@@ -111,7 +128,7 @@ func createListItemsTxWorker(
 	}
 	list.Data.Count = len(list.Data.Items)
 	listBrief.ItemsCount = len(list.Data.Items)
-	if err = list.Data.Validate(); err != nil {
+	if err = validateListInCreateListItems(list.Data); err != nil {
 		err = fmt.Errorf("list record is not valid: %w", err)
 		return
 	}
@@ -129,12 +146,12 @@ func createListItemsTxWorker(
 				return
 			}
 		}
-		if err = tx.Update(ctx, list.Key, updates); err != nil {
+		if err = txUpdateInCreateListItems(ctx, tx, list.Key, updates); err != nil {
 			err = fmt.Errorf("failed to update list record: %w", err)
 			return
 		}
 	} else {
-		if err = tx.Insert(ctx, list.Record); err != nil {
+		if err = txInsertInCreateListItems(ctx, tx, list.Record); err != nil {
 			err = fmt.Errorf("failed to insert list record: %w", err)
 			return
 		}
@@ -147,7 +164,7 @@ func createListItemsTxWorker(
 	} else {
 		params.SpaceModuleEntry.Data.CreatedAt = params.Started
 		params.SpaceModuleEntry.Data.CreatedBy = params.UserID()
-		if err = tx.Insert(ctx, params.SpaceModuleEntry.Record); err != nil {
+		if err = txInsertInCreateListItems(ctx, tx, params.SpaceModuleEntry.Record); err != nil {
 			err = fmt.Errorf("failed to insert team module entry record: %w", err)
 			return
 		}

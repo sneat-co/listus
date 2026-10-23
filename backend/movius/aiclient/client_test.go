@@ -3,6 +3,7 @@ package aiclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -86,6 +87,11 @@ func TestParseGuesses(t *testing.T) {
 			text:    `[{"title": "Broken"`,
 			wantErr: true,
 		},
+		{
+			name:    "invalid array content",
+			text:    `[not valid json]`,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -157,5 +163,43 @@ func TestClient_GuessMovies_HTTPError(t *testing.T) {
 	c.baseURL = server.URL
 	if _, err := c.GuessMovies(context.Background(), "anything"); err == nil {
 		t.Fatal("expected error for non-200 response")
+	}
+}
+
+func TestClient_GuessMovies_MoreErrors(t *testing.T) {
+	// Marshal error
+	origMarshal := jsonMarshal
+	t.Cleanup(func() { jsonMarshal = origMarshal })
+	jsonMarshal = func(v any) ([]byte, error) {
+		return nil, errors.New("marshal error")
+	}
+	c := NewClient("test-key")
+	if _, err := c.GuessMovies(context.Background(), "anything"); err == nil {
+		t.Fatal("expected error on marshal failure")
+	}
+	jsonMarshal = origMarshal
+
+	// Bad baseURL -> http.NewRequestWithContext error
+	c.baseURL = "://invalid-url"
+	if _, err := c.GuessMovies(context.Background(), "anything"); err == nil {
+		t.Fatal("expected error on invalid baseURL")
+	}
+
+	// httpClient.Do error
+	c.baseURL = "http://127.0.0.1:0"
+	if _, err := c.GuessMovies(context.Background(), "anything"); err == nil {
+		t.Fatal("expected error on http client failure")
+	}
+
+	// Response decode error
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`invalid-json`))
+	}))
+	defer server.Close()
+
+	c.baseURL = server.URL
+	if _, err := c.GuessMovies(context.Background(), "anything"); err == nil {
+		t.Fatal("expected error on invalid response JSON")
 	}
 }

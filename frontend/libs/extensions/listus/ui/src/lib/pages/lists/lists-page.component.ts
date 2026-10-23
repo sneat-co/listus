@@ -38,19 +38,21 @@ import {
   IListGroup,
   IListInfo,
   IListusSpaceDbo,
-  IListusListGroupsReader,
-  LISTUS_LIST_GROUPS_READER,
   ListType,
 } from '@sneat/extension-listus-contract';
-import { builtInListGroups } from './built-in-lists';
+import {
+  IListusListGroupsReader,
+  LISTUS_LIST_GROUPS_READER,
+} from '../../list-groups-reader';
+import { builtInListGroups, listGroupsFromBriefs } from './built-in-lists';
 import {
   SpaceBaseComponent,
   SpaceComponentBaseParams,
   SpaceSelectorComponent,
 } from '@sneat/space-components';
 import { createShortSpaceInfoFromDbo } from '@sneat/space-models';
-import { Subscription } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { of, Subscription } from 'rxjs';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ListusComponentBaseParams } from '../../listus-component-base-params';
 import {
   IListusAppStateService,
@@ -150,6 +152,8 @@ export class ListsPageComponent extends SpaceBaseComponent {
   protected readonly listTitle = signal('');
   private userCommunesSubscriptions: Subscription[] = [];
   private listGroupsSubscription?: Subscription;
+  /** True once an optional reader snapshot is the persisted overview. */
+  private readerActive = false;
   private readonly collapsedGroups = signal<string[] | undefined>(undefined);
 
   /** Notifies the listGroups signal after in-place mutations of groups/lists. */
@@ -182,6 +186,29 @@ export class ListsPageComponent extends SpaceBaseComponent {
         if (spaceType && !this.listGroups?.length) {
           this.updateListsFromSpace(undefined);
         }
+      });
+    this.spaceIDChanged$
+      .pipe(
+        tap(() => {
+          this.readerActive = false;
+          this.listGroups = [];
+          this.updateListsFromSpace(undefined);
+        }),
+        switchMap((spaceID) =>
+          spaceID ? this.params.listService.observeSpaceLists(spaceID) : of({}),
+        ),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe({
+        next: (briefs) => {
+          // A reader snapshot is complete, so a later extension emit must not
+          // put a removed list back. Until the reader emits, show these briefs.
+          if (this.readerActive) return;
+          this.listGroups = [];
+          this.updateListsFromSpace(undefined);
+          this.updateListsFromSpace(listGroupsFromBriefs(briefs));
+        },
+        error: this.errorLogger.logErrorHandler('Failed to load lists'),
       });
   }
 
@@ -297,42 +324,44 @@ export class ListsPageComponent extends SpaceBaseComponent {
       super.onSpaceDboChanged();
       this.listGroupsSubscription?.unsubscribe();
       this.listGroupsSubscription = undefined;
-      if (this.space) {
-        // Reset first so switching spaces doesn't accumulate the previous
-        // space's groups. Then show the built-in default lists (family) for
-        // instant UX, and merge the lists persisted on the space DBO (the
-        // extraction had stubbed out this second step, so only the built-ins
-        // showed and real lists never loaded).
+      if (!this.space) {
+        this.readerActive = false;
         this.listGroups = [];
-        this.updateListsFromSpace(undefined); // built-in defaults (family)
-        const listusDbo = this.space.dbo as unknown as
-          | IListusSpaceDbo
-          | undefined;
-        this.updateListsFromSpace(listusDbo?.listGroups); // persisted lists
-        if (this.listGroupsReader) {
-          this.listGroupsSubscription = this.listGroupsReader
-            .watchListGroups(this.space)
-            .pipe(takeUntil(this.destroyed$))
-            .subscribe({
-              next: (groups) => {
-                // A reader emits a complete snapshot, not an incremental merge.
-                // Reset so deletions do not remain visible after a refresh.
-                this.listGroups = [];
-                this.updateListsFromSpace(undefined);
-                this.updateListsFromSpace([...groups]);
-              },
-              error: (error: unknown) => {
-                this.listGroups = [];
-                this.updateListsFromSpace(undefined);
-                this.errorLogger.logErrorHandler(
-                  'Failed to load storage-backed list overview',
-                )(error);
-              },
-            });
-        }
-      } else {
-        this.listGroups = [];
+        return;
       }
+      if (!this.listGroupsReader) {
+        // Extension-owned briefs are observed in the constructor. Seed built-ins
+        // until they arrive, and keep any legacy groups stored on the space.
+        if (!this.listGroups?.length) {
+          this.updateListsFromSpace(undefined);
+        }
+        this.updateListsFromSpace(this.legacyListGroups());
+        return;
+      }
+      // The reader emits a complete snapshot. Reset so a removed list does not
+      // stay on screen, then re-seed built-ins and merge that snapshot.
+      this.listGroups = [];
+      this.updateListsFromSpace(undefined);
+      this.updateListsFromSpace(this.legacyListGroups());
+      this.listGroupsSubscription = this.listGroupsReader
+        .watchListGroups(this.space)
+        .pipe(takeUntil(this.destroyed$))
+        .subscribe({
+          next: (groups) => {
+            this.readerActive = true;
+            this.listGroups = [];
+            this.updateListsFromSpace(undefined);
+            this.updateListsFromSpace([...groups]);
+          },
+          error: (error: unknown) => {
+            this.readerActive = true;
+            this.listGroups = [];
+            this.updateListsFromSpace(undefined);
+            this.errorLogger.logErrorHandler(
+              'Failed to load storage-backed list overview',
+            )(error);
+          },
+        });
     } catch (e) {
       this.errorLogger.logError(e, 'Failed to process onSpaceDboChanged');
     }
@@ -379,6 +408,11 @@ export class ListsPageComponent extends SpaceBaseComponent {
   // 		}
   // 	});
   // }
+
+  private legacyListGroups(): IListGroup[] | undefined {
+    return (this.space?.dbo as unknown as IListusSpaceDbo | undefined)
+      ?.listGroups;
+  }
 
   // Merges list groups into this.listGroups for display. Called with `undefined`
   // to seed the built-in default lists (family) for instant UX, and with the

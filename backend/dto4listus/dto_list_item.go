@@ -42,6 +42,15 @@ func (v CreateListItemRequest) Validate() error {
 	if err := v.ListItemBase.Validate(); err != nil {
 		return validation.NewBadRequestError(err)
 	}
+	if v.Linkage != nil {
+		return validation.NewErrBadRequestFieldValue("linkage", "is server managed")
+	}
+	if v.SourceManagement != nil {
+		return validation.NewErrBadRequestFieldValue("sourceManagement", "is server managed")
+	}
+	if v.DateTask != nil {
+		return validation.NewErrBadRequestFieldValue("dateTask", "is server managed")
+	}
 	return nil
 }
 

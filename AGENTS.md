@@ -20,3 +20,6 @@ Key rules:
 
 Backend wiring, frontend apps, and UX:
 https://github.com/sneat-co/sneat-libs/blob/main/docs/extension-standards/README.md
+
+## Code Search & Exploration
+- Prefer `codegrapher` CLI over lexical text search (`grep`/`ripgrep`) when tracing Go symbols, function/method definitions, types, interface implementations, and struct embeddings across packages and repositories.

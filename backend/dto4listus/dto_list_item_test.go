@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/sneat-co/listus/backend/dbo4listus"
+	"github.com/sneat-co/sneat-core-modules/linkage/dbo4linkage"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dto4spaceus"
 	"github.com/sneat-co/sneat-go-core/coretypes"
 )
@@ -16,6 +17,25 @@ func validListRequest() ListRequest {
 }
 
 func TestCreateListItemRequest_Validate(t *testing.T) {
+	validRef := coretypes.NewItemRefSameSpace("mod", "col", "id")
+	validSourceManagement := &dbo4listus.SourceManagement{
+		Source:      validRef,
+		Purpose:     "test",
+		ActionID:    "act",
+		Disposition: dbo4listus.SourceCompletionNavigate,
+	}
+	validDateTask := &dbo4listus.DateTaskLink{
+		Happening: validRef,
+		Source:    validRef,
+		Purpose:   "test",
+		Revision:  1,
+	}
+	validLinkage := &dbo4linkage.WithRelatedAndIDs{
+		WithRelatedIDs: dbo4linkage.WithRelatedIDs{
+			RelatedIDs: []string{dbo4linkage.NoRelatedID},
+		},
+	}
+
 	tests := []struct {
 		name    string
 		req     CreateListItemRequest
@@ -25,6 +45,9 @@ func TestCreateListItemRequest_Validate(t *testing.T) {
 		{"valid_with_id", CreateListItemRequest{ID: "abc", ListItemBase: dbo4listus.ListItemBase{Title: "Milk"}}, false},
 		{"bad_id", CreateListItemRequest{ID: "has space", ListItemBase: dbo4listus.ListItemBase{Title: "Milk"}}, true},
 		{"missing_title", CreateListItemRequest{ListItemBase: dbo4listus.ListItemBase{}}, true},
+		{"server_managed_linkage", CreateListItemRequest{ListItemBase: dbo4listus.ListItemBase{Title: "Milk", Linkage: validLinkage}}, true},
+		{"server_managed_source_management", CreateListItemRequest{ListItemBase: dbo4listus.ListItemBase{Title: "Milk", SourceManagement: validSourceManagement}}, true},
+		{"server_managed_date_task", CreateListItemRequest{ListItemBase: dbo4listus.ListItemBase{Title: "Milk", DateTask: validDateTask}}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

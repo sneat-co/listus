@@ -19,7 +19,7 @@ func SetListItemWatchWith(ctx facade.ContextWithUser, request dto4listus.SetList
 	}
 	err = dal4listus.RunListWorker(ctx, request.ListRequest,
 		func(ctx facade.ContextWithUser, tx dal.ReadwriteTransaction, params *dal4listus.ListWorkerParams) (err error) {
-			if err = params.GetRecords(ctx, tx); err != nil {
+			if err = getListWorkerRecords(params, ctx, tx); err != nil {
 				return
 			}
 			list = params.List

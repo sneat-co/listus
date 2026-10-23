@@ -43,6 +43,8 @@ func TestAddMovieToWatchlistRequestValidate(t *testing.T) {
 		{"valid_tmdb", valid, false},
 		{"valid_query", AddMovieToWatchlistRequest{SpaceRequest: valid.SpaceRequest, Query: "Titanic"}, false},
 		{"missing_movie", AddMovieToWatchlistRequest{SpaceRequest: valid.SpaceRequest}, true},
+		{"missing_space", AddMovieToWatchlistRequest{TmdbID: 1}, true},
+		{"invalid_list_id", AddMovieToWatchlistRequest{SpaceRequest: valid.SpaceRequest, ListID: "invalid:format:extra:parts", TmdbID: 1}, true},
 		{"non_watch_list", AddMovieToWatchlistRequest{SpaceRequest: valid.SpaceRequest, ListID: dbo4listus.DoTasksListID, TmdbID: 1}, true},
 		{"invalid_watch_with", AddMovieToWatchlistRequest{SpaceRequest: valid.SpaceRequest, TmdbID: 1, WatchWith: &dbo4listus.WatchWith{Mode: dbo4listus.WatchWithModeContact}}, true},
 	}
@@ -62,6 +64,11 @@ func TestSetListItemWatchWithRequestValidate(t *testing.T) {
 	}
 	if err := request.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)
+	}
+	invalidItem := request
+	invalidItem.ItemID = ""
+	if err := invalidItem.Validate(); err == nil {
+		t.Fatal("expected error on invalid ListItemRequest")
 	}
 	request.WatchWith = dbo4listus.WatchWith{Mode: "wrong"}
 	if err := request.Validate(); err == nil {

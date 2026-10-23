@@ -8,14 +8,23 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dal-go/dalgo/dal"
 	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/listus/backend/movius/tmdbclient"
+	"github.com/sneat-co/sneat-ext-contracts/calendarius/calendariusmodels"
+	calendarfacade "github.com/sneat-co/sneat-ext-contracts/calendarius/facade4calendarius"
 	"github.com/sneat-co/sneat-go-core/apicore"
 	"github.com/sneat-co/sneat-go-core/apicore/verify"
 	"github.com/sneat-co/sneat-go-core/facade"
 )
+
+type routeDateTaskProvider struct{}
+
+func (*routeDateTaskProvider) PlanSourceLinkedDateTask(context.Context, dal.ReadwriteTransaction, string, calendariusmodels.MutateSourceLinkedDateTaskRequest) (calendarfacade.PreparedSourceLinkedDateTaskMutation, error) {
+	panic("route registration must not invoke the provider")
+}
 
 // --- Auth bypass scaffolding (mirrors assetus api handler tests) -------------
 
@@ -84,6 +93,7 @@ func TestRegisterHttpRoutes(t *testing.T) {
 		{http.MethodDelete, "/v0/listus/list_items_delete"},
 		{http.MethodPost, "/v0/listus/list_items_reorder"},
 		{http.MethodPost, "/v0/listus/list_items_set_watch_with"},
+		{http.MethodPost, "/v0/listus/list_templates_apply"},
 		{http.MethodPost, "/v0/listus/movies/search"},
 		{http.MethodPost, "/v0/listus/movies/resolve"},
 		{http.MethodPost, "/v0/listus/movies/identify"},
@@ -96,6 +106,18 @@ func TestRegisterHttpRoutes(t *testing.T) {
 		if got[i] != w {
 			t.Errorf("route %d = %+v, want %+v", i, got[i], w)
 		}
+	}
+}
+
+func TestRegisterHttpRoutesIncludesDateTaskWhenProviderBound(t *testing.T) {
+	type reg struct{ method, path string }
+	var got []reg
+	handle := func(method, path string, _ http.HandlerFunc) {
+		got = append(got, reg{method, path})
+	}
+	RegisterHttpRoutes(handle, Dependencies{SourceLinkedDateTasks: new(routeDateTaskProvider)})
+	if got[len(got)-1] != (reg{http.MethodPost, "/v0/listus/item_date_task_save"}) {
+		t.Fatalf("last route = %+v, want date-task save route", got[len(got)-1])
 	}
 }
 
@@ -547,5 +569,147 @@ func TestHttpPostSetListItemWatchWith_400OnInvalidWatchWith(t *testing.T) {
 	httpPostSetListItemWatchWith(w, newPostRequest("/v0/listus/list_items_set_watch_with?"+listQuery, body))
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400; body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHttpPostSaveListItemDateTask(t *testing.T) {
+	// 1. Auth rejected
+	authRejected(t)
+	w := httptest.NewRecorder()
+	handler := httpPostSaveListItemDateTask(&routeDateTaskProvider{})
+	body := `{"spaceID":"s1","listID":"todo:123","itemID":"it1","operationID":"op1","expectedTaskRevision":1,"dueDate":"2026-09-27","state":"active"}`
+	handler(w, newPostRequest("/v0/listus/item_date_task_save", body))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", w.Code)
+	}
+
+	// 2. Success
+	authAsUser(t)
+	orig := saveListItemDateTask
+	t.Cleanup(func() { saveListItemDateTask = orig })
+	saveListItemDateTask = func(_ facade.ContextWithUser, _ dto4listus.SaveListItemDateTaskRequest, _ calendarfacade.SourceLinkedDateTaskProvider) (dto4listus.SaveListItemDateTaskResponse, error) {
+		return dto4listus.SaveListItemDateTaskResponse{}, nil
+	}
+	w = httptest.NewRecorder()
+	handler(w, newPostRequest("/v0/listus/item_date_task_save", body))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHttpHandlers_AuthRejectedAndValidationErrors(t *testing.T) {
+	// httpDeleteListItems
+	authRejected(t)
+	w := httptest.NewRecorder()
+	httpDeleteListItems(w, newPostRequest("/v0/listus/list_items_delete?"+listQuery, `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpDeleteListItems status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpDeleteListItems(w, newPostRequest("/v0/listus/list_items_delete?spaceID=s1&listID=invalid", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("httpDeleteListItems status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+
+	// httpPostReorderListItem
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostReorderListItem(w, newPostRequest("/v0/listus/list_items_reorder?"+listQuery, `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostReorderListItem status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpPostReorderListItem(w, newPostRequest("/v0/listus/list_items_reorder?spaceID=s1&listID=invalid", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("httpPostReorderListItem status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+
+	// httpPostSetListItemsIsDone
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostSetListItemsIsDone(w, newPostRequest("/v0/listus/list_items_set_is_done?"+listQuery, `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostSetListItemsIsDone status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpPostSetListItemsIsDone(w, newPostRequest("/v0/listus/list_items_set_is_done?spaceID=s1&listID=invalid", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("httpPostSetListItemsIsDone status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+
+	// httpPostSetListItemWatchWith
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostSetListItemWatchWith(w, newPostRequest("/v0/listus/list_items_set_watch_with?"+listQuery, `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostSetListItemWatchWith status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpPostSetListItemWatchWith(w, newPostRequest("/v0/listus/list_items_set_watch_with?spaceID=s1&listID=invalid", ""))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("httpPostSetListItemWatchWith status = %d, want 500; body=%s", w.Code, w.Body.String())
+	}
+
+	// httpPostAddMovieToWatchlist
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostAddMovieToWatchlist(w, newPostRequest("/v0/listus/movies/add_to_watchlist", `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostAddMovieToWatchlist status = %d, want 401", w.Code)
+	}
+
+	// httpPostResolveMovie
+	authRejected(t)
+	w = httptest.NewRecorder()
+	httpPostResolveMovie(w, newPostRequest("/v0/listus/movies/resolve", `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("httpPostResolveMovie status = %d, want 401", w.Code)
+	}
+}
+
+func TestHttpPostApplyListTemplate(t *testing.T) {
+	authRejected(t)
+	w := httptest.NewRecorder()
+	httpPostApplyListTemplate(w, newPostRequest("/v0/listus/list_templates_apply", `{}`))
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", w.Code)
+	}
+
+	authAsUser(t)
+	w = httptest.NewRecorder()
+	httpPostApplyListTemplate(w, newPostRequest("/v0/listus/list_templates_apply", "not json"))
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400; body=%s", w.Code, w.Body.String())
+	}
+
+	old := applyListTemplate
+	t.Cleanup(func() { applyListTemplate = old })
+	applyListTemplate = func(ctx facade.ContextWithUser, request dto4listus.ApplyListTemplateRequest) (dto4listus.ApplyListTemplateResult, error) {
+		return dto4listus.ApplyListTemplateResult{Disposition: "applied"}, nil
+	}
+	w = httptest.NewRecorder()
+	httpPostApplyListTemplate(w, newPostRequest("/v0/listus/list_templates_apply", `{"spaceID":"s1","sourceListID":"buy!regular","destinationListID":"buy!groceries","requestID":"click-1"}`))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "applied") {
+		t.Errorf("body %q missing disposition", w.Body.String())
+	}
+
+	applyListTemplate = func(ctx facade.ContextWithUser, request dto4listus.ApplyListTemplateRequest) (dto4listus.ApplyListTemplateResult, error) {
+		return dto4listus.ApplyListTemplateResult{}, errBoom
+	}
+	w = httptest.NewRecorder()
+	httpPostApplyListTemplate(w, newPostRequest("/v0/listus/list_templates_apply", `{"spaceID":"s1","sourceListID":"buy!regular","destinationListID":"buy!groceries","requestID":"click-1"}`))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500; body=%s", w.Code, w.Body.String())
 	}
 }
