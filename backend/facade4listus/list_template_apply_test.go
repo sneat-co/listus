@@ -13,6 +13,7 @@ import (
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dbo4spaceus"
+	"github.com/sneat-co/sneat-go-core/facade"
 )
 
 func TestCreateListPersistsRequestedTitleInSpaceModuleBrief(t *testing.T) {
