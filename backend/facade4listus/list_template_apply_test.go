@@ -2,6 +2,7 @@ package facade4listus
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 
@@ -272,6 +273,52 @@ func TestApplyListTemplateReportsRandomIDFailure(t *testing.T) {
 		SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: dbo4listus.BuyGroceriesListID, RequestID: "id-exhausted",
 	}); err == nil {
 		t.Fatal("expected random ID exhaustion to fail the apply")
+	}
+}
+
+func TestApplyListTemplateSurfacesInjectedFailures(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	template, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "Regular groceries"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	createItems(t, ctx, template.ID, "Milk")
+	request := dto4listus.ApplyListTemplateRequest{
+		SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: dbo4listus.BuyGroceriesListID, RequestID: "injected",
+	}
+
+	origRecords := getApplyListRecords
+	origReceipt := getApplyReceiptRecord
+	origInsert := insertApplyListRecord
+	t.Cleanup(func() {
+		getApplyListRecords = origRecords
+		getApplyReceiptRecord = origReceipt
+		insertApplyListRecord = origInsert
+	})
+
+	getApplyListRecords = func(*dal4listus.ListWorkerParams, facade.ContextWithUser, dal.ReadwriteTransaction) error {
+		return errors.New("records down")
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), request); err == nil {
+		t.Fatal("record load failure was ignored")
+	}
+
+	getApplyListRecords = origRecords
+	getApplyReceiptRecord = func(context.Context, dal.ReadwriteTransaction, record.Record) error {
+		return errors.New("receipt read failed")
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), request); err == nil {
+		t.Fatal("receipt read failure was ignored")
+	}
+
+	getApplyReceiptRecord = func(context.Context, dal.ReadwriteTransaction, record.Record) error {
+		return record.ErrRecordNotFound
+	}
+	insertApplyListRecord = func(context.Context, dal.ReadwriteTransaction, record.Record) error {
+		return errors.New("insert failed")
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), request); err == nil {
+		t.Fatal("destination insert failure was ignored")
 	}
 }
 
