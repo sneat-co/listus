@@ -27,13 +27,18 @@ import { ISpaceContext } from '@sneat/space-models';
 import { SpaceServiceModule } from '@sneat/space-services';
 import { ClassName } from '@sneat/ui';
 import { switchMap, takeUntil, take, tap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { of, Subscription } from 'rxjs';
 import {
   IListGroup,
   IListusService,
+  IListusSpaceDbo,
   LISTUS_SERVICE,
   ListType,
 } from '@sneat/extension-listus-contract';
+import {
+  IListusListGroupsReader,
+  LISTUS_LIST_GROUPS_READER,
+} from '../list-groups-reader';
 import {
   builtInListGroups,
   listGroupsFromBriefs,
@@ -73,6 +78,14 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
   private readonly menuCtrl = inject(MenuController);
   private readonly router = inject(Router);
   private readonly listService = inject<IListusService>(LISTUS_SERVICE);
+  private readonly listGroupsReader = inject<IListusListGroupsReader>(
+    LISTUS_LIST_GROUPS_READER,
+    { optional: true },
+  );
+  private listGroupsSubscription?: Subscription;
+  /** True once an optional reader snapshot is the persisted overview. */
+  private readerActive = false;
+  private readerGroups?: readonly IListGroup[];
 
   constructor() {
     super();
@@ -88,6 +101,7 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
     this.spaceIDChanged$
       .pipe(
         tap(() => {
+          this.readerActive = false;
           this.$persistedListGroups.set([]);
           this.refreshListGroups();
         }),
@@ -99,32 +113,86 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
       .subscribe({
         next: (briefs) => {
           this.$persistedListGroups.set(listGroupsFromBriefs(briefs));
-          this.refreshListGroups();
+          // A reader snapshot is complete, so a later extension emit must not
+          // put a removed list back. Until the reader emits, show these briefs.
+          if (!this.readerActive) this.refreshListGroups();
         },
         error: this.errorLogger.logErrorHandler('Failed to load lists'),
       });
   }
 
   // Mirror the lists page: built-in defaults (family) + the lists persisted on
-  // the space DBO, deduped by group type.
+  // the space, deduped by group type.
   protected override onSpaceDboChanged(): void {
     super.onSpaceDboChanged();
-    this.refreshListGroups();
+    this.listGroupsSubscription?.unsubscribe();
+    this.listGroupsSubscription = undefined;
+    if (!this.space) {
+      this.readerActive = false;
+      this.readerGroups = undefined;
+      this.$persistedListGroups?.set([]);
+      this.$listGroups.set([]);
+      return;
+    }
+    if (!this.listGroupsReader) {
+      this.refreshListGroups();
+      return;
+    }
+    this.publishGroups(this.legacyListGroups());
+    this.listGroupsSubscription = this.listGroupsReader
+      .watchListGroups(this.space)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: (storageGroups) => {
+          this.readerActive = true;
+          this.readerGroups = storageGroups;
+          this.$persistedListGroups?.set([...storageGroups]);
+          this.publishGroups(storageGroups);
+        },
+        error: (error: unknown) => {
+          this.readerActive = true;
+          this.readerGroups = [];
+          this.$persistedListGroups?.set([]);
+          this.publishGroups([]);
+          this.errorLogger.logErrorHandler(
+            'Failed to load storage-backed list overview',
+          )(error);
+        },
+      });
   }
 
   private refreshListGroups(): void {
+    if (this.readerActive) {
+      this.publishGroups(this.readerGroups ?? []);
+      return;
+    }
+    const persisted = this.$persistedListGroups?.() ?? [];
+    this.publishGroups([...persisted, ...this.legacyListGroups()]);
+  }
+
+  private legacyListGroups(): readonly IListGroup[] {
+    return (
+      (this.space?.dbo as unknown as IListusSpaceDbo | undefined)?.listGroups ??
+      []
+    );
+  }
+
+  private publishGroups(persisted: readonly IListGroup[]): void {
     const groups = this.space ? [...builtInListGroups(this.space.type)] : [];
-    this.$persistedListGroups().forEach((g) => {
-      if (!groups.some((x) => x.type === g.type)) {
-        groups.push(g);
-      } else {
-        const group = groups.find((x) => x.type === g.type);
-        group?.lists?.push(
-          ...(g.lists || []).filter(
-            (list) => !group.lists?.some((current) => current.id === list.id),
-          ),
-        );
+    persisted.forEach((g) => {
+      const group = groups.find((current) => current.type === g.type);
+      if (!group) {
+        groups.push({ ...g, lists: [...(g.lists ?? [])] });
+        return;
       }
+      if (!group.lists) {
+        group.lists = [];
+      }
+      group.lists.push(
+        ...(g.lists ?? []).filter(
+          (list) => !group.lists?.some((current) => current.id === list.id),
+        ),
+      );
     });
     this.$listGroups.set(groups);
   }
@@ -154,10 +222,7 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
 
     this.listService
       .observeSpaceLists(spaceRef.id)
-      .pipe(
-        take(1),
-        takeUntil(this.destroyed$),
-      )
+      .pipe(take(1), takeUntil(this.destroyed$))
       .subscribe({
         next: (briefs) =>
           this.navigateToSelectedSpace(
@@ -198,7 +263,9 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
     this.spaceNav
       .navigateForwardToSpacePage(space, page, { replaceUrl: true })
       .catch(
-        this.errorLogger.logErrorHandler('Failed to navigate to selected space'),
+        this.errorLogger.logErrorHandler(
+          'Failed to navigate to selected space',
+        ),
       );
   }
 
@@ -219,11 +286,8 @@ export class ListusSpaceMenuComponent extends SpaceBaseComponent {
     type: ListType,
     id: string,
   ): boolean {
-    return groups.some(
-      (group) =>
-        group.lists?.some(
-          (list) => list.type === type && list.id === id,
-        ),
+    return groups.some((group) =>
+      group.lists?.some((list) => list.type === type && list.id === id),
     );
   }
 }

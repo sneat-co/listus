@@ -10,7 +10,7 @@ import {
 import { SneatApiService, SneatFirestoreService } from '@sneat/api';
 import { ISpaceContext } from '@sneat/space-models';
 import { ModuleSpaceItemService } from '@sneat/space-services';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   AddMovieToWatchlistRequest,
@@ -18,6 +18,7 @@ import {
   IListBrief,
   IListContext,
   IListDbo,
+  IListGroup,
   IListusSpaceDbo,
   ListType,
   ICreateListItemsRequest,
@@ -63,9 +64,9 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
       spaceID,
       'ext',
     ) as CollectionReference<IListusSpaceDbo>;
-    return this.listusSpaceRecords.watchByID(extensionRecords, 'listus').pipe(
-      map((record) => record.dbo?.lists || {}),
-    );
+    return this.listusSpaceRecords
+      .watchByID(extensionRecords, 'listus')
+      .pipe(map((record) => record.dbo?.lists || {}));
   }
 
   public createList(request: ICreateListRequest): Observable<IListContext> {
@@ -138,10 +139,7 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
   public saveListItemDateTask(
     request: ISaveListItemDateTaskRequest,
   ): Observable<ISaveListItemDateTaskResponse> {
-    return this.sneatApiService.post(
-      'listus/item_date_task_save',
-      request,
-    );
+    return this.sneatApiService.post('listus/item_date_task_save', request);
   }
 
   public deleteListItems(request: IDeleteListItemsRequest): Observable<void> {
@@ -169,6 +167,23 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
       map((listContext) => {
         return this.onListSnapshot(space, listID, listType, listContext.dbo);
       }),
+    );
+  }
+
+  /**
+   * Optional overview capability. A missing space id or dbo is valid during a
+   * cold load and yields the embedded groups (often none). When the space id is
+   * known, canonical extension-owned briefs are merged with any legacy groups.
+   */
+  public watchListGroups(
+    space: ISpaceContext,
+  ): Observable<readonly IListGroup[]> {
+    const embedded = embeddedListGroups(space);
+    if (!space.id) {
+      return of(embedded);
+    }
+    return this.observeSpaceLists(space.id).pipe(
+      map((briefs) => mergeListGroups(embedded, listGroupsFromBriefs(briefs))),
     );
   }
 
@@ -247,4 +262,66 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
     );
     return doc(listsCollection, listID) as DocumentReference<IListDbo>;
   }
+}
+
+function embeddedListGroups(space: ISpaceContext): IListGroup[] {
+  return [
+    ...((space.dbo as unknown as IListusSpaceDbo | undefined)?.listGroups ??
+      []),
+  ];
+}
+
+/** Same qualified-id grouping the lists UI uses for extension-owned briefs. */
+function listGroupsFromBriefs(
+  briefs: Readonly<Record<string, IListBrief>>,
+): IListGroup[] {
+  const groups = new Map<ListType, IListGroup>();
+  Object.entries(briefs)
+    .sort(([, a], [, b]) => (a.title || '').localeCompare(b.title || ''))
+    .forEach(([qualifiedID, brief]) => {
+      const separator = qualifiedID.indexOf('!');
+      const type = brief.type;
+      if (!type || separator <= 0 || qualifiedID.slice(0, separator) !== type) {
+        return;
+      }
+      const shortID = qualifiedID.slice(separator + 1);
+      if (!shortID) return;
+      let group = groups.get(type);
+      if (!group) {
+        group = { id: type, type, lists: [] };
+        groups.set(type, group);
+      }
+      group.lists?.push({
+        ...brief,
+        id: shortID,
+        shortId: shortID,
+        type,
+      });
+    });
+  return [...groups.values()];
+}
+
+function mergeListGroups(
+  base: readonly IListGroup[],
+  extra: readonly IListGroup[],
+): IListGroup[] {
+  const groups = base.map((group) => ({
+    ...group,
+    lists: [...(group.lists ?? [])],
+  }));
+  extra.forEach((incoming) => {
+    const index = groups.findIndex((current) => current.type === incoming.type);
+    if (index < 0) {
+      groups.push({ ...incoming, lists: [...(incoming.lists ?? [])] });
+      return;
+    }
+    const lists = groups[index].lists ?? [];
+    (incoming.lists ?? []).forEach((list) => {
+      if (!lists.some((current) => current.id === list.id)) {
+        lists.push({ ...list });
+      }
+    });
+    groups[index] = { ...groups[index], lists };
+  });
+  return groups;
 }
