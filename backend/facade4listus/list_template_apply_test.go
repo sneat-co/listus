@@ -1,12 +1,19 @@
 package facade4listus
 
 import (
+	"context"
+	"errors"
+	"sync"
+	"testing"
+
+	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/record"
+	"github.com/dal-go/record/update"
+	"github.com/sneat-co/listus/backend/dal4listus"
 	"github.com/sneat-co/listus/backend/dbo4listus"
 	"github.com/sneat-co/listus/backend/dto4listus"
 	"github.com/sneat-co/sneat-core-modules/spaceus/dbo4spaceus"
-	"sync"
-	"testing"
+	"github.com/sneat-co/sneat-go-core/facade"
 )
 
 func TestCreateListPersistsRequestedTitleInSpaceModuleBrief(t *testing.T) {
@@ -160,5 +167,169 @@ func TestApplyListTemplateCreatesEmptyStandardDestinationOnFirstUse(t *testing.T
 	destination := getListData(t, ctx, dbo4listus.DoTasksListID)
 	if destination.Type != dbo4listus.ListTypeToDo || len(destination.Items) != 2 {
 		t.Fatalf("standard destination=%+v", destination)
+	}
+}
+
+func TestApplyListTemplateRejectsInvalidRequestAndMissingLists(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	if _, err := ApplyListTemplate(userCtx(ctx, testUserID), dto4listus.ApplyListTemplateRequest{}); err == nil {
+		t.Fatal("invalid request was accepted")
+	}
+	template, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "Regular groceries"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	missingDestination := dto4listus.ApplyListTemplateRequest{
+		SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: "buy!missing", RequestID: "missing-dest",
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), missingDestination); err == nil {
+		t.Fatal("missing destination was accepted")
+	}
+	missingSource := dto4listus.ApplyListTemplateRequest{
+		SpaceID: testSpaceID, SourceListID: "buy!missing", DestinationListID: dbo4listus.BuyGroceriesListID, RequestID: "missing-source",
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), missingSource); err == nil {
+		t.Fatal("missing source was accepted")
+	}
+}
+
+func TestApplyListTemplateLeavesMatchingOpenItemsUnchanged(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	template, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "Regular groceries"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	createItems(t, ctx, template.ID, "Milk")
+	createItems(t, ctx, dbo4listus.BuyGroceriesListID, "Milk")
+	result, err := ApplyListTemplate(userCtx(ctx, testUserID), dto4listus.ApplyListTemplateRequest{
+		SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: dbo4listus.BuyGroceriesListID, RequestID: "unchanged",
+	})
+	if err != nil || len(result.Unchanged) != 1 || len(result.Added) != 0 || result.Disposition != "applied" {
+		t.Fatalf("unchanged apply=(%+v,%v)", result, err)
+	}
+}
+
+func TestApplyListTemplateRejectsReusedRequestIDForDifferentLists(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	template, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "Regular groceries"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	createItems(t, ctx, template.ID, "Milk")
+	request := dto4listus.ApplyListTemplateRequest{
+		SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: dbo4listus.BuyGroceriesListID, RequestID: "same-click",
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), request); err != nil {
+		t.Fatal(err)
+	}
+	other, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "Other groceries"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.DestinationListID = dbo4listus.ListKey(other.ID)
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), request); err == nil {
+		t.Fatal("requestID reused for a different destination was accepted")
+	}
+}
+
+func TestApplyListTemplateSkipsNilSourceItemsAndRejectsInvalidResults(t *testing.T) {
+	ctx, db := newTestDBWithSpace(t, testSpaceID, testUserID)
+	template, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "Regular groceries"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	createItems(t, ctx, template.ID, "Milk")
+	source := dal4listus.NewListEntry(testSpaceID, dbo4listus.ListKey(template.ID))
+	if err = db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		if err := tx.Get(ctx, source.Record); err != nil {
+			return err
+		}
+		source.Data.Items = append(source.Data.Items, nil, &dbo4listus.ListItemBrief{
+			ID: "bad", ListItemBase: dbo4listus.ListItemBase{Title: "Broken", Quantity: -1},
+		})
+		source.Data.Count = len(source.Data.Items)
+		return tx.Update(ctx, source.Key, []update.Update{update.ByFieldName("items", source.Data.Items), update.ByFieldName("count", source.Data.Count)})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), dto4listus.ApplyListTemplateRequest{
+		SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: dbo4listus.BuyGroceriesListID, RequestID: "invalid-copy",
+	}); err == nil {
+		t.Fatal("invalid copied item was accepted")
+	}
+}
+
+func TestApplyListTemplateReportsRandomIDFailure(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	template, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "Regular groceries"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	createItems(t, ctx, template.ID, "Bread")
+	created := createItems(t, ctx, dbo4listus.BuyGroceriesListID, "Eggs")
+	orig := randomListItemID
+	t.Cleanup(func() { randomListItemID = orig })
+	randomListItemID = func(int) string { return created.CreatedItems[0].ID }
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), dto4listus.ApplyListTemplateRequest{
+		SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: dbo4listus.BuyGroceriesListID, RequestID: "id-exhausted",
+	}); err == nil {
+		t.Fatal("expected random ID exhaustion to fail the apply")
+	}
+}
+
+func TestApplyListTemplateSurfacesInjectedFailures(t *testing.T) {
+	ctx, _ := newTestDBWithSpace(t, testSpaceID, testUserID)
+	template, err := CreateList(userCtx(ctx, testUserID), dto4listus.CreateListRequest{SpaceRequest: spaceRequest(testSpaceID), Type: dbo4listus.ListTypeToBuy, Title: "Regular groceries"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	createItems(t, ctx, template.ID, "Milk")
+	request := dto4listus.ApplyListTemplateRequest{
+		SpaceID: testSpaceID, SourceListID: dbo4listus.ListKey(template.ID), DestinationListID: dbo4listus.BuyGroceriesListID, RequestID: "injected",
+	}
+
+	origRecords := getApplyListRecords
+	origReceipt := getApplyReceiptRecord
+	origInsert := insertApplyListRecord
+	t.Cleanup(func() {
+		getApplyListRecords = origRecords
+		getApplyReceiptRecord = origReceipt
+		insertApplyListRecord = origInsert
+	})
+
+	getApplyListRecords = func(*dal4listus.ListWorkerParams, facade.ContextWithUser, dal.ReadwriteTransaction) error {
+		return errors.New("records down")
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), request); err == nil {
+		t.Fatal("record load failure was ignored")
+	}
+
+	getApplyListRecords = origRecords
+	getApplyReceiptRecord = func(context.Context, dal.ReadwriteTransaction, record.Record) error {
+		return errors.New("receipt read failed")
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), request); err == nil {
+		t.Fatal("receipt read failure was ignored")
+	}
+
+	getApplyReceiptRecord = func(context.Context, dal.ReadwriteTransaction, record.Record) error {
+		return record.ErrRecordNotFound
+	}
+	insertApplyListRecord = func(context.Context, dal.ReadwriteTransaction, record.Record) error {
+		return errors.New("insert failed")
+	}
+	if _, err = ApplyListTemplate(userCtx(ctx, testUserID), request); err == nil {
+		t.Fatal("destination insert failure was ignored")
+	}
+}
+
+func TestMatchingItemSkipsNilEntries(t *testing.T) {
+	milk := dbo4listus.ListItemBase{Title: "Milk", Emoji: "🥛"}
+	wanted := &dbo4listus.ListItemBrief{ListItemBase: milk}
+	if got := matchingItem([]*dbo4listus.ListItemBrief{nil, {ListItemBase: milk}}, wanted); got == nil || got.Title != "Milk" {
+		t.Fatalf("matching item = %+v", got)
+	}
+	if got := matchingItem([]*dbo4listus.ListItemBrief{nil}, wanted); got != nil {
+		t.Fatalf("nil-only items matched %+v", got)
 	}
 }

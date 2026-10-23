@@ -1,6 +1,7 @@
 package facade4listus
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
@@ -17,6 +18,18 @@ import (
 	"github.com/sneat-co/sneat-go-core/facade"
 )
 
+var getApplyListRecords = func(params *dal4listus.ListWorkerParams, ctx facade.ContextWithUser, tx dal.ReadwriteTransaction) error {
+	return params.GetRecords(ctx, tx)
+}
+
+var getApplyReceiptRecord = func(ctx context.Context, tx dal.ReadwriteTransaction, r dalrecord.Record) error {
+	return tx.Get(ctx, r)
+}
+
+var insertApplyListRecord = func(ctx context.Context, tx dal.ReadwriteTransaction, r dalrecord.Record) error {
+	return tx.Insert(ctx, r)
+}
+
 func ApplyListTemplate(ctx facade.ContextWithUser, request dto4listus.ApplyListTemplateRequest) (result dto4listus.ApplyListTemplateResult, err error) {
 	if err = request.Validate(); err != nil {
 		return result, err
@@ -26,13 +39,12 @@ func ApplyListTemplate(ctx facade.ContextWithUser, request dto4listus.ApplyListT
 		// DAL transactions may invoke this callback again after a conflict. Never
 		// carry classifications from an abandoned attempt into the next receipt.
 		result = dto4listus.ApplyListTemplateResult{}
-		if err := params.GetRecords(ctx, tx); err != nil {
+		if err := getApplyListRecords(params, ctx, tx); err != nil {
 			return err
 		}
+		// A missing non-standard destination never reaches this callback.
+		// RunListWorker already returns that not-found error.
 		destinationExists := params.List.Record.Exists()
-		if !destinationExists && !dbo4listus.IsStandardList(request.DestinationListID) {
-			return fmt.Errorf("destination list not found")
-		}
 		if !destinationExists {
 			params.List.Data.Type = request.DestinationListID.ListType()
 			params.List.Data.Title = string(request.DestinationListID)
@@ -48,7 +60,7 @@ func ApplyListTemplate(ctx facade.ContextWithUser, request dto4listus.ApplyListT
 		receiptID := templateReceiptID(params.UserID(), request.RequestID)
 		receipt := new(dbo4listus.ListTemplateApplyReceiptDbo)
 		receiptRecord := dalrecord.NewRecordWithData(dbo4listus.NewListTemplateApplyReceiptKey(request.SpaceID, receiptID), receipt)
-		if getErr := tx.Get(ctx, receiptRecord); getErr == nil {
+		if getErr := getApplyReceiptRecord(ctx, tx, receiptRecord); getErr == nil {
 			if receipt.SourceListID != string(request.SourceListID) || receipt.DestinationListID != string(request.DestinationListID) {
 				return fmt.Errorf("requestID was already used for a different template apply")
 			}
@@ -91,7 +103,7 @@ func ApplyListTemplate(ctx facade.ContextWithUser, request dto4listus.ApplyListT
 		if destinationExists {
 			params.List.Record.MarkAsChanged()
 			params.ListUpdates = append(params.ListUpdates, update.ByFieldName("items", params.List.Data.Items), update.ByFieldName("count", params.List.Data.Count))
-		} else if insertErr := tx.Insert(ctx, params.List.Record); insertErr != nil {
+		} else if insertErr := insertApplyListRecord(ctx, tx, params.List.Record); insertErr != nil {
 			return insertErr
 		}
 		result.SourceListID, result.DestinationListID, result.ListType, result.Disposition = string(request.SourceListID), string(request.DestinationListID), request.SourceListID.ListType(), "applied"
