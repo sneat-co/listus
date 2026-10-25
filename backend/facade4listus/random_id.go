@@ -7,6 +7,8 @@ import (
 	"github.com/strongo/random"
 )
 
+var randomListItemID = random.ID
+
 func generateRandomListItemID(items []*dbo4listus.ListItemBrief, initialID string) (id string, err error) {
 	isDuplicateID := func() bool {
 		for _, item := range items {
@@ -17,12 +19,12 @@ func generateRandomListItemID(items []*dbo4listus.ListItemBrief, initialID strin
 		return false
 	}
 	id = initialID
-	if !isDuplicateID() {
+	if id != "" && !isDuplicateID() {
 		return
 	}
 next:
 	for i := 0; i <= 100; i++ {
-		id = random.ID(3)
+		id = randomListItemID(3)
 		if isDuplicateID() {
 			continue next
 		}

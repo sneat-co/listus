@@ -24,7 +24,6 @@ import {
   IListusService,
   LISTUS_SERVICE,
 } from '@sneat/extension-listus-contract';
-import { EmojisLoaderService } from '../../../services';
 import { IListItemWithUiState } from '../list-item-with-ui-state';
 
 @Component({
@@ -38,7 +37,6 @@ export class NewListItemComponent {
   private readonly randomService = inject(RandomIdService);
   private readonly toastCtrl = inject(ToastController);
   private readonly listService = inject<IListusService>(LISTUS_SERVICE);
-  private readonly emojisLoader = inject(EmojisLoaderService);
 
   protected readonly isFocused = signal(false);
 
@@ -72,30 +70,12 @@ export class NewListItemComponent {
         break;
       }
     }
-    let item: ICreateListItemRequest = {
+    const item: ICreateListItemRequest = {
       id,
       title: this.title(),
+      ...(this.isDone() ? { isDone: true } : {}),
     };
-
-    // Async emoji detection
-    this.emojisLoader
-      .detectEmoji(item.title)
-      .then((emoji) => {
-        if (emoji) {
-          item = { ...item, emoji };
-        }
-      })
-      .catch((err) => {
-        this.errorLogger.logError(err, 'Failed to detect emoji');
-        // Continue without emoji
-      })
-      .finally(() => {
-        // Always apply isDone and create the item
-        if (this.isDone()) {
-          item = { ...item, isDone: true };
-        }
-        this.createListItem(item);
-      });
+    this.createListItem(item);
   }
 
   protected clear(): void {

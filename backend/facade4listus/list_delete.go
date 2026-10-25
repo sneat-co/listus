@@ -25,9 +25,7 @@ func DeleteList(ctx facade.ContextWithUser, request dto4listus.ListRequest) (err
 		return validation.NewErrRecordIsMissingRequiredField("userCtx.ContactID()")
 	}
 	briefsAdapter := dal4spaceus.NewMapBriefsAdapter(
-		func(teamModuleDbo *dbo4listus.ListusSpaceDbo) int {
-			return len(teamModuleDbo.Lists)
-		},
+		listBriefsCount,
 		func(teamModuleDbo *dbo4listus.ListusSpaceDbo, id string) ([]update.Update, error) {
 			delete(teamModuleDbo.Lists, id)
 			return []update.Update{update.ByFieldPath([]string{"lists", id}, update.DeleteField)}, teamModuleDbo.Validate()
@@ -45,10 +43,16 @@ func DeleteList(ctx facade.ContextWithUser, request dto4listus.ListRequest) (err
 		dbo4listus.ListsCollection,
 		new(dbo4listus.ListDbo),
 		briefsAdapter,
-		deleteListTxWorker,
+		deleteListWorker,
 	)
 
 	return
+}
+
+var deleteListWorker = deleteListTxWorker
+
+func listBriefsCount(teamModuleDbo *dbo4listus.ListusSpaceDbo) int {
+	return len(teamModuleDbo.Lists)
 }
 
 func deleteListTxWorker(_ facade.ContextWithUser, _ dal.ReadwriteTransaction, _ *dal4spaceus.SpaceItemWorkerParams[*dbo4listus.ListusSpaceDbo, *dbo4listus.ListDbo]) (err error) {

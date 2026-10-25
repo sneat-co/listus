@@ -1,0 +1,240 @@
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+
+test.use({ trace: 'off' });
+
+const required = (name: string): string => {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`${name} is required for Listus acceptance`);
+  return value;
+};
+
+interface Actor {
+  readonly email: string;
+  readonly password: string;
+  readonly token: string;
+}
+
+async function authenticate(request: APIRequestContext): Promise<Actor> {
+  const email = required('LISTUS_E2E_EMAIL');
+  const password = required('LISTUS_E2E_PASSWORD');
+  const response = await request.post(required('LISTUS_E2E_AUTH_SIGN_IN_URL'), {
+    data: { email, password, returnSecureToken: true },
+  });
+  expect(response.ok(), `Authentication HTTP ${response.status()}`).toBeTruthy();
+  const body = (await response.json()) as { idToken: string };
+  return { email, password, token: body.idToken };
+}
+
+async function post<T>(
+  request: APIRequestContext,
+  actor: Actor,
+  endpoint: string,
+  data: unknown,
+): Promise<T> {
+  const response = await request.post(
+    new URL(endpoint, required('LISTUS_E2E_API_BASE')).href,
+    { headers: { Authorization: `Bearer ${actor.token}` }, data },
+  );
+  expect(response.ok(), `${endpoint} HTTP ${response.status()}`).toBeTruthy();
+  return response.json();
+}
+
+async function signIn(page: Page, actor: Actor): Promise<void> {
+  const apiBase = required('LISTUS_E2E_API_BASE');
+  const appOrigin = new URL(required('BASE_URL')).origin;
+  await page.context().addInitScript(
+    ({ appOrigin, apiBase }) => {
+      if (location.origin === appOrigin)
+        sessionStorage.setItem('sneat-app:local-api-base', apiBase);
+    },
+    { appOrigin, apiBase },
+  );
+  await page.goto(`/login?apiBase=${encodeURIComponent(apiBase)}`);
+  await page.locator('ion-segment-button[value="in"]').click();
+  await page.locator('ion-input[name="email"] input').fill(actor.email);
+  await page.locator('ion-input[type="password"] input').fill(actor.password);
+  await page.getByRole('button', { name: /Sign in.*with password/ }).click();
+  await page.waitForURL((url) => !url.pathname.includes('/login'));
+}
+
+async function openCalendarDate(
+  page: Page,
+  spaceID: string,
+  date: string,
+): Promise<void> {
+  await page.goto(`/space/family/${spaceID}/calendar?tab=day`);
+  await page.getByText('Pick date', { exact: true }).click();
+  const picker = page.locator('ion-datetime.sneat-date-picker');
+  await expect(picker).toBeVisible();
+  await picker.evaluate((element, value) => {
+    (element as HTMLElement & { value: string }).value = value;
+    element.dispatchEvent(
+      new CustomEvent('ionChange', { detail: { value }, bubbles: true }),
+    );
+  }, date);
+}
+
+async function expectResponseOK(response: import('@playwright/test').Response): Promise<void> {
+  expect(
+    response.ok(),
+    `${response.request().method()} ${new URL(response.url()).pathname} returned ${response.status()}: ${await response.text()}`,
+  ).toBeTruthy();
+}
+
+test('real @authenticated Listus due task stays linked through its lifecycle', async ({
+  page,
+  request,
+}) => {
+  test.skip(
+    process.env['LISTUS_E2E_DATED_TASK'] !== '1',
+    'Requires the integrated local Listus and Calendarius stack',
+  );
+  test.setTimeout(120_000);
+  const linkedDueErrors: string[] = [];
+  page.on('console', (message) => {
+    const text = message.text();
+    if (/linked due task|permission-denied/i.test(text)) linkedDueErrors.push(text);
+  });
+  page.on('pageerror', (error) => {
+    if (/linked due task|permission-denied/i.test(error.message))
+      linkedDueErrors.push(error.message);
+  });
+  const actor = await authenticate(request);
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await post(request, actor, 'users/init_user_record', {
+    email: actor.email,
+    authProvider: 'password',
+    ianaTimezone: 'Europe/Dublin',
+  });
+  const createdSpace = await post<{ space: { id: string } }>(
+    request,
+    actor,
+    'spaces/create_space',
+    {
+      type: 'family',
+      title: `Listus dated task ${suffix}`,
+      requestID: `listus-dated-${suffix}`,
+    },
+  );
+  const spaceID = createdSpace.space.id;
+  const createdList = await post<{ id: string }>(request, actor, 'listus/create_list', {
+    spaceID,
+    type: 'do',
+    title: `Payments ${suffix}`,
+  });
+  const listSubID = createdList.id.startsWith('do!')
+    ? createdList.id.slice('do!'.length)
+    : createdList.id;
+  const listURL = `/space/family/${spaceID}/list/do/${listSubID}`;
+  const title = `Renew insurance ${suffix}`;
+
+  await signIn(page, actor);
+  await page.goto(listURL);
+  await page.locator('ion-input[placeholder="New item"] input').fill(title);
+  const firstItemCreate = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/list_items_create'),
+  );
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  expect((await firstItemCreate).ok()).toBeTruthy();
+  await page.reload();
+  const row = page.locator('ion-reorder').filter({ hasText: title });
+  await expect(row).toBeVisible();
+
+  const otherTitle = `Second task ${suffix}`;
+  await page.locator('ion-input[placeholder="New item"] input').fill(otherTitle);
+  const secondItemCreate = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/list_items_create'),
+  );
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  expect((await secondItemCreate).ok()).toBeTruthy();
+  const otherRow = page.locator('ion-reorder').filter({ hasText: otherTitle });
+  await expect(otherRow).toBeVisible();
+
+  const initialSave = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/item_date_task_save'),
+  );
+  await row.getByLabel(`Add due date for ${title}`).fill('2026-09-21');
+  await expectResponseOK(await initialSave);
+
+  await page.locator('ion-segment-button[value="all"]').click();
+  await page.locator('ion-select').filter({ hasText: /Swipe|Reorder/ }).click();
+  await page.getByRole('radio', { name: 'Reorder', exact: true }).click();
+  const reorder = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/list_items_reorder'),
+  );
+  await row.dragTo(otherRow);
+  expect((await reorder).ok()).toBeTruthy();
+  await page.reload();
+  await expect(
+    page.locator('ion-reorder').filter({ hasText: title }),
+  ).toBeVisible();
+
+  await openCalendarDate(page, spaceID, '2026-09-21');
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
+
+  await page.goto(listURL);
+  const loadedRow = page.locator('ion-reorder').filter({ hasText: title });
+  const loadedDueInput = loadedRow.getByLabel(`Change due date for ${title}`);
+  await expect
+    .poll(
+      async () =>
+        (await loadedDueInput.inputValue()) ||
+        `No due date; row shows: ${await loadedRow.innerText()}; errors: ${linkedDueErrors.join(' | ') || 'none'}`,
+      { timeout: 10_000 },
+    )
+    .toBe('2026-09-21');
+  const reschedule = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/item_date_task_save'),
+  );
+  await loadedRow.getByLabel(`Change due date for ${title}`).fill('2026-09-23');
+  expect((await reschedule).ok()).toBeTruthy();
+
+  await openCalendarDate(page, spaceID, '2026-09-21');
+  await expect(page.getByText(title, { exact: true })).toHaveCount(0);
+  await openCalendarDate(page, spaceID, '2026-09-23');
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
+
+  await page.goto(listURL);
+  const currentRow = page.locator('ion-reorder').filter({ hasText: title });
+  const completeTask = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/item_date_task_save'),
+  );
+  await currentRow.locator('ion-checkbox').click();
+  await expectResponseOK(await completeTask);
+
+  await page.locator('ion-segment-button[value="completed"]').click();
+  const completedRow = page
+    .locator('ion-reorder')
+    .filter({ hasText: title })
+    .filter({ has: page.locator('ion-checkbox:not([aria-disabled="true"])') });
+  await expect(completedRow).toBeVisible();
+  await expect(completedRow.locator('ion-checkbox')).toBeEnabled();
+  await expect(
+    completedRow.getByLabel(`Change due date for ${title}`),
+  ).toHaveValue('2026-09-23');
+  const reopenTask = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/item_date_task_save'),
+  );
+  await completedRow.locator('ion-checkbox').click();
+  await expectResponseOK(await reopenTask);
+
+  await page.locator('ion-segment-button[value="active"]').click();
+  const reopenedRow = page
+    .locator('ion-reorder')
+    .filter({ hasText: title })
+    .filter({
+      has: page.locator(
+        'ion-checkbox[aria-checked="false"]:not([aria-disabled="true"])',
+      ),
+    });
+  await expect(reopenedRow).toBeVisible();
+  await expect(reopenedRow.locator('ion-checkbox')).not.toBeChecked();
+
+  const clearDue = page.waitForResponse(
+    (response) => response.url().includes('/v0/listus/item_date_task_save'),
+  );
+  await reopenedRow.getByRole('button', { name: `Remove due date for ${title}` }).click();
+  expect((await clearDue).ok()).toBeTruthy();
+  await expect(reopenedRow).toBeVisible();
+  await expect(reopenedRow.getByLabel(`Add due date for ${title}`)).toBeVisible();
+});

@@ -50,6 +50,11 @@ func TestCreateListRequest_Validate(t *testing.T) {
 			SpaceRequest: dto4spaceus.SpaceRequest{SpaceID: coretypes.SpaceID("s1")},
 			Type:         dbo4listus.ListTypeToDo,
 		}, true},
+		{"invalid_space", CreateListRequest{
+			SpaceRequest: dto4spaceus.SpaceRequest{SpaceID: ""},
+			Type:         dbo4listus.ListTypeToDo,
+			Title:        "My List",
+		}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

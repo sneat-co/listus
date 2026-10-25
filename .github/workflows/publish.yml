@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - frontend/**
+      - .github/scripts/publish-listus.sh
       - .github/workflows/publish.yml
   workflow_dispatch:
     inputs:
@@ -23,5 +24,58 @@ jobs:
     with:
       working-directory: frontend
       build-command: pnpm exec nx run-many -t build --projects=ext-listus-runtime,ext-listus-ui
-      publish-command: ${{ inputs.dry_run && 'pnpm exec nx release --yes --dry-run' || 'pnpm exec nx release --yes && git push --follow-tags' }}
+      # main requires status checks, so the version-bump commit this produces
+      # cannot be pushed directly (GH006). ../.github/scripts/publish-listus.sh
+      # runs the idempotent Nx release and lands that commit on a plain
+      # branch instead; the open-release-pr job below turns it into a pull
+      # request with a token that actually triggers those checks.
+      publish-command: ${{ inputs.dry_run && 'pnpm exec nx release --yes --dry-run' || '../.github/scripts/publish-listus.sh' }}
     secrets: inherit
+
+  open-release-pr:
+    needs: publish
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out the release branch, if publish-listus.sh pushed one
+        id: checkout
+        uses: actions/checkout@v6
+        continue-on-error: true
+        with:
+          ref: release/listus-${{ github.run_id }}
+          fetch-depth: 1
+
+      - name: Open the protected release pull request
+        if: steps.checkout.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          branch="release/listus-${{ github.run_id }}"
+          version="$(sed -n 's/^## \([0-9][0-9.]*\).*/\1/p' frontend/CHANGELOG.md | head -1)"
+          gh pr create \
+            --repo "${{ github.repository }}" \
+            --base main \
+            --head "${branch}" \
+            --title "chore(release): publish listus ${version:-update}" \
+            --body "Nx release computed and published the listus npm packages from this push. Main requires status checks, so the version-bump commit (package.json + CHANGELOG.md) lands via this PR instead of a direct push. Merging brings main in line with what is already published to npm."
+
+      - name: Trigger protected release PR checks
+        if: steps.checkout.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.SNEAT_CI_READWRITE_TOKEN }}
+        run: |
+          set -euo pipefail
+          branch="release/listus-${{ github.run_id }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore(release): trigger protected PR checks"
+          gh auth setup-git
+          git push origin "HEAD:${branch}"
+
+      - name: No release branch to publish
+        if: steps.checkout.outcome != 'success'
+        run: echo "::notice::publish-listus.sh produced no release commit (nothing new to release); nothing to open a PR for."

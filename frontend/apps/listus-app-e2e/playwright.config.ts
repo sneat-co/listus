@@ -19,6 +19,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL,
+    ignoreHTTPSErrors: true,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
@@ -27,14 +28,17 @@ export default defineConfig({
    * commondir into the canonical clone's .angular/cache, which causes
    * JIT-compiler errors and e2e timeouts. serve-static builds once and serves
    * the plain output, sidestepping that. */
-  webServer: {
-    command: 'pnpm exec nx run listus-app:serve-static',
-    url: 'http://localhost:4200',
-    reuseExistingServer: true,
-    cwd: workspaceRoot,
-    // Cold CI builds the app on first request; allow generous startup time.
-    timeout: 180_000,
-  },
+  webServer:
+    process.env['E2E_SKIP_WEBSERVER'] === '1'
+      ? undefined
+      : {
+          command: 'pnpm exec nx run listus-app:serve-static',
+          url: baseURL,
+          reuseExistingServer: true,
+          cwd: workspaceRoot,
+          // Cold CI builds the app on first request; allow generous startup time.
+          timeout: 180_000,
+        },
   projects: [
     {
       name: 'chromium',

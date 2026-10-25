@@ -12,6 +12,11 @@ import (
 	"github.com/sneat-co/listus/backend/internal/health"
 )
 
+var (
+	listenAndServe = http.ListenAndServe
+	logFatalf      = log.Fatalf
+)
+
 func main() {
 	addr := os.Getenv("LISTUS_ADDR")
 	if addr == "" {
@@ -22,7 +27,7 @@ func main() {
 	mux.Handle("GET /health", health.Handler())
 
 	log.Printf("listusd listening on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		log.Fatalf("listusd failed: %v", err)
+	if err := listenAndServe(addr, mux); err != nil {
+		logFatalf("listusd failed: %v", err)
 	}
 }

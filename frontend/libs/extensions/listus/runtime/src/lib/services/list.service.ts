@@ -2,11 +2,12 @@ import { HttpParams } from '@angular/common/http';
 import { Injectable, inject, Injector } from '@angular/core';
 import {
   Firestore as AngularFirestore,
+  CollectionReference,
   DocumentReference,
   collection,
   doc,
 } from 'firebase/firestore';
-import { SneatApiService } from '@sneat/api';
+import { SneatApiService, SneatFirestoreService } from '@sneat/api';
 import { ISpaceContext } from '@sneat/space-models';
 import { ModuleSpaceItemService } from '@sneat/space-services';
 import { Observable, throwError } from 'rxjs';
@@ -17,6 +18,7 @@ import {
   IListBrief,
   IListContext,
   IListDbo,
+  IListusSpaceDbo,
   ListType,
   ICreateListItemsRequest,
   ICreateListRequest,
@@ -27,25 +29,48 @@ import {
   IListItemsCommandParams,
   IReorderListItemsRequest,
   ISetListItemsIsComplete,
+  ISaveListItemDateTaskRequest,
+  ISaveListItemDateTaskResponse,
   ResolveMovieRequest,
   ResolveMovieResponse,
   SearchMoviesRequest,
   SearchMoviesResponse,
   SetListItemWatchWithRequest,
+  IApplyListTemplateRequest,
+  IApplyListTemplateResult,
 } from '@sneat/extension-listus-contract';
 
 @Injectable()
 export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
+  private readonly listusSpaceRecords: SneatFirestoreService<
+    IListusSpaceDbo,
+    IListusSpaceDbo
+  >;
+
   constructor() {
     const afs = inject(AngularFirestore);
     const sneatApiService = inject(SneatApiService);
     const injector = inject(Injector);
     super(injector, 'listus', 'lists', afs, sneatApiService);
+    this.listusSpaceRecords = new SneatFirestoreService(injector);
+  }
+
+  public observeSpaceLists(
+    spaceID: string,
+  ): Observable<Readonly<Record<string, IListBrief>>> {
+    const extensionRecords = collection(
+      this.spacesCollection,
+      spaceID,
+      'ext',
+    ) as CollectionReference<IListusSpaceDbo>;
+    return this.listusSpaceRecords.watchByID(extensionRecords, 'listus').pipe(
+      map((record) => record.dbo?.lists || {}),
+    );
   }
 
   public createList(request: ICreateListRequest): Observable<IListContext> {
     return this.sneatApiService
-      .post<IListContext>('lists/create_list', request)
+      .post<IListContext>('listus/create_list', request)
       .pipe(
         map((list) => {
           if (!list.brief) {
@@ -76,7 +101,7 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
   }
 
   private getFullListID(type: ListType, shortID: string): string {
-    return `${type}:${shortID}`;
+    return `${type}!${shortID}`;
   }
 
   public createListItems(
@@ -94,11 +119,29 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
     return this.sneatApiService.post('listus/list_items_create', request);
   }
 
+  public applyListTemplate(
+    request: IApplyListTemplateRequest,
+  ): Observable<IApplyListTemplateResult> {
+    return this.sneatApiService.post<IApplyListTemplateResult>(
+      'listus/list_templates_apply',
+      request,
+    );
+  }
+
   public setListItemsIsCompleted(
     request: ISetListItemsIsComplete,
   ): Observable<void> {
     const url = 'listus/list_items_set_is_done';
     return this.sneatApiService.post(url, request);
+  }
+
+  public saveListItemDateTask(
+    request: ISaveListItemDateTaskRequest,
+  ): Observable<ISaveListItemDateTaskResponse> {
+    return this.sneatApiService.post(
+      'listus/item_date_task_save',
+      request,
+    );
   }
 
   public deleteListItems(request: IDeleteListItemsRequest): Observable<void> {
@@ -159,10 +202,7 @@ export class ListService extends ModuleSpaceItemService<IListBrief, IListDbo> {
   public addMovieToWatchlist(
     request: AddMovieToWatchlistRequest,
   ): Observable<AddMovieToWatchlistResponse> {
-    return this.sneatApiService.post(
-      'listus/movies/add_to_watchlist',
-      request,
-    );
+    return this.sneatApiService.post('listus/movies/add_to_watchlist', request);
   }
 
   public setListItemWatchWith(
