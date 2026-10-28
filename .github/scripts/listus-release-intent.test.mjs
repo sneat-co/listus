@@ -25,6 +25,9 @@ for (const message of [
 
 test('explicit manual dispatch can publish even at a bookkeeping head', () => assert.equal(check(release, 'workflow_dispatch'), true));
 test('missing push message does not suppress publication', () => assert.equal(check(undefined), true));
+test('missing repository cannot turn a real fix into bookkeeping', () => {
+  assert.equal(shouldPublish({ eventName: 'push', message: `fix: quote\n\n${release}` }), true);
+});
 test('CLI writes the GitHub job output from environment input', () => {
   const dir = mkdtempSync(join(tmpdir(), 'listus-release-intent-'));
   try {

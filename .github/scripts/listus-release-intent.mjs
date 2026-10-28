@@ -9,7 +9,7 @@ export function shouldPublish({ eventName, message = '', repository }) {
   if (releaseSubject.test(subject)) return false;
   const merge = /^Merge pull request #\d+ from (\S+)\/release\/listus-\d+$/.exec(subject);
   const owner = repository?.split('/')[0];
-  return !(merge?.[1] === owner && releaseSubject.test(body.join('\n').trim()));
+  return !(merge && owner && merge[1] === owner && releaseSubject.test(body.join('\n').trim()));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
