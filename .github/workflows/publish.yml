@@ -44,8 +44,8 @@ jobs:
       # main requires status checks, so the version-bump commit this produces
       # cannot be pushed directly (GH006). ../.github/scripts/publish-listus.sh
       # runs the idempotent Nx release and lands that commit on a plain
-      # branch instead; the open-release-pr job below uses the org PAT so
-      # opening the PR triggers the required checks.
+      # branch instead. The repository token opens the PR; a contents-write
+      # PAT push then triggers its required checks.
       publish-command: ${{ inputs.dry_run && 'pnpm exec nx release --yes --dry-run' || '../.github/scripts/publish-listus.sh' }}
     secrets: inherit
 
@@ -69,7 +69,7 @@ jobs:
       - name: Open the protected release pull request
         if: steps.checkout.outcome == 'success'
         env:
-          GH_TOKEN: ${{ secrets.SNEAT_CI_READWRITE_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           branch="release/listus-${{ github.run_id }}"
@@ -80,6 +80,18 @@ jobs:
             --head "${branch}" \
             --title "chore(release): publish listus ${version:-update}" \
             --body "Nx release computed and published the listus npm packages from this push. Main requires status checks, so the version-bump commit (package.json + CHANGELOG.md) lands via this PR instead of a direct push. Merging brings main in line with what is already published to npm."
+
+      # This PAT has contents access, but cannot create pull requests. Checkout
+      # persists it for this push, avoiding the default-token auth header that
+      # previously suppressed PR CI even after gh auth setup-git.
+      - name: Trigger protected release PR checks
+        if: steps.checkout.outcome == 'success'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore(release): trigger protected PR checks"
+          git push origin "HEAD:release/listus-${{ github.run_id }}"
 
       - name: No release branch to publish
         if: steps.checkout.outcome != 'success'
