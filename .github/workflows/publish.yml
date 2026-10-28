@@ -6,6 +6,7 @@ on:
     paths:
       - frontend/**
       - .github/scripts/publish-listus.sh
+      - .github/scripts/listus-release-intent.mjs
       - .github/workflows/publish.yml
   workflow_dispatch:
     inputs:
@@ -19,7 +20,23 @@ permissions:
   contents: write
 
 jobs:
+  release-intent:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      publish: ${{ steps.intent.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Distinguish published bookkeeping from source changes
+        id: intent
+        env:
+          LISTUS_HEAD_MESSAGE: ${{ github.event.head_commit.message }}
+        run: node .github/scripts/listus-release-intent.mjs
+
   publish:
+    needs: release-intent
+    if: needs.release-intent.outputs.publish == 'true'
     uses: sneat-co/cicd/.github/workflows/npm-publish.yml@main
     with:
       working-directory: frontend
@@ -27,8 +44,8 @@ jobs:
       # main requires status checks, so the version-bump commit this produces
       # cannot be pushed directly (GH006). ../.github/scripts/publish-listus.sh
       # runs the idempotent Nx release and lands that commit on a plain
-      # branch instead; the open-release-pr job below turns it into a pull
-      # request with a token that actually triggers those checks.
+      # branch instead; the open-release-pr job below uses the org PAT so
+      # opening the PR triggers the required checks.
       publish-command: ${{ inputs.dry_run && 'pnpm exec nx release --yes --dry-run' || '../.github/scripts/publish-listus.sh' }}
     secrets: inherit
 
@@ -47,11 +64,12 @@ jobs:
         with:
           ref: release/listus-${{ github.run_id }}
           fetch-depth: 1
+          token: ${{ secrets.SNEAT_CI_READWRITE_TOKEN }}
 
       - name: Open the protected release pull request
         if: steps.checkout.outcome == 'success'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.SNEAT_CI_READWRITE_TOKEN }}
         run: |
           set -euo pipefail
           branch="release/listus-${{ github.run_id }}"
@@ -62,19 +80,6 @@ jobs:
             --head "${branch}" \
             --title "chore(release): publish listus ${version:-update}" \
             --body "Nx release computed and published the listus npm packages from this push. Main requires status checks, so the version-bump commit (package.json + CHANGELOG.md) lands via this PR instead of a direct push. Merging brings main in line with what is already published to npm."
-
-      - name: Trigger protected release PR checks
-        if: steps.checkout.outcome == 'success'
-        env:
-          GH_TOKEN: ${{ secrets.SNEAT_CI_READWRITE_TOKEN }}
-        run: |
-          set -euo pipefail
-          branch="release/listus-${{ github.run_id }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit --allow-empty -m "chore(release): trigger protected PR checks"
-          gh auth setup-git
-          git push origin "HEAD:${branch}"
 
       - name: No release branch to publish
         if: steps.checkout.outcome != 'success'
