@@ -13,6 +13,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-bookkeeping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test release publication intent
+        run: node --test .github/scripts/listus-release-intent.test.mjs
+
   architecture:
     runs-on: ubuntu-latest
     steps:

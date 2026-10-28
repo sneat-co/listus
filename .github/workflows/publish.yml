@@ -6,6 +6,7 @@ on:
     paths:
       - frontend/**
       - .github/scripts/publish-listus.sh
+      - .github/scripts/listus-release-intent.mjs
       - .github/workflows/publish.yml
   workflow_dispatch:
     inputs:
@@ -19,11 +20,23 @@ permissions:
   contents: write
 
 jobs:
+  release-intent:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      publish: ${{ steps.intent.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Distinguish published bookkeeping from source changes
+        id: intent
+        env:
+          LISTUS_HEAD_MESSAGE: ${{ github.event.head_commit.message }}
+        run: node .github/scripts/listus-release-intent.mjs
+
   publish:
-    # A generated release PR only synchronizes versions and notes after npm
-    # publication. Both squash and merge commit messages retain this prefix.
-    if: >-
-      ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, 'chore(release): publish ') }}
+    needs: release-intent
+    if: needs.release-intent.outputs.publish == 'true'
     uses: sneat-co/cicd/.github/workflows/npm-publish.yml@main
     with:
       working-directory: frontend
