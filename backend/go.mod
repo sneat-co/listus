@@ -14,7 +14,7 @@ require (
 	github.com/sneat-co/sneat-go-core v0.69.0
 	github.com/strongo/logus v0.4.8
 	github.com/strongo/random v0.0.3
-	github.com/strongo/slice v0.3.10
+	github.com/strongo/slice v0.3.14
 	github.com/strongo/strongoapp v0.31.58
 	github.com/strongo/validation v0.0.13
 )
