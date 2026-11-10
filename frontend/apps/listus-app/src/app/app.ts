@@ -47,6 +47,7 @@ import { filter, map } from 'rxjs';
             } @else {
               <sneat-spaces-menu />
               <sneat-auth-menu-item />
+              <a class="site-info-link" href="/about/tech-stack/">How Listus is built</a>
             }
           </ion-content>
         </ion-menu>
@@ -54,7 +55,7 @@ import { filter, map } from 'rxjs';
       </ion-split-pane>
     </ion-app>
   `,
-  styles: [`.clickable-title { cursor: pointer; }`],
+  styles: [`.clickable-title { cursor: pointer; } .site-info-link { display: block; padding: 1rem; }`],
   // The shared SpacesMenu -> SpacesList chain needs these non-root services,
   // just as the SpacesCard on the landing page does.
   providers: [SpaceService, UserRequiredFieldsService],
