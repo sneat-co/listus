@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How Listus is built — tech stack</title>
+  <meta name="description" content="How Listus combines an Angular and Ionic app, Sneat platform spaces, and a Go extension to organize shared lists and tasks.">
+  <link rel="canonical" href="https://listus.app/about/tech-stack/">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"AboutPage","name":"How Listus is built","url":"https://listus.app/about/tech-stack/","inLanguage":"en"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://listus.app/"},{"@type":"ListItem","position":2,"name":"Tech stack","item":"https://listus.app/about/tech-stack/"}]}]}</script>
+  <style>
+    :root { color-scheme: light; font: 16px/1.65 system-ui, sans-serif; color: #172238; background: #f8fafc; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: #154bb8; }
+    a:hover { text-decoration-thickness: 2px; }
+    header, footer { background: #fff; border-block: 1px solid #dce3ed; }
+    header { border-top: 0; }
+    .wrap { max-width: 760px; padding: 1.3rem 1.5rem; margin: auto; }
+    header .wrap, footer .wrap { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center; }
+    main { padding-block: 3rem 5rem; }
+    h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.2; margin: .5rem 0 1.5rem; }
+    h2 { margin-top: 2.3rem; font-size: 1.3rem; }
+    p { max-width: 68ch; }
+    .eyebrow { color: #52657f; text-transform: uppercase; letter-spacing: .1em; font-size: .8rem; font-weight: 700; }
+    .lede { font-size: 1.15rem; }
+  </style>
+</head>
+<body>
+  <header><div class="wrap"><strong>Listus.app</strong><nav aria-label="Primary"><a href="/">Open Listus</a> · <a href="https://sneat.co/">Sneat platform</a></nav></div></header>
+  <main class="wrap">
+    <nav aria-label="Breadcrumb"><a href="/">Home</a> / Tech stack</nav>
+    <p class="eyebrow">Inside Listus</p>
+    <h1>The technology behind Listus</h1>
+    <p class="lede">A tech stack is the languages, libraries and services used to build a product. Listus keeps shared lists and tasks in the same Sneat platform spaces where people already work together.</p>
+    <h2>The app</h2><p>Angular and Ionic provide the signed-in interface. Listus uses the Sneat platform's shared account, navigation and space components, then adds its own screens for lists and items.</p>
+    <h2>The service</h2><p>The Listus extension has a Go backend for list and task operations. Its records are scoped to a Sneat platform space, so a list belongs to the people and context that use it.</p>
+    <h2>This website</h2><p>The app is built into static browser assets. This public explanation is a small HTML page included with the app build and served by the current Firebase Hosting setup.</p>
+    <h2>Related projects</h2><p><a href="https://github.com/sneat-co/listus">Listus source</a> contains the extension and standalone app. The <a href="https://sneat.co/">Sneat platform</a> supplies the shared services.</p>
+  </main>
+  <footer><div class="wrap"><span>Listus · a Sneat product</span><nav aria-label="Footer"><a href="/">Open Listus</a> · <a href="/about/tech-stack/">Tech stack</a></nav></div></footer>
+</body>
+</html>
