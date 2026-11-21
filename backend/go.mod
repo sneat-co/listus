@@ -11,7 +11,7 @@ require (
 	github.com/sneat-co/sneat-ext-contracts/calendarius v0.28.0
 	github.com/sneat-co/sneat-ext-contracts/listus v0.0.13
 	github.com/sneat-co/sneat-ext-contracts/media v0.1.2
-	github.com/sneat-co/sneat-go-core v0.80.1
+	github.com/sneat-co/sneat-go-core v0.81.0
 	github.com/strongo/logus v0.4.9
 	github.com/strongo/random v0.0.3
 	github.com/strongo/slice v0.3.14
